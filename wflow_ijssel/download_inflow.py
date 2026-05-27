@@ -44,7 +44,7 @@ def parse_rws_response(response: dict) -> pd.Series:
         for m in metingen
     }
     series = pd.Series(data).sort_index()
-    series.index = series.index.tz_localize(None)
+    series.index = pd.DatetimeIndex([t.replace(tzinfo=None) for t in series.index])
     return series
 
 

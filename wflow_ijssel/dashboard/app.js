@@ -4,7 +4,7 @@ const { ColumnLayer, ScatterplotLayer } = deck;
 
 const API = "";
 const JAN_DAYS = Array.from({ length: 31 }, (_, i) => {
-  const d = new Date(1995, 0, i + 1);
+  const d = new Date(Date.UTC(1995, 0, i + 1));
   return d.toISOString().slice(0, 10);
 });
 const DISCHARGE_THRESHOLD = 1500;
@@ -38,15 +38,20 @@ map.on("load", () => {
 });
 
 async function init() {
-  const [kpis, tsKampen, tsWestervoort] = await Promise.all([
-    fetch(`${API}/api/kpis`).then(r => r.json()),
-    fetch(`${API}/api/timeseries/kampen`).then(r => r.json()),
-    fetch(`${API}/api/timeseries/westervoort`).then(r => r.json()),
-  ]);
+  try {
+    const [kpis, tsKampen, tsWestervoort] = await Promise.all([
+      fetch(`${API}/api/kpis`).then(r => r.json()),
+      fetch(`${API}/api/timeseries/kampen`).then(r => r.json()),
+      fetch(`${API}/api/timeseries/westervoort`).then(r => r.json()),
+    ]);
 
-  renderKpis(kpis, tsWestervoort);
-  renderChart(tsKampen, tsWestervoort);
-  await loadDay(0);
+    renderKpis(kpis, tsWestervoort);
+    renderChart(tsKampen, tsWestervoort);
+    await loadDay(0);
+  } catch (err) {
+    document.getElementById("alert-badge").textContent = "Fout bij laden data — voer export_output.py uit";
+    console.error("Dashboard init mislukt:", err);
+  }
 }
 
 function renderKpis(kpis, tsW) {
@@ -56,7 +61,7 @@ function renderKpis(kpis, tsW) {
     `m³/s · piek op ${kpis.peak_date}`;
   document.getElementById("val-inflow").textContent =
     Math.max(...tsW.q).toLocaleString("nl-NL");
-  document.getElementById("val-precip").textContent = "+182%";
+  document.getElementById("val-precip").textContent = "+182%"; // historisch gevalideerd voor jan 1995 (KNMI)
   document.getElementById("val-days").textContent =
     kpis.days_above_threshold + " dagen";
   document.getElementById("alert-badge").textContent = "⚠ EXTREEM HOOGWATER";
@@ -116,20 +121,30 @@ function updateChartCursor(dayIso) {
   Plotly.relayout("chart", { "shapes[0].x0": dayIso, "shapes[0].x1": dayIso });
 }
 
+let loadAbortController = null;
+
 async function loadDay(idx) {
+  if (loadAbortController) loadAbortController.abort();
+  loadAbortController = new AbortController();
+  const signal = loadAbortController.signal;
+
   const day = JAN_DAYS[idx];
-  const gj  = await fetch(`${API}/api/river/${day}`).then(r => r.json());
-  riverData  = gj.features.map(f => ({
-    coordinates: f.geometry.coordinates,
-    q: f.properties.q,
-    h: f.properties.h,
-  }));
+  try {
+    const gj = await fetch(`${API}/api/river/${day}`, { signal }).then(r => r.json());
+    riverData = gj.features.map(f => ({
+      coordinates: f.geometry.coordinates,
+      q: f.properties.q,
+      h: f.properties.h,
+    }));
 
-  document.getElementById("day-label").textContent =
-    new Date(day + "T12:00:00").toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
+    document.getElementById("day-label").textContent =
+      new Date(day + "T12:00:00Z").toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" });
 
-  updateChartCursor(day);
-  renderDeckLayers();
+    updateChartCursor(day);
+    renderDeckLayers();
+  } catch (err) {
+    if (err.name !== "AbortError") console.error("loadDay mislukt:", err);
+  }
 }
 
 function renderDeckLayers() {

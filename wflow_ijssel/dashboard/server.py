@@ -1,6 +1,7 @@
 """FastAPI server: levert API-data en statische dashboard-bestanden."""
 import json
 import os
+import re
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -42,6 +43,8 @@ def get_timeseries(station: str):
 
 @app.get("/api/river/{day}")
 def get_river_day(day: str):
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
+        raise HTTPException(400, "Ongeldig datumformaat (verwacht YYYY-MM-DD)")
     path = OUTPUT_DIR / f"river_day_{day}.geojson"
     if not path.exists():
         raise HTTPException(404, f"Geen data voor dag {day}")

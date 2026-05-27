@@ -9,10 +9,6 @@ end
 
 config = Wflow.Config(toml_path)
 
-# Smoke test: overschrijf eindtijd voor snelle verificatie
-# Verwijder deze regel voor de volledige jan-1995 simulatie
-config.endtime = DateTime("1994-12-03T00:00:00")
-
 println("Starten Wflow SBM simulatie IJssel ...")
 println("  Periode: $(config.starttime) → $(config.endtime)")
 println("  Input:   $(config.dir_input)")
