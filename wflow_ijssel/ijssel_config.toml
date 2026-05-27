@@ -1,0 +1,173 @@
+calendar = "proleptic_gregorian"
+starttime = 1994-12-01T00:00:00
+endtime   = 1995-01-31T00:00:00
+time_units = "days since 1900-01-01 00:00:00"
+timestepsecs = 86400
+dir_input  = "data/input"
+dir_output = "data/output"
+loglevel   = "info"
+
+[state]
+path_input  = "instates-ijssel.nc"
+path_output = "outstates-ijssel.nc"
+
+[state.vertical]
+canopystorage    = "canopystorage"
+satwaterdepth    = "satwaterdepth"
+snow             = "snow"
+snowwater        = "snowwater"
+tsoil            = "tsoil"
+ustorelayerdepth = "ustorelayerdepth"
+
+[state.lateral.river]
+h    = "h_river"
+h_av = "h_av_river"
+q    = "q_river"
+
+[state.lateral.subsurface]
+ssf = "ssf"
+
+[state.lateral.land]
+h    = "h_land"
+h_av = "h_av_land"
+q    = "q_land"
+
+[input]
+path_forcing = "forcing-ijssel.nc"
+path_static  = "staticmaps-ijssel.nc"
+
+inflow = "inflow"
+
+gauges           = "wflow_gauges_grdc"
+ldd              = "wflow_ldd"
+river_location   = "wflow_river"
+subcatchment     = "wflow_subcatch"
+
+forcing = [
+  "vertical.precipitation",
+  "vertical.temperature",
+  "vertical.potential_evaporation",
+  "lateral.river.inflow",
+]
+
+cyclic = ["vertical.leaf_area_index"]
+
+[input.vertical]
+c                   = "c"
+cf_soil             = "cf_soil"
+cfmax               = "Cfmax"
+e_r                 = "EoverR"
+f                   = "f"
+infiltcappath       = "InfiltCapPath"
+infiltcapsoil       = "InfiltCapSoil"
+kext                = "Kext"
+leaf_area_index     = "LAI"
+maxleakage          = "MaxLeakage"
+pathfrac            = "PathFrac"
+potential_evaporation = "pet"
+precipitation       = "precip"
+rootdistpar         = "rootdistpar"
+rootingdepth        = "RootingDepth"
+soilthickness       = "SoilThickness"
+specific_leaf       = "Sl"
+storage_wood        = "Swood"
+temperature         = "temp"
+tt                  = "TT"
+tti                 = "TTI"
+ttm                 = "TTM"
+water_holding_capacity = "WHC"
+waterfrac           = "WaterFrac"
+theta_r             = "thetaR"
+theta_s             = "thetaS"
+
+[input.vertical.kv_0]
+netcdf.variable.name = "KsatVer"
+scale  = 1.0
+offset = 0.0
+
+[input.lateral.river]
+length            = "wflow_riverlength"
+n                 = "N_River"
+slope             = "RiverSlope"
+width             = "wflow_riverwidth"
+bankfull_elevation = "RiverZ"
+bankfull_depth    = "RiverDepth"
+
+[input.lateral.river.inflow]
+inflow = "inflow"
+
+[input.lateral.subsurface]
+ksathorfrac = "KsatHorFrac"
+
+[input.lateral.land]
+n     = "N"
+slope = "Slope"
+
+[model]
+type                   = "sbm"
+kin_wave_iteration     = true
+masswasting            = true
+reinit                 = true
+snow                   = true
+thicknesslayers        = [100, 300, 800]
+min_streamorder_river  = 4
+min_streamorder_land   = 3
+
+[output]
+path = "output_ijssel.nc"
+
+[output.vertical]
+canopystorage    = "canopystorage"
+satwaterdepth    = "satwaterdepth"
+snow             = "snow"
+
+[output.lateral.river]
+h = "h_river"
+q = "q_river"
+
+[output.lateral.land]
+h = "h_land"
+q = "q_land"
+
+[netcdf]
+path = "output_scalar_ijssel.nc"
+
+[[netcdf.variable]]
+name      = "Q_kampen"
+map       = "gauges"
+parameter = "lateral.river.q"
+
+[[netcdf.variable]]
+coordinate.x = 5.92
+coordinate.y = 52.55
+name         = "Q_kampen_coord"
+location     = "kampen"
+parameter    = "lateral.river.q"
+
+[[netcdf.variable]]
+coordinate.x = 6.17
+coordinate.y = 51.97
+name         = "h_westervoort"
+location     = "westervoort"
+parameter    = "lateral.river.h"
+
+[csv]
+path = "output_ijssel.csv"
+
+[[csv.column]]
+header    = "Q_kampen"
+coordinate.x = 5.92
+coordinate.y = 52.55
+parameter = "lateral.river.q"
+
+[[csv.column]]
+header    = "h_kampen"
+coordinate.x = 5.92
+coordinate.y = 52.55
+parameter = "lateral.river.h"
+
+[[csv.column]]
+header    = "Q_westervoort"
+coordinate.x = 6.17
+coordinate.y = 51.97
+parameter = "lateral.river.q"
