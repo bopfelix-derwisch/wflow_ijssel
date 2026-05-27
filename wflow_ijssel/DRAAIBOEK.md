@@ -11,28 +11,44 @@ source .venv/bin/activate
 
 ---
 
-## Stap 1 — Statische kaarten bouwen (HydroMT)
+## Stap 1 — Statische kaarten bouwen
 
-Eenmalig, duurt 10–30 minuten. Vereist internetverbinding naar Deltares data servers.
+Kies de aanpak die bij je situatie past:
+
+### Optie A — Copernicus DEM (aanbevolen, geen registratie)
+
+Downloadt ~180 MB DEM-tegels van AWS en leidt afvoernetwerk af met pyflwdir.
+Duurt 5–10 minuten. Geen account vereist.
+
+```bash
+python build_staticmaps_copernicus.py
+```
+
+Verwachte output:
+```
+INFO: Stap 1/4: DEM-tegels downloaden van AWS Copernicus ...
+INFO: Stap 2/4: Hersampelen naar 0.008333° (~1 km) ...
+INFO: Stap 3/4: Afvoernetwerk afleiden met pyflwdir ...
+INFO: Uitlaat gesnapped naar: lon=5.496 lat=53.221 uparea=10231 km²
+INFO: Stroomgebied: 19490 cellen, rivieren: 1517 cellen
+INFO: Stap 4/4: staticmaps.nc en instates.nc schrijven ...
+INFO: Geschreven: data/input/staticmaps-ijssel.nc (14.4 MB)
+INFO: Geschreven: data/input/instates-ijssel.nc
+```
+
+**Beperking:** Copernicus DEM bevat geen poldercorecties — het stroomgebied is iets ruimer dan de echte IJssel-grens. Voor een demo-/leerproject is dit acceptabel.
+
+### Optie B — MERIT Hydro via HydroMT (wetenschappelijk correct)
+
+Vereist toegang tot MERIT Hydro-tiles (registratie bij Deltares of Tokyo-server).
 
 ```bash
 python build_staticmaps.py
 ```
 
-Verwachte output:
-```
-INFO: Staticmaps geschreven: data/input/staticmaps-ijssel.nc
-INFO: Instates geschreven:   data/input/instates-ijssel.nc
-```
+**Bij `FileNotFoundError: No such file found: merit_hydro`:** MERIT Hydro is niet geconfigureerd. Gebruik Optie A of vraag een Deltares-account.
 
-**Bij HTTP 429 (rate limit):** wacht 10–15 minuten en probeer opnieuw.
-
-**Bij `KeyError: 'merit_hydro'`:** controleer HydroMT-versie:
-```bash
-pip show hydromt-wflow | grep Version   # verwacht: 0.8.x
-```
-
-Resultaat: `data/input/staticmaps-ijssel.nc` en `data/input/instates-ijssel.nc`.
+Resultaat (beide opties): `data/input/staticmaps-ijssel.nc` en `data/input/instates-ijssel.nc`.
 
 ---
 
@@ -191,10 +207,10 @@ Stoppen: `Ctrl+C`.
 cd /home/bob/waterlab/wflow_ijssel
 source .venv/bin/activate
 
-python build_staticmaps.py          # stap 1  (~10-30 min, eenmalig)
-python download_forcing.py          # stap 2c (~5-30 min, CDS wachtrij)
-python download_inflow.py           # stap 3  (~1 min)
-julia --project=. run_ijssel.jl     # stap 4  (~5-20 min)
-python export_output.py             # stap 5  (~1 min)
+python build_staticmaps_copernicus.py   # stap 1  (~5-10 min, eenmalig)
+python download_forcing.py              # stap 2c (~5-30 min, CDS wachtrij)
+python download_inflow.py               # stap 3  (~1 min)
+julia --project=. run_ijssel.jl         # stap 4  (~5-20 min)
+python export_output.py                 # stap 5  (~1 min)
 python -m uvicorn dashboard.server:app --host 127.0.0.1 --port 8000  # stap 6
 ```

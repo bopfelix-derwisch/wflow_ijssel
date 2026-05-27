@@ -25,7 +25,7 @@ def build() -> None:
     build_root = str(ROOT / "wflow_build")
     logger.info("HydroMT model bouwen in %s ...", build_root)
 
-    model = WflowModel(root=build_root, mode="w+", logger=logger)
+    model = WflowModel(root=build_root, mode="w+", data_libs=["artifact_data"], logger=logger)
     model.build(
         region={"subbasin": OUTLET, "uparea": 10},
         opt={
