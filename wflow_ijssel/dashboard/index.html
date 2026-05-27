@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>IJssel Hoogwater Dashboard — januari 1995</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #080c14; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
+
+    #header {
+      background: #0d1b2a; border-bottom: 1px solid #1a3a5c;
+      padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;
+    }
+    #header h1 { font-size: 15px; color: #4fc3f7; }
+    #header .badge { background: #f44336; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+
+    #kpi-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 10px; padding: 12px 20px; background: #0a1220;
+      border-bottom: 1px solid #1a3a5c;
+    }
+    .kpi { background: #0d1b2a; border: 1px solid #1a3a5c; border-radius: 6px; padding: 10px 14px; }
+    .kpi .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
+    .kpi .value { font-size: 22px; font-weight: bold; }
+    .kpi .sub { font-size: 10px; color: #888; margin-top: 2px; }
+    #kpi-peak .value   { color: #f44336; }
+    #kpi-inflow .value { color: #ff9800; }
+    #kpi-precip .value { color: #4fc3f7; }
+    #kpi-days .value   { color: #4caf50; }
+
+    #map-container { position: relative; height: 360px; }
+    #map { width: 100%; height: 100%; }
+
+    #slider-bar {
+      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(8,12,20,.9); border: 1px solid #1a3a5c; border-radius: 20px;
+      padding: 8px 16px; display: flex; align-items: center; gap: 10px; min-width: 380px;
+    }
+    #play-btn {
+      width: 26px; height: 26px; background: #1565c0; border: none; border-radius: 50%;
+      color: white; cursor: pointer; font-size: 12px; flex-shrink: 0;
+    }
+    #day-slider { flex: 1; accent-color: #f44336; }
+    #day-label { font-size: 11px; color: #4fc3f7; white-space: nowrap; min-width: 100px; }
+
+    #chart-container { padding: 12px 20px; }
+    #chart { width: 100%; height: 200px; }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <h1>🌊 IJssel Hoogwater Dashboard</h1>
+  <span>Wflow SBM simulatie &nbsp;|&nbsp; jan 1995 &nbsp;|&nbsp; Westervoort → Kampen</span>
+  <span class="badge" id="alert-badge">⚠ Laden...</span>
+</div>
+
+<div id="kpi-row">
+  <div class="kpi" id="kpi-peak">
+    <div class="label">Piekafvoer Kampen</div>
+    <div class="value" id="val-peak">—</div>
+    <div class="sub" id="sub-peak">m³/s</div>
+  </div>
+  <div class="kpi" id="kpi-inflow">
+    <div class="label">Max instroom Westervoort</div>
+    <div class="value" id="val-inflow">—</div>
+    <div class="sub">m³/s · bovenstrooms Rijn</div>
+  </div>
+  <div class="kpi" id="kpi-precip">
+    <div class="label">Neerslag anomalie ERA5</div>
+    <div class="value" id="val-precip">—</div>
+    <div class="sub">t.o.v. klimatologisch gemiddelde</div>
+  </div>
+  <div class="kpi" id="kpi-days">
+    <div class="label">Duur boven drempel</div>
+    <div class="value" id="val-days">—</div>
+    <div class="sub">drempel: 1500 m³/s</div>
+  </div>
+</div>
+
+<div id="map-container">
+  <div id="map"></div>
+  <div id="slider-bar">
+    <button id="play-btn">▶</button>
+    <input id="day-slider" type="range" min="0" max="30" value="0" step="1">
+    <span id="day-label">1 jan 1995</span>
+  </div>
+</div>
+
+<div id="chart-container">
+  <div id="chart"></div>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
