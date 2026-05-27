@@ -1,0 +1,5 @@
+wflow_ijssel/data/
+.venv/
+__pycache__/
+*.nc
+.superpowers/
