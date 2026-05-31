@@ -330,7 +330,35 @@ Use this list to reduce the ~12 hour setup to ~2 hours:
 
 ---
 
-## 8. Environment versions
+## 8. Dashboard network access: WiFi isolation and Tailscale
+
+**Symptom:**  
+Dashboard running on `0.0.0.0:8000` was unreachable from an iPad on the same WiFi network. SSH to the Jetson worked fine from the same device.
+
+**Root cause:**  
+Most consumer and office WiFi routers enable **AP client isolation** (also called wireless isolation or WLAN isolation) by default. This prevents devices connected to the same access point from communicating directly with each other — a security measure against lateral movement. SSH traffic over port 22 may be exempted by some routers or reach the Jetson via a different path (wired uplink, VPN), while arbitrary high ports like 8000 are blocked.
+
+**Fix applied:**  
+The Jetson already had **Tailscale** running (`tailscale ip` → `100.112.6.2`). The iPad also had Tailscale installed in the same tailnet. Tailscale creates an encrypted peer-to-peer overlay network that bypasses the router entirely — traffic goes directly between devices regardless of local network topology.
+
+Accessing `http://100.112.6.2:8000` from the iPad worked immediately.
+
+**Recommendation for edge deployments:**  
+Install Tailscale on the edge device as standard practice. It solves three problems at once:
+1. **WiFi isolation** — access from any device in the tailnet regardless of local network policy
+2. **Remote access** — reach the device from outside the local network without port forwarding
+3. **Security** — no need to bind services to `0.0.0.0`; bind to the Tailscale interface (`100.x.x.x`) only, keeping the service invisible to the local LAN
+
+**Recommended uvicorn startup** for production use on Tailscale:
+```bash
+TAILSCALE_IP=$(tailscale ip -4)
+uvicorn dashboard.server:app --host $TAILSCALE_IP --port 8000
+```
+Access URL: `http://$(tailscale ip -4):8000` — works from any device in the tailnet, on any network.
+
+---
+
+## 9. Environment versions
 
 | Package | Version |
 |---------|---------|
