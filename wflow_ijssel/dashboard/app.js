@@ -56,8 +56,8 @@ let loadAbortController = null;
 const map = new maplibregl.Map({
   container: "map",
   style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-  center: [6.1, 52.2],
-  zoom: 8,
+  center: [6.1, 52.4],
+  zoom: 9.5,
   pitch: 45,
   bearing: 0,
 });
