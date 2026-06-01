@@ -16,8 +16,10 @@ import xarray as xr
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ROOT   = Path(__file__).parent
-OUTPUT = ROOT / "data" / "output_2021"
+ROOT         = Path(__file__).parent
+OUTPUT       = ROOT / "data" / "output_2021_real"
+STATIC_MAPS  = ROOT / "data" / "input" / "staticmaps-ijssel.nc"
+UPAREA_THR   = 3000.0
 
 KAMPEN_LON,      KAMPEN_LAT      = 5.496, 53.221
 WESTERVOORT_LON, WESTERVOORT_LAT = 6.154, 51.987
@@ -81,8 +83,9 @@ def export_all() -> None:
     logger.info("Laden %s ...", nc_path)
     ds = xr.open_dataset(nc_path)
 
-    river_mask = (ds["q_river"].mean(dim="time").values > 1.0)
-    logger.info("Rivier-cellen: %d", int(river_mask.sum()))
+    ds_st      = xr.open_dataset(str(STATIC_MAPS))
+    river_mask = ds_st["wflow_uparea"].values > UPAREA_THR
+    logger.info("Rivier-cellen: %d (wflow_uparea > %g km²)", int(river_mask.sum()), UPAREA_THR)
 
     for name, lon, lat in [
         ("kampen",      KAMPEN_LON,      KAMPEN_LAT),

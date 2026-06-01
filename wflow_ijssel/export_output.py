@@ -16,11 +16,13 @@ import xarray as xr
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ROOT   = Path(__file__).parent
-OUTPUT = ROOT / "data" / "output"
+ROOT         = Path(__file__).parent
+OUTPUT       = ROOT / "data" / "output"
+STATIC_MAPS  = ROOT / "data" / "input" / "staticmaps-ijssel.nc"
+UPAREA_THR   = 3000.0  # km² — hoofdrivier + grote zijtakken (~157 cellen)
 
-KAMPEN_LON,      KAMPEN_LAT      = 5.92,  52.55
-WESTERVOORT_LON, WESTERVOORT_LAT = 6.17,  51.97
+KAMPEN_LON,      KAMPEN_LAT      = 5.496, 53.221
+WESTERVOORT_LON, WESTERVOORT_LAT = 6.154, 51.987
 DISCHARGE_THRESHOLD = 1500.0
 
 
@@ -39,12 +41,12 @@ def _nearest_idx(ds: xr.Dataset, lon: float, lat: float) -> tuple[int, int]:
 def extract_timeseries(ds: xr.Dataset, lon: float, lat: float) -> dict:
     """Extraheer debiet en waterpeil op een locatie als dict met lijsten."""
     xi, yi = _nearest_idx(ds, lon, lat)
-    q_vals = ds["q_river"].isel(x=xi, y=yi).values.tolist()
-    h_vals = ds["h_river"].isel(x=xi, y=yi).values.tolist()
+    q_vals = ds["q_river"].isel(lon=xi, lat=yi).values.tolist()
+    h_vals = ds["h_river"].isel(lon=xi, lat=yi).values.tolist()
 
     bankfull = 0.0
     if "bankfull_elevation" in ds:
-        bankfull = float(ds["bankfull_elevation"].isel(x=xi, y=yi))
+        bankfull = float(ds["bankfull_elevation"].isel(lon=xi, lat=yi))
     h_nap = [h + bankfull for h in h_vals]
 
     dates = [str(t)[:10] for t in ds["time"].values]
@@ -81,7 +83,7 @@ def compute_kpis(
 ) -> dict:
     """Bereken KPI-waarden voor Kampen."""
     xi, yi = _nearest_idx(ds, lon, lat)
-    q_series = ds["q_river"].isel(x=xi, y=yi).values
+    q_series = ds["q_river"].isel(lon=xi, lat=yi).values
     dates    = [str(t)[:10] for t in ds["time"].values]
     peak_idx = int(np.argmax(q_series))
     return {
@@ -98,8 +100,9 @@ def export_all() -> None:
     logger.info("Laden %s ...", nc_path)
     ds = xr.open_dataset(nc_path)
 
-    river_mask = (ds["q_river"].mean(dim="time").values > 1.0)
-    logger.info("Rivier-cellen: %d", int(river_mask.sum()))
+    ds_st      = xr.open_dataset(str(STATIC_MAPS))
+    river_mask = ds_st["wflow_uparea"].values > UPAREA_THR
+    logger.info("Rivier-cellen: %d (wflow_uparea > %g km²)", int(river_mask.sum()), UPAREA_THR)
 
     for name, lon, lat in [
         ("kampen",      KAMPEN_LON,      KAMPEN_LAT),
