@@ -16,13 +16,13 @@ import xarray as xr
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-ROOT         = Path(__file__).parent
-OUTPUT       = ROOT / "data" / "output"
-STATIC_MAPS  = ROOT / "data" / "input" / "staticmaps-ijssel.nc"
-UPAREA_THR   = 3000.0   # km² — hoofdrivier + grote zijtakken
+ROOT          = Path(__file__).parent
+OUTPUT        = ROOT / "data" / "output"
 RIVER_LAT_MAX = 52.72   # °N — uitlaat IJssel bij Kampen; sluit IJsselmeer-routing uit
+MAX_Q_THR     = 150.0   # m³/s — IJssel-hoofdgeul (Rijn is grensinstroming, geen uparea)
+MAX_LON       = 6.25    # °E — sluit Berkel/Schipbeek en andere oostelijke zijtakken uit
 
-KAMPEN_LON,      KAMPEN_LAT      = 5.496, 53.221
+KAMPEN_LON,      KAMPEN_LAT      = 6.104, 52.654
 WESTERVOORT_LON, WESTERVOORT_LAT = 6.154, 51.987
 DISCHARGE_THRESHOLD = 1500.0
 
@@ -101,11 +101,13 @@ def export_all() -> None:
     logger.info("Laden %s ...", nc_path)
     ds = xr.open_dataset(nc_path)
 
-    ds_st      = xr.open_dataset(str(STATIC_MAPS))
-    river_mask = np.flipud(ds_st["wflow_uparea"].values > UPAREA_THR)
+    max_q      = ds["q_river"].max(dim="time").values
+    lon_vals   = ds["lon"].values
+    river_mask = (max_q > MAX_Q_THR) & ~np.isnan(max_q) & (lon_vals < MAX_LON)[np.newaxis, :]
     lat_cut    = int(np.searchsorted(ds["lat"].values, RIVER_LAT_MAX))
-    river_mask[lat_cut:, :] = False  # uitlaat IJssel bij Kampen
-    logger.info("Rivier-cellen: %d (uparea>%g km², lat<%g°N)", int(river_mask.sum()), UPAREA_THR, RIVER_LAT_MAX)
+    river_mask[lat_cut:, :] = False
+    logger.info("Rivier-cellen: %d (max_q>%g m³/s, lon<%g°E, lat<%g°N)",
+                int(river_mask.sum()), MAX_Q_THR, MAX_LON, RIVER_LAT_MAX)
 
     for name, lon, lat in [
         ("kampen",      KAMPEN_LON,      KAMPEN_LAT),
