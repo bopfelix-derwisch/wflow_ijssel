@@ -224,10 +224,10 @@ Resultaat: `data/output/` bevat `kpis.json`, `timeseries_kampen.json`, `timeseri
 ## Stap 6 — Dashboard starten
 
 ```bash
-python -m uvicorn dashboard.server:app --host 127.0.0.1 --port 8000
+python -m uvicorn dashboard.server:app --host 0.0.0.0 --port 8000
 ```
 
-Open in je browser: **http://127.0.0.1:8000**
+Open in je browser: **http://127.0.0.1:8000** of via de publieke URL **https://waterlab.felixisfelix.com**
 
 Het dashboard toont:
 - 4 KPI-blokken: piekafvoer Kampen, maximale instroom Westervoort, neerslaganomalie, duur boven drempel
@@ -236,6 +236,27 @@ Het dashboard toont:
 - Tijdreeksgrafiek (Plotly): debiet m³/s (rood, links) + waterpeil m+NAP (groen gestippeld, rechts) + drempellijn 1500 m³/s
 
 Stoppen: `Ctrl+C`.
+
+---
+
+## Stap 7 — Publieke URL via Cloudflare Tunnel
+
+Het dashboard is bereikbaar via **https://waterlab.felixisfelix.com** dankzij een Cloudflare Tunnel die als systemd-service draait.
+
+**Configuratie (eenmalig gedaan, geen actie vereist):**
+- Cloudflare Tunnel ID: `ca12e4f6-fa0d-4f39-8868-e729d9369c5c`
+- Systemd-service: `cloudflared.service` (autostart bij boot)
+- Config: `~/.cloudflared/config.yml` — ingress `waterlab.felixisfelix.com` → `http://localhost:8000`
+- DNS: CNAME `waterlab.felixisfelix.com` → `<tunnel-id>.cfargotunnel.com` (proxied)
+
+**Service beheren:**
+```bash
+sudo systemctl status cloudflared    # status controleren
+sudo systemctl restart cloudflared   # herstarten na config-wijziging
+sudo systemctl stop cloudflared      # stoppen
+```
+
+**Let op:** uvicorn moet draaien op `--host 0.0.0.0` (niet `127.0.0.1`) zodat cloudflared er bij kan.
 
 ---
 
@@ -252,5 +273,6 @@ python download_forcing.py              # stap 2c  (~5-30 min, CDS wachtrij)
 python download_inflow.py               # stap 3   (~1 min)
 julia --project=. run_ijssel.jl         # stap 4   (~5-20 min)
 python export_output.py                 # stap 5   (~1 min)
-python -m uvicorn dashboard.server:app --host 127.0.0.1 --port 8000  # stap 6
+python -m uvicorn dashboard.server:app --host 0.0.0.0 --port 8000  # stap 6
+# Dashboard: http://127.0.0.1:8000  of  https://waterlab.felixisfelix.com
 ```
