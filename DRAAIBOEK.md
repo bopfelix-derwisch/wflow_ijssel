@@ -52,6 +52,42 @@ Resultaat (beide opties): `data/input/staticmaps-ijssel.nc` en `data/input/insta
 
 ---
 
+## Stap 1b — LDD-routing corrigeren (Zwolle→Kampen)
+
+De D8-routing uit MERIT Hydro stuurde de IJssel na Zwolle ten onrechte naar het noordoosten (richting Meppel) in plaats van naar het noordwesten (Kampen). Dit script burned de correcte PDOK NWB-centerline in `wflow_ldd`, `wflow_river` en `wflow_subcatch`.
+
+**Vereisten:** `data/input/staticmaps-ijssel.nc` (stap 1) en `data/input/river_geom_ijssel.gpkg`.
+
+```bash
+# river_geom downloaden (eenmalig; vereist internet)
+python download_river_geom.py
+
+# LDD-fix toepassen (maakt backup als staticmaps-ijssel.nc.bak)
+python fix_staticmaps.py
+```
+
+Verwachte output:
+```
+INFO: Junctiecel: lat=52.4708, lon=6.1708 → ldd wordt W
+INFO: Brugcellen: 8  (lon 6.1708→6.1042 op lat 52.4708)
+INFO: Totale nieuwe keten: 57 cellen
+INFO: Cellen die parameter-fill nodig hebben: 40 nieuw-subcatch + 15 nieuw-river
+INFO: Parameter-fill (NN): 55 cellen ingevuld
+INFO: Terminus: lat=52.5792, lon=5.8375 (pit)
+INFO: Opgeslagen: data/input/staticmaps-ijssel.nc
+```
+
+**Wat het doet:**
+- Junctiecel (lat 52.47°N, lon 6.17°E) omgeleid van NE→W
+- 8 brugcellen westwaarts naar PDOK-startpunt
+- 49 PDOK-gecorrigeerde cellen tot aan Ketelmeer (nieuwe pit)
+- `wflow_subcatch` uitgebreid met 40 cellen buiten het originele stroomgebied
+- Alle statische parameters ingevuld via nearest-neighbour (land + rivier-specifiek)
+
+**Zonder deze stap** lopen de rivierbalken in het dashboard na Zwolle ten onrechte naar het noordoosten.
+
+---
+
 ## Stap 2 — CDS API-sleutel configureren + ERA5 forcing downloaden
 
 ### 2a. CDS-account (eenmalig)
@@ -171,13 +207,15 @@ python export_output.py
 Verwachte output:
 ```
 INFO: Laden data/output/output_ijssel.nc ...
-INFO: Rivier-cellen: 847
+INFO: Rivier-cellen: 140 (max_q>150 m³/s, lon 5.8–6.25°E, lat<52.65°N)
 INFO: Geschreven: data/output/timeseries_kampen.json
 INFO: Geschreven: data/output/timeseries_westervoort.json
-INFO: KPI's: {'peak_q': 3241.5, 'peak_date': '1995-01-31', 'days_above_threshold': 18}
+INFO: KPI's: {'peak_q': 849.0, 'peak_date': '1995-01-30', 'days_above_threshold': 0}
 INFO: GeoJSON bestanden: 31 dagen
 INFO: Export klaar.
 ```
+
+**Noot:** De piekafvoer van ~849 m³/s bij Kampen (echt Kampen, 5.921°E/52.555°N) is realistisch voor de gecorrigeerde route — de instromende Westervoort-grensconditie bepaalt het maximum. De 2021-simulatie (synthetische forcering) geeft 3058 m³/s.
 
 Resultaat: `data/output/` bevat `kpis.json`, `timeseries_kampen.json`, `timeseries_westervoort.json`, en `river_day_1995-01-01.geojson` t/m `river_day_1995-01-31.geojson`.
 
@@ -207,10 +245,12 @@ Stoppen: `Ctrl+C`.
 cd /home/bob/waterlab/wflow_ijssel
 source .venv/bin/activate
 
-python build_staticmaps_copernicus.py   # stap 1  (~5-10 min, eenmalig)
-python download_forcing.py              # stap 2c (~5-30 min, CDS wachtrij)
-python download_inflow.py               # stap 3  (~1 min)
-julia --project=. run_ijssel.jl         # stap 4  (~5-20 min)
-python export_output.py                 # stap 5  (~1 min)
+python build_staticmaps_copernicus.py   # stap 1   (~5-10 min, eenmalig)
+python download_river_geom.py           # stap 1b  (~1 min, eenmalig)
+python fix_staticmaps.py                # stap 1b  (~1 min, eenmalig)
+python download_forcing.py              # stap 2c  (~5-30 min, CDS wachtrij)
+python download_inflow.py               # stap 3   (~1 min)
+julia --project=. run_ijssel.jl         # stap 4   (~5-20 min)
+python export_output.py                 # stap 5   (~1 min)
 python -m uvicorn dashboard.server:app --host 127.0.0.1 --port 8000  # stap 6
 ```
