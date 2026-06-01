@@ -100,6 +100,7 @@ function switchYear(year) {
     document.getElementById("alert-badge").textContent = "ℹ Info";
     document.getElementById("alert-badge").style.background = "#00695c";
     document.body.className = "";
+    loadInfoKpis();
     return;
   }
 
@@ -367,4 +368,31 @@ function stopPlay() {
   playing = false;
   playBtn.textContent = "▶";
   if (playTimer) { clearInterval(playTimer); playTimer = null; }
+}
+
+// ── info-tab KPI's dynamisch laden ────────────────────────────────────────────
+
+async function loadInfoKpis() {
+  try {
+    const [synth, real] = await Promise.all([
+      fetch(`${API}/api/2021synth/kpis`).then(r => r.ok ? r.json() : null),
+      fetch(`${API}/api/2021/kpis`).then(r => r.ok ? r.json() : null),
+    ]);
+    if (synth) {
+      document.getElementById("cmp-synth-peak").textContent =
+        synth.peak_q.toLocaleString("nl-NL") + " m³/s";
+      document.getElementById("cmp-synth-date").textContent =
+        synth.peak_date;
+      document.getElementById("cmp-synth-days").textContent =
+        synth.days_above_threshold;
+    }
+    if (real) {
+      document.getElementById("cmp-real-peak").textContent =
+        real.peak_q.toLocaleString("nl-NL") + " m³/s";
+      document.getElementById("cmp-real-date").textContent =
+        real.peak_date;
+      document.getElementById("cmp-real-days").textContent =
+        real.days_above_threshold;
+    }
+  } catch (_) {}
 }

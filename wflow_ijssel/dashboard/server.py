@@ -12,8 +12,9 @@ ROOT       = Path(__file__).parent.parent
 STATIC_DIR = Path(__file__).parent
 
 OUTPUT_DIRS = {
-    "1995": ROOT / "data" / "output",
-    "2021": ROOT / "data" / "output_2021",
+    "1995":      ROOT / "data" / "output",
+    "2021":      ROOT / "data" / "output_2021_real",   # echte gemeten inflow
+    "2021synth": ROOT / "data" / "output_2021",        # synthetische inflow (vergelijking)
 }
 
 app = FastAPI(title="IJssel Hoogwater Dashboard API")
@@ -24,7 +25,7 @@ if os.path.isdir(str(STATIC_DIR)):
 
 def _output_dir(year: str) -> Path:
     if year not in OUTPUT_DIRS:
-        raise HTTPException(400, f"Onbekend jaar: {year}. Kies 1995 of 2021.")
+        raise HTTPException(400, f"Onbekend jaar: {year}.")
     return OUTPUT_DIRS[year]
 
 
@@ -58,11 +59,16 @@ def get_timeseries(year: str, station: str):
 
 @app.get("/api/{year}/measured")
 def get_measured(year: str):
-    d = _output_dir(year)
-    path = d / "measured_2021.json" if year == "2021" else d / "measured_1995.json"
-    if not path.exists():
-        raise HTTPException(404, f"Geen gemeten data voor {year}")
-    return JSONResponse(json.loads(path.read_text()))
+    # gemeten data zit altijd in de synth-map (ongeacht inflow-variant)
+    base = year.replace("synth", "")
+    candidates = [
+        OUTPUT_DIRS.get(f"{base}synth", ROOT / "data" / f"output_{base}") / "measured_2021.json",
+        OUTPUT_DIRS.get(base, ROOT / "data" / f"output_{base}") / "measured_2021.json",
+    ]
+    for path in candidates:
+        if path.exists():
+            return JSONResponse(json.loads(path.read_text()))
+    raise HTTPException(404, f"Geen gemeten data voor {year}")
 
 
 @app.get("/api/{year}/river/{day}")

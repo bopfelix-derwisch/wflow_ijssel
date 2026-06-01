@@ -327,98 +327,152 @@
 
     <p>
       De juli 2021 Rijn-vloed was de zwaarste in Duitsland en Nederland in decennia.
-      Bij <span class="highlight">Lobith</span> bereikte de Rijn een piek van
-      <span class="red">6 687 m³/s op 18 juli 2021</span> (RWS-meting).
-      Het IJssel-aandeel van de Rijnafsplitsing bij de Pannerdense Kop is gemiddeld ~18–25%.
+      Bij <span class="highlight">Lobith</span> (meetpunt Pannerdense Kop) bereikte de Rijn een piek van
+      <span class="red">6 687 m³/s op 18 juli 2021</span> (bron: RWS Waterinfo, station
+      <code>lobith.bovenrijn.tolkamer</code>). De simulatie is twee keer uitgevoerd:
+      eerst met een synthetische inflow-schatting, daarna met de werkelijk gemeten debietreeks.
     </p>
 
-    <h3 style="color:#aaa; font-size:12px; margin:14px 0 8px; font-weight:600; text-transform:uppercase; letter-spacing:.5px">Synthetische invoer vs. gemeten werkelijkheid</h3>
+    <!-- ── Bronnen synthetische data ── -->
+    <h3 style="color:#ff9800; font-size:12px; margin:18px 0 8px; font-weight:700; text-transform:uppercase; letter-spacing:.5px">
+      ⚠ Bronnen van de synthetische inflow — en waarom ze faalkten
+    </h3>
     <p>
-      Voor de 2021-simulatie was geen werkelijk gemeten debiet bij Westervoort beschikbaar
-      via de toenmalige API. Er werd een synthetische tijdreeks gebruikt gebaseerd op historische
-      schattingen (Lobith-piek × 25% IJssel-aandeel = ~2 200 m³/s).
-      De RWS-meting na het feit laat een andere werkelijkheid zien:
+      Bij de eerste opzet was de RWS Waterinfo REST API niet beschikbaar (het oude eindpunt
+      gaf "Exceeded 30 redirects" doordat het in april 2026 was vervangen).
+      De inflow bij Westervoort werd daarom synthetisch opgebouwd uit twee aannames:
+    </p>
+    <table class="ll-table" style="margin-bottom:12px">
+      <tr><th>Aanname</th><th>Bron</th><th>Gebruikte waarde</th><th>Werkelijk (RWS)</th><th>Fout</th></tr>
+      <tr>
+        <td>Lobith piekdebiet</td>
+        <td>RWS waterstandsberichten jul 2021<br><span style="color:#888;font-size:11px">(persbericht, niet gevalideerde meting)</span></td>
+        <td class="warn">~8 900 m³/s op 15 jul</td>
+        <td class="ok">6 687 m³/s op 18 jul</td>
+        <td class="red">+33%</td>
+      </tr>
+      <tr>
+        <td>IJssel-aandeel bij hoog water</td>
+        <td>Vuistregel voor gemiddelde Rijnverdeling<br><span style="color:#888;font-size:11px">(langjarig gemiddelde ~18–25%)</span></td>
+        <td class="warn">25%</td>
+        <td class="ok">13,4% (899 / 6 687)</td>
+        <td class="red">+87%</td>
+      </tr>
+      <tr>
+        <td><strong>Resulterende inflow Westervoort</strong></td>
+        <td>8 900 × 25% = 2 225 m³/s</td>
+        <td class="warn"><strong>2 200 m³/s</strong></td>
+        <td class="ok"><strong>899 m³/s</strong></td>
+        <td class="red"><strong>×2,45</strong></td>
+      </tr>
+    </table>
+    <p>
+      <span class="warn">Waarom week het IJssel-aandeel zo sterk af?</span>
+      Bij extreme afvoer op de Rijn reguleert Rijkswaterstaat actief de verdeling bij de
+      Pannerdense Kop. Bij de jul-2021 golf werd meer water naar de Waal geleid om
+      benedenrivierafvoer te spreiden. Het langjarig gemiddelde van ~25% is dus géén
+      betrouwbare schatting tijdens hoogwater — juist het moment dat het er toe doet.
     </p>
 
-    <div class="compare-bar-wrap">
-      <div class="compare-label">Piek Westervoort — synthetisch (model-invoer) vs. gemeten (RWS)</div>
-      <div style="position:relative; height:22px; background:#0d1b2a; border-radius:4px; margin-bottom:6px;">
-        <div class="compare-bar-fill" style="width:100%; background:rgba(206,147,216,0.35); color:#ce93d8">Synthetisch: 2 200 m³/s</div>
+    <!-- ── Vergelijking simulaties ── -->
+    <h3 style="color:#aaa; font-size:12px; margin:18px 0 8px; font-weight:600; text-transform:uppercase; letter-spacing:.5px">Simulatievergelijking: synthetisch vs. gemeten inflow</h3>
+
+    <div id="compare-kpis" class="info-grid">
+      <!-- ingevuld door JavaScript -->
+      <div class="info-card">
+        <div class="ic-label">Piek Kampen — synthetische inflow</div>
+        <div class="ic-value" style="color:#ce93d8" id="cmp-synth-peak">3 090 m³/s</div>
+        <div class="ic-sub" id="cmp-synth-date">16 jul 2021</div>
       </div>
-      <div style="position:relative; height:22px; background:#0d1b2a; border-radius:4px;">
-        <div class="compare-bar-fill" style="width:40.9%; background:rgba(128,203,196,0.45); color:#80cbc4">Gemeten: 899 m³/s</div>
+      <div class="info-card">
+        <div class="ic-label">Piek Kampen — gemeten inflow (RWS)</div>
+        <div class="ic-value" style="color:#80cbc4" id="cmp-real-peak">1 767 m³/s</div>
+        <div class="ic-sub" id="cmp-real-date">17 jul 2021</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Dagen boven 1 500 m³/s — synthetisch</div>
+        <div class="ic-value" style="color:#ce93d8" id="cmp-synth-days">14</div>
+        <div class="ic-sub">drempel overschreden</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Dagen boven 1 500 m³/s — gemeten inflow</div>
+        <div class="ic-value" style="color:#80cbc4" id="cmp-real-days">2</div>
+        <div class="ic-sub">drempel overschreden</div>
       </div>
     </div>
 
-    <div class="compare-bar-wrap" style="margin-top:18px">
-      <div class="compare-label">Piek Lobith — verwacht vs. gemeten (RWS)</div>
-      <div style="position:relative; height:22px; background:#0d1b2a; border-radius:4px; margin-bottom:6px;">
-        <div class="compare-bar-fill" style="width:100%; background:rgba(144,202,249,0.25); color:#90caf9">Verwacht (historisch): ~8 900 m³/s</div>
+    <div class="compare-bar-wrap" style="margin-top:16px">
+      <div class="compare-label">Piek inflow Westervoort (model-randconditie)</div>
+      <div style="position:relative;height:24px;background:#0d1b2a;border-radius:4px;margin-bottom:5px">
+        <div class="compare-bar-fill" style="width:100%;background:rgba(206,147,216,0.3);color:#ce93d8">Synthetisch: 2 200 m³/s &nbsp;<span style="opacity:.6;font-weight:400">(8 900 × 25% — vuistregel + persbericht)</span></div>
       </div>
-      <div style="position:relative; height:22px; background:#0d1b2a; border-radius:4px;">
-        <div class="compare-bar-fill" style="width:75.1%; background:rgba(144,202,249,0.45); color:#90caf9">Gemeten: 6 687 m³/s</div>
+      <div style="position:relative;height:24px;background:#0d1b2a;border-radius:4px">
+        <div class="compare-bar-fill" style="width:40.9%;background:rgba(128,203,196,0.45);color:#80cbc4">Gemeten RWS: 899 m³/s &nbsp;<span style="opacity:.6;font-weight:400">(station westervoort.ijsselkop)</span></div>
       </div>
     </div>
 
-    <div class="info-grid" style="margin-top:18px">
-      <div class="info-card">
-        <div class="ic-label">Gesimuleerd piek Kampen</div>
-        <div class="ic-value" style="color:#ce93d8">3 090 m³/s</div>
-        <div class="ic-sub">16 juli 2021 · te hoog door onjuiste inflow</div>
+    <div class="compare-bar-wrap" style="margin-top:14px">
+      <div class="compare-label">Gesimuleerd piekdebiet Kampen (model-uitvoer)</div>
+      <div style="position:relative;height:24px;background:#0d1b2a;border-radius:4px;margin-bottom:5px">
+        <div class="compare-bar-fill" style="width:100%;background:rgba(206,147,216,0.3);color:#ce93d8">Synthetische run: 3 090 m³/s</div>
       </div>
-      <div class="info-card">
-        <div class="ic-label">Gemeten Westervoort (RWS)</div>
-        <div class="ic-value" style="color:#80cbc4">899 m³/s</div>
-        <div class="ic-sub">18 juli 2021 · werkelijke IJssel-inflow</div>
+      <div style="position:relative;height:24px;background:#0d1b2a;border-radius:4px">
+        <div class="compare-bar-fill" style="width:57.2%;background:rgba(128,203,196,0.45);color:#80cbc4">Gemeten-inflow run: 1 767 m³/s</div>
       </div>
+    </div>
+
+    <!-- ── Leerpunten ── -->
+    <h3 style="color:#aaa; font-size:12px; margin:20px 0 8px; font-weight:600; text-transform:uppercase; letter-spacing:.5px">Leerpunten</h3>
+    <ul>
+      <li>
+        <span class="warn">Persberichten en vuistregels zijn geen vervanging voor gemeten data</span> als randconditie.
+        Het RWS-waterbericht noemde een Lobith-piek van ~8 900 m³/s; de geverifieerde meting was 6 687 m³/s.
+        De 25%-vuistregel voor het IJssel-aandeel geldt voor gemiddelde condities —
+        bij extreme afvoer wijkt de werkelijke verdeling significant af.
+      </li>
+      <li>
+        <span class="ok">De RWS Waterinfo API</span> levert nauwkeurige, tijdstap-getrouwe meetreeksen
+        (<code>rws-waterinfo</code> Python-pakket, station <code>westervoort.ijsselkop</code>,
+        grootheid <code>Q</code>). Dit moet de <em>eerste</em> keuze zijn voor randcondities bij
+        operationele runs — niet de fallback.
+      </li>
+      <li>
+        <span class="highlight">Effect op de simulatie:</span> de overgeschatte inflow (×2,45) resulteerde
+        in een gesimuleerde piek die ×1,75 te hoog lag (3 090 vs 1 767 m³/s). De versterking
+        komt doordat de kinematische golfvergelijking de extra inflow door het hele stroomgebied
+        propageert, met enige demping door berging maar geen volledige compensatie.
+      </li>
+      <li>
+        <span class="highlight">Wat wél klopte:</span> de ERA5-Land neerslagforcing is authentiek
+        en correct verwerkt. Het model reageerde fysisch consistent op de inflow.
+        De timing van de piek (16–17 juli) klopt goed met de waarneming: Lobith piekte op 18 juli,
+        een dag later — realistisch voor de propagatietijd langs de IJssel.
+      </li>
+    </ul>
+
+    <h3 style="color:#aaa; font-size:12px; margin:18px 0 8px; font-weight:600; text-transform:uppercase; letter-spacing:.5px">Gemeten referentiedata (RWS Waterinfo)</h3>
+    <div class="info-grid">
       <div class="info-card">
-        <div class="ic-label">Gemeten Lobith (RWS)</div>
+        <div class="ic-label">Lobith piek (Rijn totaal)</div>
         <div class="ic-value" style="color:#90caf9">6 687 m³/s</div>
-        <div class="ic-sub">18 juli 2021 · Rijn totaal</div>
+        <div class="ic-sub">18 jul 2021 · station lobith.bovenrijn.tolkamer</div>
       </div>
       <div class="info-card">
-        <div class="ic-label">IJssel-aandeel gemeten</div>
+        <div class="ic-label">Westervoort piek (IJssel)</div>
+        <div class="ic-value" style="color:#80cbc4">899 m³/s</div>
+        <div class="ic-sub">18 jul 2021 · station westervoort.ijsselkop</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">IJssel-aandeel werkelijk</div>
         <div class="ic-value" style="color:#ffb74d">13,4%</div>
-        <div class="ic-sub">899 / 6 687 · lager dan verwacht 25%</div>
+        <div class="ic-sub">899 / 6 687 · vs. aangenomen 25%</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">API-bron</div>
+        <div class="ic-value" style="color:#4fc3f7; font-size:13px">rws-waterinfo 1.0.1</div>
+        <div class="ic-sub">ddapi20-waterwebservices.rijkswaterstaat.nl</div>
       </div>
     </div>
-
-    <h3 style="color:#aaa; font-size:12px; margin:18px 0 8px; font-weight:600; text-transform:uppercase; letter-spacing:.5px">Duiding</h3>
-    <ul>
-      <li>
-        De <span class="warn">synthetische inflow (2 200 m³/s)</span> was een factor
-        <span class="warn">2,4× te hoog</span>. De werkelijke IJssel-piek bij Westervoort was slechts
-        899 m³/s — het IJssel-aandeel van de Rijn was bij deze hoog-watergolf kleiner dan het
-        langjarig gemiddelde (~25%), waarschijnlijk omdat de Pannerdense Kop meer afvoerde naar
-        de Waal en Neder-Rijn.
-      </li>
-      <li>
-        Het <span class="red">gesimuleerde piekdebiet bij Kampen (3 090 m³/s)</span> is daardoor
-        ~3× hoger dan wat het model met de correcte inflow zou geven. De interne modelrouting
-        (kinematische golfvergelijking) werkt correct; de fout zit volledig in het invoerdebiet.
-      </li>
-      <li>
-        De <span class="ok">ERA5-Land neerslag</span> en verdamping waren wel correct beschikbaar
-        en zijn authentiek ERA5-data voor mei–augustus 2021. Het neerslagpatroon voor de
-        Eifel-catastrofe (12–15 juli 2021) is zichtbaar als de periode met de hoogste
-        gesimuleerde rivierafvoer.
-      </li>
-      <li>
-        <span class="highlight">Conclusie:</span> voor een accurate 2021-simulatie dient de
-        bovenstrooms-randconditie bij Westervoort te worden gevoed met werkelijk gemeten debiet
-        (via de vernieuwde RWS Waterinfo API, nu beschikbaar als <code>rws-waterinfo</code>
-        Python-pakket). Met 899 m³/s als piek-inflow zou het gesimuleerde piekdebiet bij Kampen
-        naar verwachting uitkomen op ~600–900 m³/s.
-      </li>
-    </ul>
-
-    <h3 style="color:#aaa; font-size:12px; margin:18px 0 8px; font-weight:600; text-transform:uppercase; letter-spacing:.5px">Wat werkte wel goed</h3>
-    <ul>
-      <li>De ERA5-forcing pipeline werkt volledig autonoom en correct.</li>
-      <li>Wflow SBM initialiseert correct met <code>cold_start__flag = true</code> voor zomer-events zonder voorstaat.</li>
-      <li>De uitlaatstructuur van de IJssel richting IJsselmeer is correct gerepresenteerd.</li>
-      <li>De RWS Waterinfo API levert nu real-time historische data via het nieuwe ddapi20-eindpunt — inzetbaar voor automatische validatie in volgende runs.</li>
-    </ul>
   </div>
 
 </div><!-- /#info-panel -->
@@ -426,6 +480,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=4"></script>
+<script src="/static/app.js?v=5"></script>
 </body>
 </html>
