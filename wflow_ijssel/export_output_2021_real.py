@@ -84,7 +84,7 @@ def export_all() -> None:
     ds = xr.open_dataset(nc_path)
 
     ds_st      = xr.open_dataset(str(STATIC_MAPS))
-    river_mask = ds_st["wflow_uparea"].values > UPAREA_THR
+    river_mask = np.flipud(ds_st["wflow_uparea"].values > UPAREA_THR)
     logger.info("Rivier-cellen: %d (wflow_uparea > %g km²)", int(river_mask.sum()), UPAREA_THR)
 
     for name, lon, lat in [
