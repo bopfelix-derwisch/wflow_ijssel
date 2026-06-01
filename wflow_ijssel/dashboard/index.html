@@ -125,6 +125,55 @@
     .compare-bar-bg { background: #0d1b2a; border-radius: 4px; height: 22px; position: relative; }
     .compare-bar-fill { height: 100%; border-radius: 4px; position: absolute; top: 0; left: 0; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 600; white-space: nowrap; }
     .compare-bar-ref  { height: 100%; border-radius: 4px; position: absolute; top: 0; left: 0; background: rgba(255,255,255,0.07); }
+
+    /* ── uitleg panel ── */
+    .year-tab.active-uitleg { background: #01579b; border-color: #4fc3f7; color: #fff; }
+    #uitleg-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #uitleg-panel.visible { display: block; }
+    .audience-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-radius: 6px; margin: 0 0 20px;
+    }
+    .audience-header .aud-icon  { font-size: 20px; }
+    .audience-header .aud-title { font-weight: 700; color: #fff; font-size: 14px; }
+    .audience-header .aud-sub   { font-size: 11px; color: rgba(255,255,255,.6); }
+    .audience-header.voor-iedereen { background: linear-gradient(135deg,#00695c,#004d40); }
+    .audience-header.voor-techneut { background: linear-gradient(135deg,#01579b,#003064); margin-top: 28px; }
+    .rijn-flow {
+      display: flex; align-items: center; gap: 10px; margin: 14px 0;
+      background: #0a1220; border: 1px solid #1a3a5c; border-radius: 8px; padding: 12px 16px; flex-wrap: wrap;
+    }
+    .rf-node { background: #0d1b2a; border: 1px solid #1a3a5c; border-radius: 6px; padding: 6px 12px; text-align: center; }
+    .rf-node .rfn-label { font-size: 10px; color: #888; text-transform: uppercase; }
+    .rf-node .rfn-val   { font-size: 14px; font-weight: 700; color: #4fc3f7; }
+    .rf-node .rfn-sub   { font-size: 10px; color: #888; }
+    .rf-arrow { color: #2a4a6a; font-size: 18px; }
+    .rf-branches { display: flex; flex-direction: column; gap: 5px; }
+    .rf-branch { background: #0d1b2a; border-radius: 4px; padding: 4px 10px; font-size: 12px; color: #ccc; display: flex; align-items: center; gap: 8px; }
+    .rf-branch .rfb-pct { font-weight: 700; min-width: 38px; }
+    .rf-branch .rfb-note { font-size: 10px; color: #80cbc4; background: rgba(128,203,196,.15); padding: 1px 6px; border-radius: 8px; }
+    .b-ijssel .rfb-pct { color: #80cbc4; }
+    .b-nrijn  .rfb-pct { color: #90caf9; }
+    .b-waal   .rfb-pct { color: #ffb74d; }
+    .event-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+    .event-card { background: #0d1b2a; border: 1px solid #1a3a5c; border-radius: 6px; padding: 14px; display: flex; flex-direction: column; }
+    .event-card.ev-1995 { border-left: 3px solid #f44336; }
+    .event-card.ev-2021 { border-left: 3px solid #ce93d8; }
+    .event-card .ec-year { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .event-card.ev-1995 .ec-year { color: #f44336; }
+    .event-card.ev-2021 .ec-year { color: #ce93d8; }
+    .event-card .ec-stat { font-size: 12px; color: #ccc; margin: 4px 0; line-height: 1.5; }
+    .uitleg-goto-btn { margin-top: auto; padding-top: 12px; align-self: flex-start; padding: 4px 12px; border: 1px solid; border-radius: 10px; cursor: pointer; background: transparent; font-size: 11px; font-weight: 600; transition: all .2s; }
+    .btn-1995 { color: #ef5350; border-color: #ef5350; }
+    .btn-1995:hover { background: #ef5350; color: #fff; }
+    .btn-2021 { color: #ce93d8; border-color: #ce93d8; }
+    .btn-2021:hover { background: #ce93d8; color: #000; }
+    .sim-steps { display: flex; gap: 8px; margin: 14px 0; flex-wrap: wrap; align-items: flex-start; }
+    .sim-step { background: #0d1b2a; border: 1px solid #1a3a5c; border-radius: 6px; padding: 12px; flex: 1; min-width: 100px; text-align: center; }
+    .sim-step .ss-icon  { font-size: 24px; display: block; margin-bottom: 6px; }
+    .sim-step .ss-label { font-size: 11px; color: #ccc; font-weight: 600; }
+    .sim-step .ss-sub   { font-size: 10px; color: #888; margin-top: 3px; }
+    .sim-sep { color: #2a4a6a; font-size: 20px; padding-top: 20px; align-self: flex-start; }
   </style>
 </head>
 <body>
@@ -136,6 +185,7 @@
     <button class="year-tab active-1995" data-year="1995">Jan 1995</button>
     <button class="year-tab" data-year="2021">Jul 2021</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
+    <button class="year-tab" data-year="uitleg">Uitleg</button>
   </div>
 </div>
 
@@ -477,9 +527,355 @@
 
 </div><!-- /#info-panel -->
 
+<!-- ── uitleg-view ── -->
+<div id="uitleg-panel">
+
+  <!-- ══ VOOR IEDEREEN ══════════════════════════════════════════ -->
+  <div class="audience-header voor-iedereen">
+    <span class="aud-icon">🌊</span>
+    <span class="aud-title">Voor iedereen</span>
+    <span class="aud-sub">Geen technische kennis vereist</span>
+  </div>
+
+  <!-- 1. IJssel systeem -->
+  <div class="info-section">
+    <h2>1 · Hoe werkt het Rijn–IJssel systeem?</h2>
+    <p>
+      De IJssel is geen zelfstandige rivier maar een <span class="highlight">zijtak van de Rijn</span>.
+      Al het water in de IJssel komt via de Rijn uit de Alpen en het Middenrijngebied.
+      Bij <span class="highlight">Lobith</span> (bij Zevenaar) passeert de Rijn de grens.
+      Verderop, bij de <span class="highlight">Pannerdense Kop</span>, splitst de stroom zich op
+      in drie richtingen.
+    </p>
+    <div class="rijn-flow">
+      <div class="rf-node">
+        <div class="rfn-label">Rijn</div>
+        <div class="rfn-val">Lobith</div>
+        <div class="rfn-sub">100% · grens NL/DE</div>
+      </div>
+      <span class="rf-arrow">→</span>
+      <div class="rf-node">
+        <div class="rfn-label">Splitsing</div>
+        <div class="rfn-val">Pannerdense Kop</div>
+        <div class="rfn-sub">actief geregeld door RWS</div>
+      </div>
+      <span class="rf-arrow">→</span>
+      <div class="rf-branches">
+        <div class="rf-branch b-ijssel">
+          <span class="rfb-pct">~13%</span>
+          <strong>IJssel</strong> → Westervoort → Deventer → Kampen → IJsselmeer
+          <span class="rfb-note">dit model</span>
+        </div>
+        <div class="rf-branch b-nrijn">
+          <span class="rfb-pct">~22%</span>
+          Neder-Rijn → Lek → Rotterdam
+        </div>
+        <div class="rf-branch b-waal">
+          <span class="rfb-pct">~67%</span>
+          Waal → Nijmegen → Rotterdam
+        </div>
+      </div>
+    </div>
+    <p>
+      Als de Rijn hoog staat door smeltwater of extreme regenval in Duitsland stijgt ook de IJssel.
+      Bij <span class="highlight">Kampen</span> mondt de IJssel uit in het IJsselmeer.
+      Als het water te hoog stijgt, moeten dijken het tegenhouden — of ze houden het niet meer.
+    </p>
+  </div>
+
+  <!-- 2. Kaart uitleg -->
+  <div class="info-section">
+    <h2>2 · Wat zie je op de kaart?</h2>
+    <p>
+      De kaart toont het IJssel-stroomgebied van Westervoort (bij Arnhem) tot Kampen.
+      Elke 3D-staaf is één rastercel van <span class="highlight">~800 × 800 meter</span>.
+    </p>
+    <div class="info-grid" style="margin:12px 0">
+      <div class="info-card" style="display:flex;align-items:center;gap:10px">
+        <div style="width:14px;height:36px;background:rgb(21,101,192);border-radius:4px;flex-shrink:0"></div>
+        <div>
+          <div class="ic-label">Blauw — normaal</div>
+          <div class="ic-value" style="color:#5c8de8;font-size:14px">&lt; 40% van de piek</div>
+          <div class="ic-sub">Reguliere waterafvoer</div>
+        </div>
+      </div>
+      <div class="info-card" style="display:flex;align-items:center;gap:10px">
+        <div style="width:14px;height:36px;background:rgb(255,152,0);border-radius:4px;flex-shrink:0"></div>
+        <div>
+          <div class="ic-label">Oranje — verhoogd</div>
+          <div class="ic-value" style="color:#ff9800;font-size:14px">40–70% van de piek</div>
+          <div class="ic-sub">Boven-gemiddelde afvoer</div>
+        </div>
+      </div>
+      <div class="info-card" style="display:flex;align-items:center;gap:10px">
+        <div style="width:14px;height:36px;background:rgb(244,67,54);border-radius:4px;flex-shrink:0"></div>
+        <div>
+          <div class="ic-label">Rood/Paars — extreem</div>
+          <div class="ic-value" style="color:#f44336;font-size:14px">&gt; 70% van de piek</div>
+          <div class="ic-sub">Hoogwater</div>
+        </div>
+      </div>
+    </div>
+    <ul>
+      <li><strong>Hoogte van de staaf</strong> = hoeveel water per seconde door die cel stroomt (m³/s — kubieke meter per seconde)</li>
+      <li><strong>Tijdlijn</strong> onderaan: sleep de slider of gebruik ▶ om dag voor dag door het event te bladeren</li>
+      <li><strong>Rode bol</strong> = meetstation Kampen — uitlaat van de IJssel, eindpunt van het model</li>
+      <li><strong>Oranje bol</strong> = meetstation Westervoort — instroom vanuit de Rijn, startpunt van het model</li>
+      <li><strong>Grafiek rechtsonder</strong>: de volledige tijdreeks van debiet en waterpeil bij Kampen</li>
+    </ul>
+  </div>
+
+  <!-- 3. 1995 vs 2021 -->
+  <div class="info-section">
+    <h2>3 · Twee hoogwatergolven: 1995 en 2021</h2>
+    <div class="event-compare">
+      <div class="event-card ev-1995">
+        <div class="ec-year">Januari 1995</div>
+        <div class="ec-stat">🌧 <strong>Oorzaak:</strong> langdurige regen over heel West-Europa</div>
+        <div class="ec-stat">📍 <strong>Rijn piek Lobith:</strong> ~12.600 m³/s op 31 jan</div>
+        <div class="ec-stat">📊 <strong>IJssel piek Kampen:</strong> ~3.340 m³/s (gesimuleerd)</div>
+        <div class="ec-stat">🚨 <strong>250.000 mensen</strong> preventief geëvacueerd</div>
+        <div class="ec-stat">🛡 Dijken hielden ternauwernood stand</div>
+        <div class="ec-stat">🌡 Neerslag +182% boven klimaatnorm (KNMI)</div>
+        <div class="ec-stat">⏱ 16 dagen boven hoogwater-drempel (1.500 m³/s)</div>
+        <button class="uitleg-goto-btn btn-1995" onclick="switchYear('1995')">Bekijk simulatie →</button>
+      </div>
+      <div class="event-card ev-2021">
+        <div class="ec-year">Juli 2021</div>
+        <div class="ec-stat">⛈ <strong>Oorzaak:</strong> extreme buien boven Eifel en Ardennen</div>
+        <div class="ec-stat">📍 <strong>Rijn piek Lobith:</strong> 6.687 m³/s op 18 jul (RWS)</div>
+        <div class="ec-stat">📊 <strong>IJssel piek Kampen:</strong> 1.767 m³/s (sim. gemeten inflow)</div>
+        <div class="ec-stat">🇩🇪 Ahr-vallei: meer dan 180 doden, duizenden huizen verwoest</div>
+        <div class="ec-stat">🇳🇱 Nederland: verhoogde waakzaamheid, geen evacuaties</div>
+        <div class="ec-stat">🌡 Neerslag +120% boven zomernorm (ERA5)</div>
+        <div class="ec-stat">⏱ 2 dagen boven hoogwater-drempel (1.500 m³/s)</div>
+        <button class="uitleg-goto-btn btn-2021" onclick="switchYear('2021')">Bekijk simulatie →</button>
+      </div>
+    </div>
+    <p>
+      Het debiet bij Kampen in 1995 (~3.340 m³/s) was bijna <span class="highlight">twee keer zo hoog</span>
+      als in 2021 (1.767 m³/s). In 1995 bleef de IJssel wekenlang boven de hoogwater-drempel;
+      in 2021 slechts twee dagen. Toch veroorzaakte 2021 meer maatschappelijke schade —
+      doordat het water bovenstrooms in Duitsland veel sneller steeg dan verwacht.
+    </p>
+  </div>
+
+  <!-- 4. Simulatie uitleg -->
+  <div class="info-section">
+    <h2>4 · Wat doet een simulatie?</h2>
+    <p>
+      Een hydrologisch model berekent hoe neerslag door een stroomgebied beweegt —
+      dag voor dag, cel voor cel. Vergelijk het met een weersverwachting: maar dan voor water.
+    </p>
+    <div class="sim-steps">
+      <div class="sim-step">
+        <span class="ss-icon">🌧</span>
+        <div class="ss-label">Neerslag</div>
+        <div class="ss-sub">ERA5 historische weerdata van ECMWF</div>
+      </div>
+      <div class="sim-sep">→</div>
+      <div class="sim-step">
+        <span class="ss-icon">🌱</span>
+        <div class="ss-label">Bodem</div>
+        <div class="ss-sub">Infiltratie, grondwater, verdamping</div>
+      </div>
+      <div class="sim-sep">→</div>
+      <div class="sim-step">
+        <span class="ss-icon">💧</span>
+        <div class="ss-label">Afstroming</div>
+        <div class="ss-sub">Via beken naar de rivier</div>
+      </div>
+      <div class="sim-sep">→</div>
+      <div class="sim-step">
+        <span class="ss-icon">📊</span>
+        <div class="ss-label">Debiet</div>
+        <div class="ss-sub">m³/s per cel en bij Kampen</div>
+      </div>
+    </div>
+    <p>
+      De <span class="highlight">ERA5-weerdata</span> is historische, gereconstrueerde atmosfeerdata
+      van het Europees Centrum voor Weersverwachtingen (ECMWF) — nauwkeurig gereconstrueerd
+      aan de hand van satellieten en grondwaarnemingen, terug tot 1950. Geen voorspelling,
+      maar een zo goed mogelijk beeld van wat er werkelijk gevallen is.
+    </p>
+    <p>
+      Bovenop de lokale neerslag voeren we het dagelijkse <span class="highlight">debiet van de Rijn</span>
+      in bij Westervoort (het punt waar de IJssel begint). Voor 2021 is dit de werkelijk gemeten
+      reeks van Rijkswaterstaat. Het model combineert beide tot een dagelijkse schatting van
+      de waterafvoer langs de volledige IJssel.
+    </p>
+  </div>
+
+  <!-- ══ TECHNIEK & HYDROLOGIE ════════════════════════════════ -->
+  <div class="audience-header voor-techneut">
+    <span class="aud-icon">⚙</span>
+    <span class="aud-title">Techniek &amp; Hydrologie</span>
+    <span class="aud-sub">Voor de geïnteresseerde</span>
+  </div>
+
+  <!-- 5. Wflow SBM -->
+  <div class="info-section">
+    <h2>5 · Wflow SBM modelarchitectuur</h2>
+    <p>
+      <span class="highlight">Wflow SBM</span> (Simple Bucket Model) is een gedistribueerd hydrologisch
+      rastermodel van Deltares, gebouwd in Julia en open-source beschikbaar.
+      Per rastercel wordt een meerlaagsbodemmodel doorgerekend:
+    </p>
+    <ul>
+      <li><strong>Onverzadigde zone</strong> (wortelzone): verdamping via Penman-Monteith, interceptie, capillaire opstijging</li>
+      <li><strong>Diepere bodemlagen</strong> (2–3): percolatie naar verzadigde zone</li>
+      <li><strong>Laterale afstroming</strong>: kinematische golfvergelijking langs de D8-afstroomrichting (afgeleid uit MERIT Hydro DEM)</li>
+    </ul>
+    <div class="info-grid" style="margin-top:12px">
+      <div class="info-card">
+        <div class="ic-label">Rastergrootte</div>
+        <div class="ic-value" style="color:#4fc3f7">~800 m</div>
+        <div class="ic-sub">300 × 240 cellen · 19.490 actief</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Tijdstap</div>
+        <div class="ic-value" style="color:#4fc3f7">1 dag</div>
+        <div class="ic-sub">dagelijkse forcingdata</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Bodemmodel</div>
+        <div class="ic-value" style="color:#4fc3f7">3 lagen SBM</div>
+        <div class="ic-sub">+ kinematische golf routing</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Runtime na JIT</div>
+        <div class="ic-value" style="color:#4caf50">~31 s / ~2 min</div>
+        <div class="ic-sub">1995 (62 t) / 2021 (123 t) · Jetson Orin</div>
+      </div>
+    </div>
+    <p style="margin-top:12px">
+      De <span class="highlight">kinematische golfvergelijking</span> is een vereenvoudiging van de
+      volledige Saint-Venant vergelijkingen die de versnellingstermen verwaarloost.
+      Dit werkt goed voor sub-kritieke stroming in rivierbeddingen maar mist retentie-effecten
+      in uiterwaarden en is niet geschikt voor inundatiemodellering.
+    </p>
+  </div>
+
+  <!-- 6. Invoerdata -->
+  <div class="info-section">
+    <h2>6 · Invoerdata en randcondities</h2>
+    <p>Het model heeft drie soorten invoer:</p>
+    <table class="ll-table" style="margin:12px 0">
+      <tr><th>Type</th><th>Bron</th><th>Resolutie</th><th>Verwerking</th></tr>
+      <tr>
+        <td><strong>Statische kaarten</strong></td>
+        <td>MERIT Hydro DEM · SOILGRIDS · Copernicus Land Cover</td>
+        <td>~90 m → 800 m</td>
+        <td>HydroMT model builder (eenmalig)</td>
+      </tr>
+      <tr>
+        <td><strong>Forcingdata</strong></td>
+        <td>ERA5-Land via Copernicus Climate Data Store</td>
+        <td>~9 km → 800 m</td>
+        <td>Bilineaire interpolatie · P, T, PET dagelijks</td>
+      </tr>
+      <tr>
+        <td><strong>Randconditie (inflow)</strong></td>
+        <td>RWS Waterinfo · station <code>westervoort.ijsselkop</code></td>
+        <td>Daggemiddeld Q (m³/s)</td>
+        <td>Puntbron in forcing NetCDF op IJssel-begincel</td>
+      </tr>
+    </table>
+    <p>
+      De <span class="highlight">randconditie bij Westervoort</span> is de dominante stuurvariabele:
+      hier "begint" het model. Fouten in deze waarde propageren direct door het hele stroomgebied —
+      zoals gedemonstreerd door de vergelijking van de synthetische (×2,45 te hoog) en de
+      gemeten run van 2021. Zie de <em>Info &amp; Analyse</em>-tab voor de kwantitatieve analyse.
+    </p>
+    <p>
+      <span class="highlight">Cold start:</span> de begintoestand van bodemvochtigheid en grondwater
+      is niet geïnitialiseerd vanuit een voorgaande simulatieperiode. Operationele modellen
+      draaien typisch 1–3 jaar spin-up vooraf om stabiele initiële condities te bereiken.
+    </p>
+  </div>
+
+  <!-- 7. Pannerdense Kop -->
+  <div class="info-section">
+    <h2>7 · De Pannerdense Kop: geen vaste verdeling</h2>
+    <p>
+      De verdeling van het Rijnwater is wettelijk vastgelegd in het
+      <span class="highlight">Tractaat van 1709</span>, maar in de praktijk stuurt Rijkswaterstaat
+      actief bij via stuwen bij de Pannerdense Kop en Driel:
+    </p>
+    <table class="ll-table" style="margin:12px 0">
+      <tr><th>Tak</th><th>Tractaat 1709</th><th>Praktijk gemiddeld</th><th>Juli 2021 gemeten</th></tr>
+      <tr>
+        <td>Waal</td>
+        <td>6/9 ≈ 66,7%</td>
+        <td>~65%</td>
+        <td class="warn">~86,6%</td>
+      </tr>
+      <tr>
+        <td>Neder-Rijn / Lek</td>
+        <td>2/9 ≈ 22,2%</td>
+        <td>~18–22%</td>
+        <td class="ok">—</td>
+      </tr>
+      <tr>
+        <td><strong>IJssel</strong></td>
+        <td><strong>1/9 ≈ 11,1%</strong></td>
+        <td><strong>~13–18%</strong></td>
+        <td class="ok"><strong>13,4%</strong> (899 / 6.687 m³/s)</td>
+      </tr>
+    </table>
+    <p>
+      Bij de synthetische run werd <span class="warn">25%</span> aangenomen — een fout gebaseerd op
+      een langjarig gemiddelde dat bij extreme afvoer niet geldt. Bij hoogwater stuurt RWS
+      actief meer water naar de Waal om IJssel en Lek te ontlasten. De IJssel-inflow was
+      daardoor een factor <span class="red">2,45</span> overschat, wat doorwerkte in een gesimuleerde
+      piek van 3.090 m³/s in plaats van 1.767 m³/s.
+    </p>
+    <p>
+      <span class="ok">Leerpunt:</span> gebruik altijd gemeten debieten van RWS Waterinfo als
+      randconditie — met name bij hoog water, wanneer de verdeling het meest afwijkt van gemiddelden.
+    </p>
+  </div>
+
+  <!-- 8. Beperkingen -->
+  <div class="info-section">
+    <h2>8 · Beperkingen en validiteit</h2>
+    <ul>
+      <li>
+        <span class="warn">Geen kalibratie</span> — standaard Wflow-parameters, niet afgesteld op de IJssel.
+        Uitkomsten zijn kwalitatief betrouwbaar (reactie op neerslag, piek-timing) maar
+        kwantitatief indicatief. Afwijkingen van 20–50% ten opzichte van een gekalibreerd model zijn realistisch.
+      </li>
+      <li>
+        <span class="warn">Dagelijkse tijdstap</span> — sub-dagelijkse variatie wordt gemist. Geschikt voor
+        seizoens- en maandelijkse analyses, minder nauwkeurig voor korte, intense pieken.
+      </li>
+      <li>
+        <span class="warn">800 m resolutie</span> — kleine zijbeken, stedelijk gebied en polders
+        zijn niet gerepresenteerd. Neerslagrouting via uiterwaarden is sterk vereenvoudigd.
+      </li>
+      <li>
+        <span class="warn">Geen inundatiemodellering</span> — zodra water buiten de oever treedt,
+        houdt de kinematische golf op geldig te zijn. Het model kent geen 2D overstroomde vlakten;
+        overstromingsschade is niet afleidbaar.
+      </li>
+      <li>
+        <span class="warn">Cold start</span> — de begintoestand (bodemvochtigheid, grondwaterniveau)
+        is niet geïnitialiseerd vanuit een voorgaande run. Typisch is 1–3 jaar spin-up nodig
+        voor stabiele resultaten; de eerste weken van elke simulatie zijn daardoor minder betrouwbaar.
+      </li>
+      <li>
+        <span class="ok">Wél geschikt voor:</span> vergelijking tussen events (1995 vs 2021),
+        gevoeligheidsanalyse op inflow-aannames, aantonen van de impact van grensconditie-keuzes,
+        educatieve demonstraties, en als proof-of-concept voor ARM edge-computing.
+      </li>
+    </ul>
+  </div>
+
+</div><!-- /#uitleg-panel -->
+
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=5"></script>
+<script src="/static/app.js?v=6"></script>
 </body>
 </html>

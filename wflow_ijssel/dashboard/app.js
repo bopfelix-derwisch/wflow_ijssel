@@ -89,13 +89,15 @@ function switchYear(year) {
     if (b.dataset.year === year) b.classList.add(`active-${year}`);
   });
 
-  const simView  = document.getElementById("sim-view");
-  const infoPnl  = document.getElementById("info-panel");
-  const banner   = document.getElementById("event-banner");
+  const simView   = document.getElementById("sim-view");
+  const infoPnl   = document.getElementById("info-panel");
+  const uitlegPnl = document.getElementById("uitleg-panel");
+  const banner    = document.getElementById("event-banner");
 
   if (year === "info") {
-    simView.style.display  = "none";
+    simView.style.display = "none";
     infoPnl.classList.add("visible");
+    uitlegPnl.classList.remove("visible");
     banner.textContent = "Uitleg proef · Lessons learned · Analyse resultaten 2021";
     document.getElementById("alert-badge").textContent = "ℹ Info";
     document.getElementById("alert-badge").style.background = "#00695c";
@@ -104,9 +106,21 @@ function switchYear(year) {
     return;
   }
 
+  if (year === "uitleg") {
+    simView.style.display = "none";
+    infoPnl.classList.remove("visible");
+    uitlegPnl.classList.add("visible");
+    banner.textContent = "Uitleg & Achtergrond  ·  IJssel-systeem  ·  Wflow SBM  ·  ERA5";
+    document.getElementById("alert-badge").textContent = "📖 Uitleg";
+    document.getElementById("alert-badge").style.background = "#01579b";
+    document.body.className = "";
+    return;
+  }
+
   // simulatie-view
   simView.style.display = "";
   infoPnl.classList.remove("visible");
+  uitlegPnl.classList.remove("visible");
 
   const cfg = YEAR_CONFIG[year];
   document.body.className = cfg.themeClass;
