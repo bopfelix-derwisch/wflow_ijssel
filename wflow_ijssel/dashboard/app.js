@@ -89,11 +89,26 @@ function switchYear(year) {
     if (b.dataset.year === year) b.classList.add(`active-${year}`);
   });
 
-  // body theme
+  const simView  = document.getElementById("sim-view");
+  const infoPnl  = document.getElementById("info-panel");
+  const banner   = document.getElementById("event-banner");
+
+  if (year === "info") {
+    simView.style.display  = "none";
+    infoPnl.classList.add("visible");
+    banner.textContent = "Uitleg proef · Lessons learned · Analyse resultaten 2021";
+    document.getElementById("alert-badge").textContent = "ℹ Info";
+    document.getElementById("alert-badge").style.background = "#00695c";
+    document.body.className = "";
+    return;
+  }
+
+  // simulatie-view
+  simView.style.display = "";
+  infoPnl.classList.remove("visible");
+
   const cfg = YEAR_CONFIG[year];
   document.body.className = cfg.themeClass;
-
-  // slider accent kleur (via inline style)
   document.getElementById("day-slider").style.accentColor = cfg.sliderColor;
 
   loadYear(year);
@@ -121,8 +136,16 @@ async function loadYear(year) {
       fetch(`${API}/api/${year}/timeseries/westervoort`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }),
     ]);
 
+    // Gemeten data optioneel (alleen 2021)
+    let measured = null;
+    if (year === "2021") {
+      try {
+        measured = await fetch(`${API}/api/${year}/measured`).then(r => r.ok ? r.json() : null);
+      } catch (_) {}
+    }
+
     renderKpis(kpis, tsW, cfg);
-    renderChart(tsK, tsW, days, cfg);
+    renderChart(tsK, tsW, days, cfg, measured);
     await loadDay(0);
 
     badge.textContent = cfg.alertText;
@@ -153,13 +176,14 @@ function renderKpis(kpis, tsW, cfg) {
 
 // ── grafiek ───────────────────────────────────────────────────────────────────
 
-function renderChart(tsK, tsW, days, cfg) {
+function renderChart(tsK, tsW, days, cfg, measured) {
   const [r, g, b] = cfg.accentColor;
-  Plotly.react("chart", [
+
+  const traces = [
     {
       x: tsK.dates, y: tsK.q,
       type: "scatter", mode: "lines",
-      name: "Debiet Kampen (m³/s)",
+      name: "Gesimuleerd Kampen (m³/s)",
       line: { color: `rgb(${r},${g},${b})`, width: 2 },
       yaxis: "y",
       fill: "tozeroy",
@@ -180,15 +204,41 @@ function renderChart(tsK, tsW, days, cfg) {
       line: { color: "#ff9800", width: 1, dash: "dash" },
       yaxis: "y",
     },
-  ], {
+  ];
+
+  // Gemeten data voor 2021: Westervoort (IJssel) en Lobith (Rijn)
+  if (measured) {
+    if (measured.westervoort) {
+      traces.push({
+        x: measured.westervoort.dates, y: measured.westervoort.q,
+        type: "scatter", mode: "lines",
+        name: "Gemeten Westervoort m³/s (RWS)",
+        line: { color: "#80cbc4", width: 2, dash: "dashdot" },
+        yaxis: "y",
+      });
+    }
+    if (measured.lobith) {
+      traces.push({
+        x: measured.lobith.dates, y: measured.lobith.q,
+        type: "scatter", mode: "lines",
+        name: "Gemeten Lobith m³/s (Rijn totaal)",
+        line: { color: "#90caf9", width: 1.5, dash: "dot" },
+        yaxis: "y3",
+      });
+    }
+  }
+
+  const hasLobith = measured && measured.lobith;
+
+  Plotly.react("chart", traces, {
     paper_bgcolor: "#080c14",
     plot_bgcolor:  "#0d1b2a",
     font:   { color: "#e0e0e0", size: 11 },
-    margin: { t: 10, b: 40, l: 60, r: 60 },
-    legend: { orientation: "h", y: -0.25 },
+    margin: { t: 10, b: 40, l: 60, r: hasLobith ? 80 : 60 },
+    legend: { orientation: "h", y: -0.3 },
     xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
     yaxis: {
-      title: "Debiet (m³/s)", gridcolor: "#1a3a5c",
+      title: "Debiet IJssel (m³/s)", gridcolor: "#1a3a5c",
       titlefont: { color: `rgb(${r},${g},${b})` },
       tickfont:  { color: `rgb(${r},${g},${b})` },
     },
@@ -196,7 +246,15 @@ function renderChart(tsK, tsW, days, cfg) {
       title: "Waterpeil (m+NAP)", overlaying: "y", side: "right",
       titlefont: { color: "#4caf50" }, tickfont: { color: "#4caf50" },
       gridcolor: "rgba(0,0,0,0)",
+      position: hasLobith ? 0.85 : 1.0,
     },
+    ...(hasLobith ? {
+      yaxis3: {
+        title: "Rijn Lobith (m³/s)", overlaying: "y", side: "right",
+        titlefont: { color: "#90caf9" }, tickfont: { color: "#90caf9" },
+        gridcolor: "rgba(0,0,0,0)",
+      },
+    } : {}),
     shapes: [{
       type: "line",
       x0: days[0], x1: days[0],

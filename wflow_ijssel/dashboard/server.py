@@ -56,6 +56,15 @@ def get_timeseries(year: str, station: str):
     return JSONResponse(json.loads(path.read_text()))
 
 
+@app.get("/api/{year}/measured")
+def get_measured(year: str):
+    d = _output_dir(year)
+    path = d / "measured_2021.json" if year == "2021" else d / "measured_1995.json"
+    if not path.exists():
+        raise HTTPException(404, f"Geen gemeten data voor {year}")
+    return JSONResponse(json.loads(path.read_text()))
+
+
 @app.get("/api/{year}/river/{day}")
 def get_river_day(year: str, day: str):
     if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
