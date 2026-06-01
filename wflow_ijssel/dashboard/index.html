@@ -2,58 +2,91 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>IJssel Hoogwater Dashboard — januari 1995</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IJssel Hoogwater Dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #080c14; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
 
+    /* ── header ── */
     #header {
       background: #0d1b2a; border-bottom: 1px solid #1a3a5c;
-      padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
     }
-    #header h1 { font-size: 15px; color: #4fc3f7; }
-    #header .badge { background: #f44336; color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+    #header h1 { font-size: 14px; color: #4fc3f7; white-space: nowrap; }
+    .badge { color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+    #alert-badge { background: #f44336; }
 
+    /* ── jaar tabs ── */
+    #year-tabs { display: flex; gap: 4px; margin-left: auto; }
+    .year-tab {
+      padding: 4px 16px; border: 1px solid #1a3a5c; border-radius: 14px;
+      cursor: pointer; font-size: 12px; font-weight: 600; background: transparent;
+      color: #888; transition: all .2s;
+    }
+    .year-tab.active-1995 { background: #1565c0; border-color: #1565c0; color: #fff; }
+    .year-tab.active-2021 { background: #7b1fa2; border-color: #7b1fa2; color: #fff; }
+    .year-tab:not([class*="active"]):hover { border-color: #4fc3f7; color: #4fc3f7; }
+
+    /* ── event-banner ── */
+    #event-banner {
+      padding: 4px 16px; font-size: 11px; color: #aaa;
+      background: #0a1220; border-bottom: 1px solid #1a3a5c;
+    }
+
+    /* ── KPI's ── */
     #kpi-row {
       display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 10px; padding: 12px 20px; background: #0a1220;
+      gap: 10px; padding: 10px 16px; background: #0a1220;
       border-bottom: 1px solid #1a3a5c;
     }
-    .kpi { background: #0d1b2a; border: 1px solid #1a3a5c; border-radius: 6px; padding: 10px 14px; }
-    .kpi .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 4px; }
-    .kpi .value { font-size: 22px; font-weight: bold; }
-    .kpi .sub { font-size: 10px; color: #888; margin-top: 2px; }
+    .kpi { background: #0d1b2a; border: 1px solid #1a3a5c; border-radius: 6px; padding: 8px 12px; }
+    .kpi .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 3px; }
+    .kpi .value { font-size: 20px; font-weight: bold; }
+    .kpi .sub   { font-size: 10px; color: #888; margin-top: 2px; }
     #kpi-peak .value   { color: #f44336; }
     #kpi-inflow .value { color: #ff9800; }
     #kpi-precip .value { color: #4fc3f7; }
     #kpi-days .value   { color: #4caf50; }
 
-    #map-container { position: relative; height: 360px; }
+    /* ── kaart ── */
+    #map-container { position: relative; height: 340px; }
     #map { width: 100%; height: 100%; }
 
     #slider-bar {
-      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-      background: rgba(8,12,20,.9); border: 1px solid #1a3a5c; border-radius: 20px;
-      padding: 8px 16px; display: flex; align-items: center; gap: 10px; min-width: 380px;
+      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+      background: rgba(8,12,20,.92); border: 1px solid #1a3a5c; border-radius: 20px;
+      padding: 6px 14px; display: flex; align-items: center; gap: 10px; min-width: 360px;
     }
     #play-btn {
-      width: 26px; height: 26px; background: #1565c0; border: none; border-radius: 50%;
+      width: 26px; height: 26px; border: none; border-radius: 50%;
       color: white; cursor: pointer; font-size: 12px; flex-shrink: 0;
+      background: #1565c0;
     }
+    .year-2021 #play-btn { background: #7b1fa2; }
     #day-slider { flex: 1; accent-color: #f44336; }
-    #day-label { font-size: 11px; color: #4fc3f7; white-space: nowrap; min-width: 100px; }
+    .year-2021 #day-slider { accent-color: #ce93d8; }
+    #day-label { font-size: 11px; color: #4fc3f7; white-space: nowrap; min-width: 110px; }
 
-    #chart-container { padding: 12px 20px; }
-    #chart { width: 100%; height: 200px; }
+    /* ── grafiek ── */
+    #chart-container { padding: 10px 16px; }
+    #chart { width: 100%; height: 190px; }
   </style>
 </head>
 <body>
 
 <div id="header">
   <h1>🌊 IJssel Hoogwater Dashboard</h1>
-  <span>Wflow SBM simulatie &nbsp;|&nbsp; jan 1995 &nbsp;|&nbsp; Westervoort → Kampen</span>
-  <span class="badge" id="alert-badge">⚠ Laden...</span>
+  <span class="badge" id="alert-badge">⏳ Laden...</span>
+  <div id="year-tabs">
+    <button class="year-tab active-1995" data-year="1995">Jan 1995</button>
+    <button class="year-tab" data-year="2021">Jul 2021</button>
+  </div>
+</div>
+
+<div id="event-banner" id="event-banner">
+  Wflow SBM simulatie &nbsp;·&nbsp; Westervoort → Kampen &nbsp;·&nbsp; ERA5-Land forcing
 </div>
 
 <div id="kpi-row">
@@ -70,7 +103,7 @@
   <div class="kpi" id="kpi-precip">
     <div class="label">Neerslag anomalie ERA5</div>
     <div class="value" id="val-precip">—</div>
-    <div class="sub">t.o.v. klimatologisch gemiddelde</div>
+    <div class="sub" id="sub-precip">t.o.v. klimatologisch gemiddelde</div>
   </div>
   <div class="kpi" id="kpi-days">
     <div class="label">Duur boven drempel</div>
@@ -95,6 +128,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js"></script>
+<script src="/static/app.js?v=2"></script>
 </body>
 </html>

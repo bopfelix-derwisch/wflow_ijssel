@@ -1,14 +1,14 @@
 # Lessons Learned — Wflow SBM on ARM Edge Hardware
-## IJssel Catchment · January 1995 Flood Simulation
+## IJssel Catchment · January 1995 & July 2021 Flood Simulations
 ### For exchange with Deltares / Wflow development team
 
 **Platform:** NVIDIA Jetson AGX Orin Developer Kit (aarch64, ARM Cortex-A78AE)  
 **OS:** Linux 5.15 (Ubuntu 20.04-based JetPack)  
 **Julia:** 1.12.5 · **Wflow:** 1.0.2 · **Python:** 3.10  
-**Simulation period:** 1994-12-01 → 1995-01-31 (62 daily timesteps)  
+**Simulation periods:** 1994-12-01 → 1995-01-31 · 2021-05-01 → 2021-08-31  
 **Domain:** IJssel catchment, 300×240 grid cells, ~0.0083° (~800 m) resolution  
-**Active cells:** 19,490 land · 1,303 river  
-**Final runtime (after fixes):** ~31 seconds per simulation  
+**Active cells:** 19,490 land · 1,303–1,170 river  
+**Final runtime (after JIT warmup):** ~31 s (1995) · ~2 min (2021, JIT already warm)  
 
 ---
 
@@ -232,6 +232,10 @@ Change `isel(x=xi, y=yi)` → `isel(lon=xi, lat=yi)` throughout `export_output.p
 | 4 | Input data | 3 outlet cells outside ERA5 coverage | Nearest-neighbour fill | Data fix |
 | 5 | TOML config | Kampen gauge not on river network | Snap to nearest river cell | Config fix |
 | 6 | Post-processing | `lat`/`lon` vs `x`/`y` mismatch | Fix dimension names in export script | Code fix |
+| 7 | Python/cdsapi | `attrs` namespace missing on system Python | Install `attrs>=22` to separate `--target` dir | Env fix |
+| 8 | Python/xarray | `dask` not installed, `open_mfdataset` fails | `pip install dask` or pass `chunks=None` | Env fix |
+| 9 | Python/scipy | numpy 2.x / scipy 1.x binary incompatibility | `pip install --upgrade scipy` | Env fix |
+| 10 | Dashboard/browser | Old `app.js` cached by iPad Safari | `?v=N` cache-bust + `Cache-Control: no-store` | Code fix |
 
 ---
 
@@ -246,7 +250,10 @@ Change `isel(x=xi, y=yi)` → `isel(lon=xi, lat=yi)` throughout `export_output.p
 | Data dimension fixes (issues 2–4) | ~3 hours | Multiple restarts, slow feedback loop |
 | Config/post-processing fixes (5–6) | ~30 min | Quick once root cause was known |
 | Dashboard (FastAPI + deck.gl frontend) | ~2 hours | Mostly boilerplate |
-| **Total** | **~12 hours** | Could be ~2 hours with fixes applied upfront |
+| **Total 1995** | **~12 hours** | Could be ~2 hours with fixes applied upfront |
+| 2021 simulation + pipeline | ~2 hours | Python dependency issues; Wflow itself ~2 min |
+| Multi-year dashboard + browser cache fix | ~1 hour | Cache-busting + year-tab UI |
+| **Grand total** | **~15 hours** | |
 
 The dominant cost was the **slow feedback loop on ARM**: each failed attempt required a new Julia startup (~2–5 min for package loading) plus waiting for errors to surface during model init (~10–15 min). On x86, the same iteration cycle would be ~30 seconds.
 
@@ -326,6 +333,14 @@ Use this list to reduce the ~12 hour setup to ~2 hours:
   (use wflow_river mask + nearest-neighbour check in Python)
 
 □ Post-processing: use lat/lon not x/y for output NetCDF dimensions
+
+□ Python dependencies (Jetson/ARM):
+  pip3 install dask scipy --upgrade   # before first ERA5 processing
+  pip3 install --target /tmp/cdsapi_deps cdsapi attrs  # if cdsapi 0.7.x needed
+  PYTHONPATH=/tmp/cdsapi_deps python3 download_forcing_*.py
+
+□ Dashboard: add ?v=N suffix to app.js <script> tag on every deploy
+  Server: add Cache-Control: no-store to index.html FileResponse
 ```
 
 ---
@@ -358,7 +373,118 @@ Access URL: `http://$(tailscale ip -4):8000` — works from any device in the ta
 
 ---
 
-## 9. Environment versions
+## 9. Second simulation year: July 2021 flood
+
+After the 1995 simulation ran successfully, we added a July 2021 simulation to the same installation — the Ahrtal/Rhine high-water event that caused severe flooding in Germany and the Netherlands.
+
+### 9.1 Pipeline structure
+
+The 2021 pipeline mirrors 1995 but uses different TOML parameters:
+
+| Parameter | 1995 | 2021 |
+|-----------|------|------|
+| Simulation period | 1994-12-01 → 1995-01-31 | 2021-05-01 → 2021-08-31 |
+| `cold_start__flag` | `false` (warm start) | `true` (no spin-up state) |
+| `snow__flag` | `true` | `false` (summer) |
+| Input dir | `data/input` | `data/input_2021` |
+| Output dir | `data/output` | `data/output_2021` |
+| Staticmaps | original | symlink to 1995 staticmaps |
+
+`cold_start__flag = true` initialises all state variables from default (zero/equilibrium) values. The `path_input` state file is ignored. We symlinked the 1995 instates file as `data/input_2021/instates-ijssel-2021.nc` to satisfy Wflow's file existence check even though the file is not read.
+
+### 9.2 Inflow: RWS Waterinfo API failed, synthetic used
+
+`download_inflow_2021.py` tried the RWS Waterinfo REST API first. In 2026, this API returned HTTP redirect loops (`Exceeded 30 redirects`). A synthetic discharge curve was used instead:
+
+- Baseflow: 250 m³/s with slight seasonal variation
+- June pulse: +400 m³/s peak on 2021-06-20 (σ = 6 days)
+- July flood: peak ~2200 m³/s at Westervoort on 2021-07-15
+
+The July peak is based on historical data: Lobith peak ~8900 m³/s on 15 July 2021, IJssel share ~25%, giving ~2200 m³/s at Westervoort.
+
+**Result:** Simulated peak Q at Kampen = **3090 m³/s on 16 July 2021**, 14 days above the 1500 m³/s threshold.
+
+### 9.3 Runtime
+
+The 2021 simulation completed in **2 minutes 5 seconds** — much faster than the 1995 first run — because the Julia JIT cache was already warm from the 1995 run. Subsequent runs of the same Wflow version take 2–5 minutes regardless of simulation length.
+
+**Key lesson:** JIT warmup cost is per Julia session, not per simulation. Running two events back-to-back in one session is essentially free for the second. Plan batch runs accordingly.
+
+### 9.4 Multi-year dashboard
+
+The dashboard was extended with a year-tab UI. Architecture:
+
+- **Server:** year-prefixed API routes `/api/{year}/kpis`, `/api/{year}/timeseries/{station}`, `/api/{year}/river/{day}`. Backward-compatible legacy routes `/api/kpis` etc. redirect to 1995.
+- **Frontend:** `YEAR_CONFIG` dict in `app.js` maps year → day list, accent colour, alert text, event description. `switchYear()` swaps config and re-fetches all data without a page reload.
+- **Plotly:** `Plotly.react()` updates an existing chart in place; no `Plotly.purge()` needed between years.
+
+---
+
+## 10. Python dependency problems on ARM (Jetson)
+
+The Jetson runs Ubuntu 20.04 with Python 3.10. Several library version conflicts appeared when installing scientific Python packages into the user site.
+
+### 10.1 cdsapi 0.7.x requires `ecmwf-datastores` which needs `attrs >= 22`
+
+cdsapi 0.7.7 (the version compatible with the new CDS API key format, a bare UUID without a UID prefix) routes keys without ":" through `ecmwf.datastores.legacy_client`. This package requires `import attrs` — the `attrs` namespace module that was added in attrs 22.x. The system-installed attrs was 21.2.0, which only provides `import attr` (no `attrs` namespace).
+
+**Fix:** install all cdsapi dependencies into a separate directory and inject it at runtime:
+```bash
+pip3 install cdsapi attrs --target /tmp/cdsapi_deps
+PYTHONPATH=/tmp/cdsapi_deps python3 download_forcing_2021.py
+```
+
+**Alternative:** pin `cdsapi==0.6.1` — but this version expects old-style `UID:KEY` format and will not work with new-style UUID-only keys.
+
+**Recommendation:** document the cdsapi version / key format dependency. New CDS (post-2024) uses UUID keys; old cdsapi (≤0.6.x) requires `UID:KEY`. A README note mapping CDS key format → cdsapi version would save significant time.
+
+### 10.2 xarray `open_mfdataset` requires dask (not installed)
+
+xarray `open_mfdataset` uses chunked/lazy loading via dask by default. On the Jetson, dask was not installed.
+
+**Symptom:**
+```
+ImportError: chunk manager 'dask' is not available.
+```
+
+**Fix:** `pip3 install dask`
+
+**Alternative:** pass `chunks=None` to `open_mfdataset` to force eager loading — acceptable for files of this size (< 1 MB each).
+
+### 10.3 scipy/numpy binary incompatibility
+
+The system scipy was compiled against numpy 1.x. After pip-installing numpy 2.x (pulled in as a dependency of newer packages), scipy raised:
+
+```
+ValueError: numpy.dtype size changed, may indicate binary incompatibility.
+Expected 96 from C header, got 88 from PyObject
+```
+
+**Fix:** `pip3 install --upgrade scipy` — installs scipy 1.15.3 built against numpy 2.x.
+
+**Lesson:** on a system with mixed apt/pip packages, always upgrade scipy and numpy together. Adding `scipy` to any `requirements.txt` should pin it alongside numpy: `numpy>=2.0,<3; scipy>=1.13`.
+
+---
+
+## 11. Browser caching: dashboard showed old JavaScript after code update
+
+**Symptom:**  
+After updating `app.js` to add the 2021 tab, the iPad still loaded the old version. Clicking the "Jul 2021" tab did nothing because the old `app.js` had no year-switching code. The server logs confirmed: all requests still used the legacy URLs (`/api/kpis`, `/api/river/1995-01-01`) rather than the new year-prefixed ones (`/api/1995/kpis`).
+
+**Root cause:**  
+Safari on iPad aggressively caches static assets. The server was not sending cache-control headers for `index.html` or `app.js`, so the browser reused its cached copy even after the server's files changed.
+
+**Fix applied:**
+1. Added `?v=2` query string to the `<script>` tag: `<script src="/static/app.js?v=2">` — forces a cache miss.
+2. Added `Cache-Control: no-store` header to the `/` (index.html) response in FastAPI.
+
+**For production:** use content-based hashing (e.g., Vite/webpack) to generate filenames like `app.abc123.js`. For development/edge deployments without a build step, increment a `?v=N` suffix manually on every deploy.
+
+**Hard-refresh workaround on iPad Safari:** Settings → Safari → Advanced → Website Data → Remove data for the site. Or: long-press the reload button → "Reload Without Content Blockers" (not available on all iOS versions). Easier: tell the user the URL with `?cache=bust` appended to force a reload.
+
+---
+
+## 12. Environment versions
 
 | Package | Version |
 |---------|---------|
