@@ -89,15 +89,30 @@ function switchYear(year) {
     if (b.dataset.year === year) b.classList.add(`active-${year}`);
   });
 
-  const simView   = document.getElementById("sim-view");
-  const infoPnl   = document.getElementById("info-panel");
-  const uitlegPnl = document.getElementById("uitleg-panel");
-  const banner    = document.getElementById("event-banner");
+  const simView    = document.getElementById("sim-view");
+  const infoPnl    = document.getElementById("info-panel");
+  const uitlegPnl  = document.getElementById("uitleg-panel");
+  const forecastPnl = document.getElementById("forecast-panel");
+  const banner     = document.getElementById("event-banner");
+
+  if (year === "forecast") {
+    simView.style.display = "none";
+    infoPnl.classList.remove("visible");
+    uitlegPnl.classList.remove("visible");
+    forecastPnl.classList.add("visible");
+    banner.textContent = "Live verwachting IJssel · RWS Waterinfo + Open-Meteo · indicatief 14 dagen";
+    document.getElementById("alert-badge").textContent = "📡 Verwachting";
+    document.getElementById("alert-badge").style.background = "#00695c";
+    document.body.className = "";
+    loadForecast();
+    return;
+  }
 
   if (year === "info") {
     simView.style.display = "none";
     infoPnl.classList.add("visible");
     uitlegPnl.classList.remove("visible");
+    forecastPnl.classList.remove("visible");
     banner.textContent = "Uitleg proef · Lessons learned · Analyse resultaten 2021";
     document.getElementById("alert-badge").textContent = "ℹ Info";
     document.getElementById("alert-badge").style.background = "#00695c";
@@ -110,6 +125,7 @@ function switchYear(year) {
     simView.style.display = "none";
     infoPnl.classList.remove("visible");
     uitlegPnl.classList.add("visible");
+    forecastPnl.classList.remove("visible");
     banner.textContent = "Uitleg & Achtergrond  ·  IJssel-systeem  ·  Wflow SBM  ·  ERA5";
     document.getElementById("alert-badge").textContent = "📖 Uitleg";
     document.getElementById("alert-badge").style.background = "#01579b";
@@ -121,6 +137,7 @@ function switchYear(year) {
   simView.style.display = "";
   infoPnl.classList.remove("visible");
   uitlegPnl.classList.remove("visible");
+  forecastPnl.classList.remove("visible");
 
   const cfg = YEAR_CONFIG[year];
   document.body.className = cfg.themeClass;
@@ -382,6 +399,220 @@ function stopPlay() {
   playing = false;
   playBtn.textContent = "▶";
   if (playTimer) { clearInterval(playTimer); playTimer = null; }
+}
+
+// ── forecast tab ─────────────────────────────────────────────────────────────
+
+const ALERT_LABELS = {
+  normaal:   { text: "Normaal",   color: "#4caf50" },
+  waakzaam:  { text: "Waakzaam",  color: "#ff9800" },
+  verhoogd:  { text: "Verhoogd",  color: "#f44336" },
+  hoog:      { text: "HOOG",      color: "#b71c1c" },
+};
+
+async function loadForecast() {
+  const badge = document.getElementById("alert-badge");
+  badge.textContent = "⏳ Ophalen...";
+  badge.style.background = "#555";
+
+  try {
+    const data = await fetch(`${API}/api/forecast`).then(r => {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+    renderForecastKpis(data);
+    renderForecastChart(data);
+    renderForecastPrecip(data);
+
+    const al = ALERT_LABELS[data.alert] || ALERT_LABELS.normaal;
+    badge.textContent = `🌊 ${al.text}`;
+    badge.style.background = al.color;
+
+    const src = document.getElementById("forecast-source");
+    const src_str = data.data_available
+      ? `RWS Waterinfo · Open-Meteo · gegenereerd ${data.generated_at}`
+      : `⚠ RWS niet beschikbaar — model op standaard · Open-Meteo · ${data.generated_at}`;
+    if (src) src.textContent = src_str;
+  } catch (err) {
+    badge.textContent = "Verwachting niet beschikbaar";
+    badge.style.background = "#555";
+    console.warn("forecast load failed:", err);
+  }
+}
+
+function renderForecastKpis(d) {
+  const k = d.kpis;
+  const hStr = k.current_h_kampen_m !== null
+    ? ` · ${k.current_h_kampen_m.toLocaleString("nl-NL", {minimumFractionDigits:2})} m+NAP`
+    : "";
+  document.getElementById("fval-now").textContent    = k.current_q_kampen.toLocaleString("nl-NL") + " m³/s";
+  document.getElementById("fkpi-now").querySelector(".sub").textContent = "m³/s routing" + hStr;
+  document.getElementById("fval-peak").textContent   = k.peak_forecast_q.toLocaleString("nl-NL") + " m³/s";
+  document.getElementById("fsub-peak").textContent   = `piek verwacht ${k.peak_forecast_date}`;
+  document.getElementById("fval-precip").textContent = k.total_precip_14d.toLocaleString("nl-NL") + " mm";
+  const al = ALERT_LABELS[d.alert] || ALERT_LABELS.normaal;
+  const alertEl = document.getElementById("fval-alert");
+  alertEl.textContent = al.text;
+  alertEl.style.color = al.color;
+  document.getElementById("fsub-alert").textContent =
+    k.days_above_threshold > 0
+      ? `${k.days_above_threshold} dag(en) boven 1500 m³/s`
+      : "onder drempel 1500 m³/s";
+}
+
+function renderForecastChart(d) {
+  const today     = d.generated_at;
+  const measDates = d.measured.dates;
+  const fDates    = d.forecast.dates;
+  const allX0     = measDates[0];
+  const allX1     = fDates[fDates.length - 1];
+
+  const hasH = d.measured.h_kampen_m && d.measured.h_kampen_m.some(v => v !== null);
+  const hasRwsFcast = d.rws_forecast && d.rws_forecast.dates && d.rws_forecast.dates.length > 0;
+
+  const traces = [
+    // Onzekerheidsband debiet (laag → hoog, fill)
+    {
+      x: fDates, y: d.forecast.q_low,
+      type: "scatter", mode: "lines", line: { width: 0 },
+      showlegend: false, hoverinfo: "skip", yaxis: "y",
+    },
+    {
+      x: fDates, y: d.forecast.q_high,
+      type: "scatter", mode: "lines", line: { width: 0 },
+      fill: "tonexty", fillcolor: "rgba(77,182,172,0.15)",
+      name: "Onzekerheidsband ±", hoverinfo: "skip", yaxis: "y",
+    },
+    // Gemeten Westervoort Q
+    {
+      x: measDates, y: d.measured.q_westervoort,
+      type: "scatter", mode: "lines",
+      name: "Debiet Westervoort (m³/s)",
+      line: { color: "#ff9800", width: 1.5, dash: "dot" },
+      yaxis: "y",
+    },
+    // Gemeten Q Kampen (routing)
+    {
+      x: measDates, y: d.measured.q_kampen,
+      type: "scatter", mode: "lines",
+      name: "Debiet Kampen routing (m³/s)",
+      line: { color: "#4db6ac", width: 2 },
+      yaxis: "y",
+    },
+    // Statistisch debiet-forecast
+    {
+      x: fDates, y: d.forecast.q_mid,
+      type: "scatter", mode: "lines",
+      name: "Verwacht debiet Kampen",
+      line: { color: "#4db6ac", width: 2, dash: "dash" },
+      yaxis: "y",
+    },
+    // Drempel 1500 m³/s
+    {
+      x: [allX0, allX1], y: [1500, 1500],
+      type: "scatter", mode: "lines",
+      name: "Drempel 1500 m³/s",
+      line: { color: "#f44336", width: 1, dash: "dash" },
+      hoverinfo: "skip", yaxis: "y",
+    },
+  ];
+
+  // Gemeten waterpeil Kampen (rechter y-as)
+  if (hasH) {
+    traces.push({
+      x: measDates,
+      y: d.measured.h_kampen_m,
+      type: "scatter", mode: "lines",
+      name: "Waterpeil Kampen (m+NAP)",
+      line: { color: "#4caf50", width: 1.5, dash: "dot" },
+      yaxis: "y2", connectgaps: true,
+    });
+  }
+  // RWS officiële waterstandsverwachting
+  if (hasRwsFcast) {
+    traces.push({
+      x: d.rws_forecast.dates,
+      y: d.rws_forecast.values_m,
+      type: "scatter", mode: "lines+markers",
+      name: "RWS verwachting peil",
+      line: { color: "#81c784", width: 2 },
+      marker: { size: 5 },
+      yaxis: "y2",
+    });
+  }
+
+  const layout = {
+    paper_bgcolor: "#080c14",
+    plot_bgcolor:  "#0d1b2a",
+    font:   { color: "#e0e0e0", size: 11 },
+    margin: { t: 8, b: 36, l: 58, r: hasH ? 58 : 14 },
+    legend: { orientation: "h", y: -0.28, font: { size: 10 } },
+    xaxis: {
+      gridcolor: "#1a3a5c", tickformat: "%d %b",
+      range: [allX0, allX1],
+    },
+    yaxis: {
+      title: "Debiet (m³/s)", gridcolor: "#1a3a5c",
+      titlefont: { color: "#4db6ac" }, tickfont: { color: "#4db6ac" },
+    },
+    ...(hasH ? {
+      yaxis2: {
+        title: "Peil (m+NAP)", overlaying: "y", side: "right",
+        titlefont: { color: "#4caf50" }, tickfont: { color: "#4caf50" },
+        gridcolor: "rgba(0,0,0,0)",
+      },
+    } : {}),
+    shapes: [{
+      type: "line", x0: today, x1: today,
+      yref: "paper", y0: 0, y1: 1,
+      line: { color: "#4fc3f7", width: 1, dash: "dot" },
+    }],
+    annotations: [{
+      x: today, yref: "paper", y: 1.0, text: "vandaag",
+      showarrow: false, font: { size: 9, color: "#4fc3f7" },
+      xanchor: "left", yanchor: "top",
+    }],
+  };
+
+  Plotly.react("forecast-chart", traces, layout, { responsive: true, displayModeBar: false });
+}
+
+function renderForecastPrecip(d) {
+  const today = d.generated_at;
+  const traces = [
+    {
+      x: d.precip.past_dates, y: d.precip.past_values,
+      type: "bar", name: "Neerslag gemeten (ERA5)",
+      marker: { color: "rgba(100,130,160,0.7)" },
+    },
+    {
+      x: d.precip.forecast_dates, y: d.precip.forecast_values,
+      type: "bar", name: "Neerslag verwacht (IFS)",
+      marker: { color: "rgba(77,182,172,0.7)" },
+    },
+  ];
+  Plotly.react("forecast-precip", traces, {
+    paper_bgcolor: "#080c14",
+    plot_bgcolor:  "#0d1b2a",
+    font:   { color: "#e0e0e0", size: 10 },
+    margin: { t: 4, b: 36, l: 58, r: 14 },
+    legend: { orientation: "h", y: -0.38, font: { size: 10 } },
+    barmode: "overlay",
+    xaxis: {
+      gridcolor: "#1a3a5c", tickformat: "%d %b",
+      range: [d.measured.dates[0], d.forecast.dates[d.forecast.dates.length - 1]],
+    },
+    yaxis: {
+      title: "Neerslag (mm/dag)", gridcolor: "#1a3a5c",
+      titlefont: { color: "#4db6ac" }, tickfont: { color: "#4db6ac" },
+      autorange: "reversed",
+    },
+    shapes: [{
+      type: "line", x0: today, x1: today,
+      yref: "paper", y0: 0, y1: 1,
+      line: { color: "#4fc3f7", width: 1, dash: "dot" },
+    }],
+  }, { responsive: true, displayModeBar: false });
 }
 
 // ── info-tab KPI's dynamisch laden ────────────────────────────────────────────

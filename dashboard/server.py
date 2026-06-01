@@ -8,6 +8,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from dashboard.forecast import build_forecast
+
 ROOT       = Path(__file__).parent.parent
 STATIC_DIR = Path(__file__).parent
 
@@ -97,6 +99,14 @@ def get_timeseries_legacy(station: str):
 @app.get("/api/river/{day}")
 def get_river_day_legacy(day: str):
     return get_river_day("1995", day)
+
+
+@app.get("/api/forecast")
+def get_forecast():
+    try:
+        return JSONResponse(build_forecast())
+    except Exception as e:
+        raise HTTPException(503, f"Voorspelling niet beschikbaar: {e}")
 
 
 if __name__ == "__main__":

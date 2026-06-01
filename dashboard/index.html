@@ -127,9 +127,34 @@
     .compare-bar-ref  { height: 100%; border-radius: 4px; position: absolute; top: 0; left: 0; background: rgba(255,255,255,0.07); }
 
     /* ── uitleg panel ── */
-    .year-tab.active-uitleg { background: #01579b; border-color: #4fc3f7; color: #fff; }
+    .year-tab.active-uitleg    { background: #01579b; border-color: #4fc3f7; color: #fff; }
+    .year-tab.active-forecast  { background: #00695c; border-color: #4db6ac; color: #fff; }
     #uitleg-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #uitleg-panel.visible { display: block; }
+
+    /* ── forecast panel ── */
+    #forecast-panel { display: none; overflow-y: auto; max-height: calc(100vh - 52px); }
+    #forecast-panel.visible { display: block; }
+    #forecast-kpi-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 10px; padding: 10px 16px; background: #0a1220;
+      border-bottom: 1px solid #1a3a5c;
+    }
+    #forecast-kpi-row .kpi .value { color: #4db6ac; }
+    #forecast-kpi-row .kpi.alert-verhoogd .value { color: #ff9800; }
+    #forecast-kpi-row .kpi.alert-hoog .value     { color: #f44336; }
+    #forecast-source {
+      padding: 4px 16px 0; font-size: 10px; color: #556; text-align: right;
+      background: #0a1220; border-bottom: 1px solid #1a3a5c;
+    }
+    #forecast-chart-wrap { padding: 8px 16px 0; }
+    #forecast-chart  { width: 100%; height: 220px; }
+    #forecast-precip { width: 100%; height: 130px; }
+    #forecast-disclaimer {
+      margin: 0 16px 12px; padding: 8px 12px;
+      background: #0a1220; border: 1px solid #1a3a5c; border-radius: 6px;
+      font-size: 10px; color: #666; line-height: 1.6;
+    }
     .audience-header {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 16px; border-radius: 6px; margin: 0 0 20px;
@@ -184,6 +209,7 @@
   <div id="year-tabs">
     <button class="year-tab active-1995" data-year="1995">Jan 1995</button>
     <button class="year-tab" data-year="2021">Jul 2021</button>
+    <button class="year-tab" data-year="forecast">Verwachting</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
     <button class="year-tab" data-year="uitleg">Uitleg</button>
   </div>
@@ -526,6 +552,44 @@
   </div>
 
 </div><!-- /#info-panel -->
+
+<!-- ── forecast-view ── -->
+<div id="forecast-panel">
+  <div id="forecast-kpi-row">
+    <div class="kpi" id="fkpi-now">
+      <div class="label">Huidig debiet Kampen</div>
+      <div class="value" id="fval-now">—</div>
+      <div class="sub">m³/s · RWS + routing</div>
+    </div>
+    <div class="kpi" id="fkpi-peak">
+      <div class="label">Verwacht max 14 dagen</div>
+      <div class="value" id="fval-peak">—</div>
+      <div class="sub" id="fsub-peak">m³/s</div>
+    </div>
+    <div class="kpi" id="fkpi-precip">
+      <div class="label">Neerslag komende 14 d</div>
+      <div class="value" id="fval-precip">—</div>
+      <div class="sub">mm totaal · Open-Meteo</div>
+    </div>
+    <div class="kpi" id="fkpi-alert">
+      <div class="label">Waakzaamheidsniveau</div>
+      <div class="value" id="fval-alert">—</div>
+      <div class="sub" id="fsub-alert">drempel: 1500 m³/s</div>
+    </div>
+  </div>
+  <div id="forecast-source" id="forecast-source-bar">—</div>
+  <div id="forecast-chart-wrap">
+    <div id="forecast-chart"></div>
+    <div id="forecast-precip"></div>
+  </div>
+  <div id="forecast-disclaimer">
+    ⚠ <strong>Indicatieve verwachting</strong> — geen gekalibreerd model.
+    Gebaseerd op statistisch recessiemodel toegepast op RWS Waterinfo debietsmeting (Westervoort)
+    + neerslagimpulsrespons (Open-Meteo ERA5/IFS, 14 dagen).
+    Marge neemt toe tot ±70% op dag 14. Gebruik RWS waterstandsberichten voor operationele beslissingen.
+    Bron: <strong>RWS Waterinfo</strong> (meting) · <strong>Open-Meteo</strong> (neerslag) · cache 15 min.
+  </div>
+</div>
 
 <!-- ── uitleg-view ── -->
 <div id="uitleg-panel">
@@ -876,6 +940,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=9"></script>
+<script src="/static/app.js?v=10"></script>
 </body>
 </html>
