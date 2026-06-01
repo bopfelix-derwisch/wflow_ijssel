@@ -340,7 +340,7 @@ function renderDeckLayers() {
       new ScatterplotLayer({
         id:   "stations",
         data: [
-          { name: "Kampen",      coords: [6.104, 52.654], color: [244, 67, 54] },
+          { name: "Kampen",      coords: [5.921, 52.555], color: [244, 67, 54] },
           { name: "Westervoort", coords: [6.154, 51.987], color: [255, 152, 0] },
         ],
         getPosition:  d => d.coords,

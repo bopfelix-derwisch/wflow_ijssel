@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 ROOT          = Path(__file__).parent
 OUTPUT        = ROOT / "data" / "output_2021_real"
-RIVER_LAT_MAX = 52.80
+RIVER_LAT_MAX = 52.63
 MAX_Q_THR     = 150.0
 MIN_LON       = 6.025
 MAX_LON       = 6.25

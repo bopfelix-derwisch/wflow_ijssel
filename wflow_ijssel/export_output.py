@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 ROOT          = Path(__file__).parent
 OUTPUT        = ROOT / "data" / "output"
-RIVER_LAT_MAX = 52.80   # °N — net boven model-uitlaat IJssel; lat 52.79 = Kampen-equivalent
+RIVER_LAT_MAX = 52.63   # °N — net boven echt Kampen (52.55°N); model routeert rivier te ver N
 MAX_Q_THR     = 150.0   # m³/s — IJssel-hoofdgeul (Rijn is grensinstroming, geen uparea)
 MIN_LON       = 6.025   # °E — sluit IJsselmeer-cellen uit (lon<6.022 bij lat>52.75)
 MAX_LON       = 6.25    # °E — sluit Berkel/Schipbeek en andere oostelijke zijtakken uit
