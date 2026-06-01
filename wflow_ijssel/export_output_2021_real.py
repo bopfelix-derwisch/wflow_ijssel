@@ -18,8 +18,9 @@ logger = logging.getLogger(__name__)
 
 ROOT          = Path(__file__).parent
 OUTPUT        = ROOT / "data" / "output_2021_real"
-RIVER_LAT_MAX = 52.72
+RIVER_LAT_MAX = 52.80
 MAX_Q_THR     = 150.0
+MIN_LON       = 6.025
 MAX_LON       = 6.25
 
 KAMPEN_LON,      KAMPEN_LAT      = 6.104, 52.654
@@ -86,11 +87,12 @@ def export_all() -> None:
 
     max_q      = ds["q_river"].max(dim="time").values
     lon_vals   = ds["lon"].values
-    river_mask = (max_q > MAX_Q_THR) & ~np.isnan(max_q) & (lon_vals < MAX_LON)[np.newaxis, :]
+    lon_mask   = (lon_vals >= MIN_LON) & (lon_vals < MAX_LON)
+    river_mask = (max_q > MAX_Q_THR) & ~np.isnan(max_q) & lon_mask[np.newaxis, :]
     lat_cut    = int(np.searchsorted(ds["lat"].values, RIVER_LAT_MAX))
     river_mask[lat_cut:, :] = False
-    logger.info("Rivier-cellen: %d (max_q>%g m³/s, lon<%g°E, lat<%g°N)",
-                int(river_mask.sum()), MAX_Q_THR, MAX_LON, RIVER_LAT_MAX)
+    logger.info("Rivier-cellen: %d (max_q>%g m³/s, lon %g–%g°E, lat<%g°N)",
+                int(river_mask.sum()), MAX_Q_THR, MIN_LON, MAX_LON, RIVER_LAT_MAX)
 
     for name, lon, lat in [
         ("kampen",      KAMPEN_LON,      KAMPEN_LAT),
