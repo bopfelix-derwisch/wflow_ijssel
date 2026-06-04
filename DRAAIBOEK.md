@@ -229,11 +229,24 @@ python -m uvicorn dashboard.server:app --host 0.0.0.0 --port 8000
 
 Open in je browser: **http://127.0.0.1:8000** of via de publieke URL **https://waterlab.felixisfelix.com**
 
-Het dashboard toont:
+Het dashboard heeft vier tabs:
+
+**Tab 1995** (simulatie jan 1995):
 - 4 KPI-blokken: piekafvoer Kampen, maximale instroom Westervoort, neerslaganomalie, duur boven drempel
 - 3D kaart (deck.gl): rivierdebiet als kolommen — hoogte = debiet, kleur blauw → oranje → rood
 - Tijdslider: scrub door 1–31 januari 1995 (dag-resolutie), met ▶ play-knop
 - Tijdreeksgrafiek (Plotly): debiet m³/s (rood, links) + waterpeil m+NAP (groen gestippeld, rechts) + drempellijn 1500 m³/s
+
+**Tab 2021 — echt** en **2021 — synth** (vereist export_output_2021.py):
+- Zelfde structuur als 1995, maar simulatieperiode jan–feb 2021
+- "echt" gebruikt gemeten Westervoort-inflow; "synth" synthetische inflow (vergelijking)
+
+**Tab Verwachting** (live, geen simulatie vereist):
+- Trekt real-time data van RWS Waterinfo (debiet Westervoort, waterpeil Kampen) en Open-Meteo
+- 14-daagse debiets­verwachting op basis van recessiemodel + neerslagimpulsrespons
+- Onzekerheidsbanden, RWS officiële verwachting als overlay, neerslaggerafiek
+- Alertniveaus: normaal / waakzaam / verhoogd / hoog (drempel 1500 m³/s)
+- Data wordt 15 minuten gecached (`dashboard/forecast.py`)
 
 Stoppen: `Ctrl+C`.
 
