@@ -22,15 +22,18 @@ def run_scenario(scenario: dict, julia_project: str, run_script: str,
         config_path,
     ]
 
-    print(f"  → Run: {scenario['name']} (multiplier={scenario['multiplier']})")
+    log_path = Path(scenario["output_dir"]) / "run.log"
+    print(f"  → Run: {scenario['name']} (multiplier={scenario['multiplier']}) — log: {log_path}")
     t0 = time.monotonic()
 
-    result = subprocess.run(
-        cmd,
-        cwd=julia_project,
-        capture_output=False,
-        timeout=timeout,
-    )
+    with open(log_path, "wb") as log_f:
+        result = subprocess.run(
+            cmd,
+            cwd=julia_project,
+            stdout=log_f,
+            stderr=log_f,
+            timeout=timeout,
+        )
 
     elapsed = time.monotonic() - t0
     if result.returncode != 0:

@@ -17,24 +17,15 @@ def collect(output_nc: Path, station_lon: float, station_lat: float,
     Retourneert dict met:
       dates, q, h_nap, peak_q, peak_date, days_above_threshold
     """
-    ds = xr.open_dataset(str(output_nc))
-
-    # Support both lon/lat and x/y dimension names
-    if "lon" in ds.dims:
-        lon_dim, lat_dim = "lon", "lat"
-    else:
-        lon_dim, lat_dim = "x", "y"
-
-    lons = ds[lon_dim].values
-    lats = ds[lat_dim].values
-
-    xi = _nearest_idx(lons, station_lon)
-    yi = _nearest_idx(lats, station_lat)
-
-    q    = ds["q_river"].isel({lon_dim: xi, lat_dim: yi}).values.tolist()
-    h    = ds["h_river"].isel({lon_dim: xi, lat_dim: yi}).values.tolist()
-    dates = [str(t)[:10] for t in ds["time"].values]
-    ds.close()
+    with xr.open_dataset(str(output_nc)) as ds:
+        lon_dim, lat_dim = ("lon", "lat") if "lon" in ds.dims else ("x", "y")
+        lons  = ds[lon_dim].values
+        lats  = ds[lat_dim].values
+        xi    = _nearest_idx(lons, station_lon)
+        yi    = _nearest_idx(lats, station_lat)
+        q     = ds["q_river"].isel({lon_dim: xi, lat_dim: yi}).values.tolist()
+        h     = ds["h_river"].isel({lon_dim: xi, lat_dim: yi}).values.tolist()
+        dates = [str(t)[:10] for t in ds["time"].values]
 
     q_arr    = np.array(q)
     peak_idx = int(np.argmax(q_arr))

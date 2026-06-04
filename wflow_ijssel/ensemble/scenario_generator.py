@@ -1,11 +1,10 @@
 """Genereer neerslag-scenario's voor het ensemble."""
 from __future__ import annotations
-import shutil
+import copy
 import tomli
 import tomli_w
 from pathlib import Path
 
-import numpy as np
 import xarray as xr
 import yaml
 
@@ -36,17 +35,14 @@ def generate_scenarios(settings: dict, out_dir: Path) -> list[dict]:
 
         forcing_out = scenario_dir / "forcing.nc"
         if not forcing_out.exists():
-            ds = xr.open_dataset(base_forcing)
-            ds["precip"] = (ds["precip"] * mult).clip(min=0)
-            ds.to_netcdf(str(forcing_out))
-            ds.close()
+            with xr.open_dataset(base_forcing) as ds:
+                ds["precip"] = (ds["precip"] * mult).clip(min=0)
+                ds.to_netcdf(str(forcing_out))
 
         toml_out = scenario_dir / "config.toml"
-        cfg = dict(base_toml)
-        cfg["input"]  = dict(cfg["input"])
+        cfg = copy.deepcopy(base_toml)
         cfg["input"]["path_forcing"] = str(forcing_out.resolve())
-        cfg["output"] = dict(cfg.get("output", {}))
-        cfg["output"]["path"] = str((scenario_dir / "output.nc").resolve())
+        cfg.setdefault("output", {})["path"] = str((scenario_dir / "output.nc").resolve())
         cfg["dir_output"] = str(scenario_dir.resolve())
 
         with open(toml_out, "wb") as f:
