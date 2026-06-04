@@ -4,7 +4,7 @@ base_config:  "data/output/ijssel_config.toml"
 julia_project: "/home/bob/waterlab/wflow_ijssel"
 run_script:   "run_ijssel.jl"
 
-ensemble_data_root: "/mnt/nvme/waterlab/ensemble"
+ensemble_data_root: "/home/bob/waterlab/ensemble_data"
 
 scenarios:
   parameter: "precip_multiplier"

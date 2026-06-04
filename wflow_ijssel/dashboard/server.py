@@ -19,7 +19,7 @@ OUTPUT_DIRS = {
     "2021synth": ROOT / "data" / "output_2021",        # synthetische inflow (vergelijking)
 }
 
-ENSEMBLE_DIR = Path("/mnt/nvme/waterlab/ensemble/outputs")
+ENSEMBLE_DIR = Path("/home/bob/waterlab/ensemble_data/outputs")
 
 app = FastAPI(title="IJssel Hoogwater Dashboard API")
 
