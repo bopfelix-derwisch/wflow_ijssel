@@ -15,6 +15,7 @@ STATIC_DIR = Path(__file__).parent
 
 OUTPUT_DIRS = {
     "1995":      ROOT / "data" / "output",
+    "2018":      ROOT / "data" / "output_2018",
     "2021":      ROOT / "data" / "output_2021_real",   # echte gemeten inflow
     "2021synth": ROOT / "data" / "output_2021",        # synthetische inflow (vergelijking)
 }

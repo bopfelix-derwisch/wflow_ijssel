@@ -26,6 +26,7 @@
       color: #888; transition: all .2s;
     }
     .year-tab.active-1995 { background: #1565c0; border-color: #1565c0; color: #fff; }
+    .year-tab.active-2018 { background: #e65100; border-color: #ffc107; color: #fff; }
     .year-tab.active-2021 { background: #7b1fa2; border-color: #7b1fa2; color: #fff; }
     .year-tab.active-info { background: #00695c; border-color: #00695c; color: #fff; }
     .year-tab:not([class*="active"]):hover { border-color: #4fc3f7; color: #4fc3f7; }
@@ -63,8 +64,10 @@
       width: 26px; height: 26px; border: none; border-radius: 50%;
       color: white; cursor: pointer; font-size: 12px; flex-shrink: 0; background: #1565c0;
     }
+    .year-2018 #play-btn { background: #e65100; }
     .year-2021 #play-btn { background: #7b1fa2; }
     #day-slider { flex: 1; accent-color: #f44336; }
+    .year-2018 #day-slider { accent-color: #ffc107; }
     .year-2021 #day-slider { accent-color: #ce93d8; }
     #day-label { font-size: 11px; color: #4fc3f7; white-space: nowrap; min-width: 110px; }
 
@@ -235,6 +238,7 @@
   <span class="badge" id="alert-badge">⏳ Laden...</span>
   <div id="year-tabs">
     <button class="year-tab active-1995" data-year="1995">Jan 1995</button>
+    <button class="year-tab" data-year="2018">Zomer 2018</button>
     <button class="year-tab" data-year="2021">Jul 2021</button>
     <button class="year-tab" data-year="forecast">Verwachting</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
@@ -1227,6 +1231,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=15"></script>
+<script src="/static/app.js?v=16"></script>
 </body>
 </html>

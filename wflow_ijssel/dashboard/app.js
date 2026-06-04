@@ -17,6 +17,20 @@ const YEAR_CONFIG = {
     precipLabel:  "+182% (KNMI, jan 1995)",
     alertText:    "⚠ EXTREEM HOOGWATER",
     alertBg:      "#c62828",
+    threshold:    1500,
+    thresholdLabel: "Drempel 1500 m³/s",
+  },
+  "2018": {
+    days: buildDays("2018-06-01", "2018-08-31"),
+    accentColor:  [255, 193, 7],
+    sliderColor:  "#ffc107",
+    themeClass:   "year-2018",
+    eventLabel:   "Droogte zomer 2018 — Lobith ~600 m³/s (normaal ~2 000 m³/s) · IJssel laag peil",
+    precipLabel:  "−40% (ERA5, zomer 2018)",
+    alertText:    "⚠ ERNSTIGE DROOGTE",
+    alertBg:      "#e65100",
+    threshold:    200,
+    thresholdLabel: "Laagwater 200 m³/s",
   },
   "2021": {
     days: buildDays("2021-07-01", "2021-08-31"),
@@ -27,6 +41,8 @@ const YEAR_CONFIG = {
     precipLabel:  "+120% (ERA5, jul 2021)",
     alertText:    "⚠ ERNSTIG HOOGWATER",
     alertBg:      "#6a1b9a",
+    threshold:    1500,
+    thresholdLabel: "Drempel 1500 m³/s",
   },
 };
 
@@ -260,9 +276,9 @@ function renderChart(tsK, tsW, days, cfg, measured) {
     },
     {
       x: tsK.dates,
-      y: Array(tsK.dates.length).fill(DISCHARGE_THRESHOLD),
+      y: Array(tsK.dates.length).fill(cfg.threshold ?? DISCHARGE_THRESHOLD),
       type: "scatter", mode: "lines",
-      name: "Drempel 1500 m³/s",
+      name: cfg.thresholdLabel ?? "Drempel 1500 m³/s",
       line: { color: "#ff9800", width: 1, dash: "dash" },
       yaxis: "y",
     },
