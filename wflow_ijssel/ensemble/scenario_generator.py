@@ -42,6 +42,7 @@ def generate_scenarios(settings: dict, out_dir: Path) -> list[dict]:
         toml_out = scenario_dir / "config.toml"
         cfg = copy.deepcopy(base_toml)
         cfg["input"]["path_forcing"] = str(forcing_out.resolve())
+        cfg["dir_input"]  = str((root / settings["base_forcing"]).parent.resolve())
         cfg["dir_output"] = str(scenario_dir.resolve())
 
         # Derive expected output NC name from the config (relative to dir_output)
