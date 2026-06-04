@@ -1122,12 +1122,60 @@
       <thead><tr><th>Scenario</th><th>Multiplier</th><th>Piek (m³/s)</th><th>Piekdatum</th><th>Dagen &gt; drempel</th></tr></thead>
       <tbody id="mm-scenario-tbody"></tbody>
     </table>
+
+    <!-- Uitleg voor hydrologen -->
+    <div style="margin-top:2rem; border-top:1px solid #2a3a50; padding-top:1.5rem;">
+      <h3 style="color:#90caf9; margin-bottom:1rem;">Wat u ziet — toelichting voor hydrologen</h3>
+
+      <h4 style="color:#ccc; margin-bottom:.5rem;">Landelijk netwerkmodel (kaart)</h4>
+      <p style="color:#aaa; line-height:1.7; margin-bottom:1rem;">
+        De kaart toont een vereenvoudigd Rijn/IJssel netwerk met vier knooppunten: Pannerdensch Kanaal,
+        IJssel bij Kampen, Neder-Rijn en Lek. Als bovenstroomse randvoorwaarde bij Lobith wordt een
+        droogtescenario gebruikt: een sinusvormige afvoer rond 600 m³/s (representatief voor zomer 2018,
+        waarbij de werkelijke Lobith-afvoer daalde tot ~500–700 m³/s). Per knoop wordt het waterdeficit
+        berekend als het percentage waarmee de gemiddelde waterstand onder de ingestelde drempelstand blijft.
+        Knopen worden groen (0–20%), oranje (20–50%) of rood (&gt;50%) weergegeven.
+      </p>
+
+      <h4 style="color:#ccc; margin-bottom:.5rem;">AI-beslissingslaag</h4>
+      <p style="color:#aaa; line-height:1.7; margin-bottom:1rem;">
+        De AI-orchestrator (Qwen2.5-32B, lokaal op de Jetson) leest de netwerktoestand en selecteert
+        automatisch de knoop met het hoogste waterdeficit. Op basis daarvan besluit het systeem welk
+        deelstroomgebied detailmodellering vereist en genereert het een motivatietekst. De beslissingslogica
+        is volledig deterministisch (hoogste deficit wint); de tekst is een LLM-samenvatting van die toestand.
+      </p>
+
+      <h4 style="color:#ccc; margin-bottom:.5rem;">wflow SBM droogte-ensemble</h4>
+      <p style="color:#aaa; line-height:1.7; margin-bottom:1rem;">
+        Voor het geselecteerde stroomgebied (IJssel) draait wflow SBM vijf neerslag-scenario's met
+        multipliers van ×0.10 tot ×0.80 — wat overeenkomt met extreem droog tot licht droog.
+        De modelperiode is december 1994 – januari 1995 (zelfde forcing als de overige simulaties op dit
+        dashboard). De grafiek toont P10/gemiddelde/P90 over de vijf scenario's; de tabel geeft de
+        piekafvoer bij Kampen per scenario.
+      </p>
+
+      <div style="background:#1a0a0a; border:1px solid #5c2c2c; border-left:4px solid #d32f2f;
+                  border-radius:6px; padding:14px 16px; margin-top:1rem;">
+        <div style="font-size:10px; color:#ef9a9a; font-weight:700; text-transform:uppercase;
+                    letter-spacing:.8px; margin-bottom:8px;">⚠ Disclaimer</div>
+        <p style="color:#ccc; font-size:13px; line-height:1.7; margin:0;">
+          Dit is een <strong>prototype voor onderzoeks- en demonstratiedoeleinden</strong>.
+          Het netwerkmodel is een sterk vereenvoudigde representatie van het Rijn/IJssel-systeem
+          en is <em>niet</em> gekalibreerd of gevalideerd tegen historische meetreeksen.
+          De Lobith-inflow is synthetisch (sinusvorm) en vertegenwoordigt geen specifieke historische gebeurtenis.
+          De AI-gegenereerde beslissingsmotivatie is indicatief en vervangt geen hydrologisch oordeel van een expert.
+          Gebruik de uitkomsten van dit systeem <strong>niet</strong> voor operationeel waterbeheer,
+          beleidsvorming of veiligheidsbeoordelingen. Deltares Ribasim (het volwaardige netwerkmodel)
+          en een gevalideerde wflow-kalibratie zijn vereist voor professionele toepassingen.
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=12"></script>
+<script src="/static/app.js?v=13"></script>
 </body>
 </html>
