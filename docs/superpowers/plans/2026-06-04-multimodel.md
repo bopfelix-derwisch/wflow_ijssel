@@ -1243,7 +1243,7 @@ Verwacht: `available: True`, correcte waarden.
 
 ```bash
 cd /home/bob/waterlab
-TOKEN="<GITHUB_PAT>"
+TOKEN="<GITHUB_PAT>"  # vul hier je PAT in
 git remote set-url origin "https://bopfelix-derwisch:${TOKEN}@github.com/bopfelix-derwisch/wflow_ijssel.git"
 git push
 git remote set-url origin https://github.com/bopfelix-derwisch/wflow_ijssel.git
