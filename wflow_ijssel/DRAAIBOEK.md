@@ -52,6 +52,42 @@ Resultaat (beide opties): `data/input/staticmaps-ijssel.nc` en `data/input/insta
 
 ---
 
+## Stap 1b — LDD-routing corrigeren (Zwolle→Kampen)
+
+De D8-routing uit MERIT Hydro stuurde de IJssel na Zwolle ten onrechte naar het noordoosten (richting Meppel) in plaats van naar het noordwesten (Kampen). Dit script burned de correcte PDOK NWB-centerline in `wflow_ldd`, `wflow_river` en `wflow_subcatch`.
+
+**Vereisten:** `data/input/staticmaps-ijssel.nc` (stap 1) en `data/input/river_geom_ijssel.gpkg`.
+
+```bash
+# river_geom downloaden (eenmalig; vereist internet)
+python download_river_geom.py
+
+# LDD-fix toepassen (maakt backup als staticmaps-ijssel.nc.bak)
+python fix_staticmaps.py
+```
+
+Verwachte output:
+```
+INFO: Junctiecel: lat=52.4708, lon=6.1708 → ldd wordt W
+INFO: Brugcellen: 8  (lon 6.1708→6.1042 op lat 52.4708)
+INFO: Totale nieuwe keten: 57 cellen
+INFO: Cellen die parameter-fill nodig hebben: 40 nieuw-subcatch + 15 nieuw-river
+INFO: Parameter-fill (NN): 55 cellen ingevuld
+INFO: Terminus: lat=52.5792, lon=5.8375 (pit)
+INFO: Opgeslagen: data/input/staticmaps-ijssel.nc
+```
+
+**Wat het doet:**
+- Junctiecel (lat 52.47°N, lon 6.17°E) omgeleid van NE→W
+- 8 brugcellen westwaarts naar PDOK-startpunt
+- 49 PDOK-gecorrigeerde cellen tot aan Ketelmeer (nieuwe pit)
+- `wflow_subcatch` uitgebreid met 40 cellen buiten het originele stroomgebied
+- Alle statische parameters ingevuld via nearest-neighbour (land + rivier-specifiek)
+
+**Zonder deze stap** lopen de rivierbalken in het dashboard na Zwolle ten onrechte naar het noordoosten.
+
+---
+
 ## Stap 2 — CDS API-sleutel configureren + ERA5 forcing downloaden
 
 ### 2a. CDS-account (eenmalig)
@@ -171,13 +207,15 @@ python export_output.py
 Verwachte output:
 ```
 INFO: Laden data/output/output_ijssel.nc ...
-INFO: Rivier-cellen: 847
+INFO: Rivier-cellen: 140 (max_q>150 m³/s, lon 5.8–6.25°E, lat<52.65°N)
 INFO: Geschreven: data/output/timeseries_kampen.json
 INFO: Geschreven: data/output/timeseries_westervoort.json
-INFO: KPI's: {'peak_q': 3241.5, 'peak_date': '1995-01-31', 'days_above_threshold': 18}
+INFO: KPI's: {'peak_q': 849.0, 'peak_date': '1995-01-30', 'days_above_threshold': 0}
 INFO: GeoJSON bestanden: 31 dagen
 INFO: Export klaar.
 ```
+
+**Noot:** De piekafvoer van ~849 m³/s bij Kampen (echt Kampen, 5.921°E/52.555°N) is realistisch voor de gecorrigeerde route — de instromende Westervoort-grensconditie bepaalt het maximum. De 2021-simulatie (synthetische forcering) geeft 3058 m³/s.
 
 Resultaat: `data/output/` bevat `kpis.json`, `timeseries_kampen.json`, `timeseries_westervoort.json`, en `river_day_1995-01-01.geojson` t/m `river_day_1995-01-31.geojson`.
 
@@ -186,18 +224,119 @@ Resultaat: `data/output/` bevat `kpis.json`, `timeseries_kampen.json`, `timeseri
 ## Stap 6 — Dashboard starten
 
 ```bash
-python -m uvicorn dashboard.server:app --host 127.0.0.1 --port 8000
+python -m uvicorn dashboard.server:app --host 0.0.0.0 --port 8000
 ```
 
-Open in je browser: **http://127.0.0.1:8000**
+Open in je browser: **http://127.0.0.1:8000** of via de publieke URL **https://waterlab.felixisfelix.com**
 
-Het dashboard toont:
+Het dashboard heeft vijf tabs:
+
+**Tab 1995** (simulatie jan 1995):
 - 4 KPI-blokken: piekafvoer Kampen, maximale instroom Westervoort, neerslaganomalie, duur boven drempel
 - 3D kaart (deck.gl): rivierdebiet als kolommen — hoogte = debiet, kleur blauw → oranje → rood
 - Tijdslider: scrub door 1–31 januari 1995 (dag-resolutie), met ▶ play-knop
 - Tijdreeksgrafiek (Plotly): debiet m³/s (rood, links) + waterpeil m+NAP (groen gestippeld, rechts) + drempellijn 1500 m³/s
 
+**Tab 2021 — echt** en **2021 — synth** (vereist export_output_2021.py):
+- Zelfde structuur als 1995, maar simulatieperiode jan–feb 2021
+- "echt" gebruikt gemeten Westervoort-inflow; "synth" synthetische inflow (vergelijking)
+
+**Tab Verwachting** (live, geen simulatie vereist):
+- Trekt real-time data van RWS Waterinfo (debiet Westervoort, waterpeil Kampen) en Open-Meteo
+- 14-daagse debiets­verwachting op basis van recessiemodel + neerslagimpulsrespons
+- Onzekerheidsbanden, RWS officiële verwachting als overlay, neerslaggerafiek
+- Alertniveaus: normaal / waakzaam / verhoogd / hoog (drempel 1500 m³/s)
+- Data wordt 15 minuten gecached (`dashboard/forecast.py`)
+
+**Tab Ensemble AI** (vereist stap 8 — zie hieronder):
+- 4 KPI-blokken: scenario bereik (min/max piek Q), baseline piek, P10–P90 spread, piekdag
+- Plotly grafiek: onzekerheidsband P10/gemiddelde/P90 over de simulatieperiode
+- Scenario-vergelijkingstabel: 5 scenario's × neerslagfactor, piek Q, piekdatum, dagen boven drempel
+- AI-interpretatie: tekstblok gegenereerd door Qwen2.5-32B (lokaal via llama.cpp)
+- Uitleg over ensemble-analyse en EFAS/Deltares-context
+- Toont "nog niet uitgevoerd"-placeholder zolang stap 8 niet is gedraaid
+
 Stoppen: `Ctrl+C`.
+
+---
+
+## Stap 7 — Publieke URL via Cloudflare Tunnel
+
+Het dashboard is bereikbaar via **https://waterlab.felixisfelix.com** dankzij een Cloudflare Tunnel die als systemd-service draait.
+
+**Configuratie (eenmalig gedaan, geen actie vereist):**
+- Cloudflare Tunnel ID: `ca12e4f6-fa0d-4f39-8868-e729d9369c5c`
+- Systemd-service: `cloudflared.service` (autostart bij boot)
+- Config: `~/.cloudflared/config.yml` — ingress `waterlab.felixisfelix.com` → `http://localhost:8000`
+- DNS: CNAME `waterlab.felixisfelix.com` → `<tunnel-id>.cfargotunnel.com` (proxied)
+
+**Service beheren:**
+```bash
+sudo systemctl status cloudflared    # status controleren
+sudo systemctl restart cloudflared   # herstarten na config-wijziging
+sudo systemctl stop cloudflared      # stoppen
+```
+
+**Let op:** uvicorn moet draaien op `--host 0.0.0.0` (niet `127.0.0.1`) zodat cloudflared er bij kan.
+
+---
+
+## Stap 8 — Ensemble AI simulatie draaien
+
+Vereist dat stappen 1–5 klaar zijn en dat de llama.cpp server actief is op poort 8080.
+
+```bash
+python run_ensemble.py
+```
+
+Het script voert vijf opeenvolgende Wflow-simulaties uit met neerslagfactoren ×0.70, ×0.85, ×1.00, ×1.15 en ×1.30, berekent ensemble-statistieken (P10/gemiddelde/P90) en laat Qwen2.5-32B een interpretatie genereren.
+
+Verwachte output:
+```
+INFO: Ensemble gestart — 5 scenario's
+INFO: [1/5] Scenario droog (precip ×0.70) ...
+INFO: [1/5] klaar — piek 680 m³/s op 1995-01-28
+INFO: [2/5] Scenario normaal_droog (precip ×0.85) ...
+...
+INFO: [5/5] klaar — piek 1020 m³/s op 1995-01-31
+INFO: Statistieken berekend: P10=680 | gemiddelde=849 | P90=1020 m³/s
+INFO: LLM-interpretatie genereren (Qwen2.5-32B) ...
+INFO: Interpretatie klaar (412 tokens)
+INFO: Geschreven: /mnt/nvme/waterlab/ensemble/outputs/ensemble_stats.json
+INFO: Geschreven: /mnt/nvme/waterlab/ensemble/outputs/interpretation.txt
+INFO: Ensemble klaar.
+```
+
+Looptijd: ~25–100 minuten (5 × simulatietijd + LLM inferentie).
+
+**Data-locatie:** `/mnt/nvme/waterlab/ensemble/outputs/`
+- `ensemble_stats.json` — scenario-resultaten en tijdreeksen (P10/mean/P90)
+- `interpretation.txt` — LLM-analyse in platte tekst
+
+**Vereist formaat `ensemble_stats.json`:**
+```json
+{
+  "scenarios": [
+    {"name": "droog",        "multiplier": 0.70, "peak_q": 680,  "peak_date": "1995-01-28", "days_above": 3},
+    {"name": "normaal_droog","multiplier": 0.85, "peak_q": 765,  "peak_date": "1995-01-29", "days_above": 5},
+    {"name": "baseline",     "multiplier": 1.00, "peak_q": 849,  "peak_date": "1995-01-30", "days_above": 8},
+    {"name": "normaal_nat",  "multiplier": 1.15, "peak_q": 934,  "peak_date": "1995-01-30", "days_above": 10},
+    {"name": "nat",          "multiplier": 1.30, "peak_q": 1020, "peak_date": "1995-01-31", "days_above": 12}
+  ],
+  "timeseries": {
+    "dates":  ["1995-01-01", "1995-01-02", "..."],
+    "q_p10":  [120, 135, "..."],
+    "q_mean": [145, 162, "..."],
+    "q_p90":  [170, 190, "..."]
+  }
+}
+```
+
+**Bij `Connection refused` op poort 8080:** llama.cpp server is niet actief. Start hem apart of sla de LLM-stap over — `ensemble_stats.json` zonder `interpretation.txt` werkt ook; het dashboard toont dan "Geen AI-interpretatie beschikbaar".
+
+**Bij `FileNotFoundError` voor run_ensemble.py:** het ensemble-systeem (stap 8 van het implementatieplan) is nog niet gebouwd. Zie `docs/superpowers/plans/2026-06-04-wflow-ensemble-ai.md`.
+
+Resultaat: de **Ensemble AI**-tab in het dashboard toont automatisch de resultaten zodra het dashboard (stap 6) draait.
 
 ---
 
@@ -207,10 +346,16 @@ Stoppen: `Ctrl+C`.
 cd /home/bob/waterlab/wflow_ijssel
 source .venv/bin/activate
 
-python build_staticmaps_copernicus.py   # stap 1  (~5-10 min, eenmalig)
-python download_forcing.py              # stap 2c (~5-30 min, CDS wachtrij)
-python download_inflow.py               # stap 3  (~1 min)
-julia --project=. run_ijssel.jl         # stap 4  (~5-20 min)
-python export_output.py                 # stap 5  (~1 min)
-python -m uvicorn dashboard.server:app --host 127.0.0.1 --port 8000  # stap 6
+python build_staticmaps_copernicus.py   # stap 1   (~5-10 min, eenmalig)
+python download_river_geom.py           # stap 1b  (~1 min, eenmalig)
+python fix_staticmaps.py                # stap 1b  (~1 min, eenmalig)
+python download_forcing.py              # stap 2c  (~5-30 min, CDS wachtrij)
+python download_inflow.py               # stap 3   (~1 min)
+julia --project=. run_ijssel.jl         # stap 4   (~5-20 min)
+python export_output.py                 # stap 5   (~1 min)
+python -m uvicorn dashboard.server:app --host 0.0.0.0 --port 8000  # stap 6
+# Dashboard: http://127.0.0.1:8000  of  https://waterlab.felixisfelix.com
+
+python run_ensemble.py                  # stap 8   (~25-100 min, optioneel)
+# Ensemble AI-tab zichtbaar na herstart dashboard
 ```
