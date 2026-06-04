@@ -42,8 +42,10 @@ def generate_scenarios(settings: dict, out_dir: Path) -> list[dict]:
         toml_out = scenario_dir / "config.toml"
         cfg = copy.deepcopy(base_toml)
         cfg["input"]["path_forcing"] = str(forcing_out.resolve())
-        cfg.setdefault("output", {})["path"] = str((scenario_dir / "output.nc").resolve())
         cfg["dir_output"] = str(scenario_dir.resolve())
+
+        # Derive expected output NC name from the config (relative to dir_output)
+        output_nc_name = cfg["output"]["netcdf_grid"]["path"]
 
         with open(toml_out, "wb") as f:
             tomli_w.dump(cfg, f)
@@ -53,7 +55,7 @@ def generate_scenarios(settings: dict, out_dir: Path) -> list[dict]:
             "multiplier":  mult,
             "forcing_path": str(forcing_out),
             "config_path":  str(toml_out),
-            "output_nc":    str(scenario_dir / "output.nc"),
+            "output_nc":    str(scenario_dir / output_nc_name),
             "output_dir":   str(scenario_dir),
         })
 
