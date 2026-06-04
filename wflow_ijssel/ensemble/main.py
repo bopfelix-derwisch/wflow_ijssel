@@ -58,8 +58,28 @@ def run_pipeline(settings_path: Path, dry_run: bool = False) -> None:
 
     print("\n=== Stap 3: Ensemble-statistieken ===")
     stats = compute_ensemble_stats(results)
+
+    # Dashboard-compatible format: scenarios[] + timeseries{}
+    dashboard_stats = {
+        "scenarios": [
+            {
+                "name":       r["name"],
+                "multiplier": r["multiplier"],
+                "peak_q":     r["peak_q"],
+                "peak_date":  r["peak_date"],
+                "days_above": r["days_above_threshold"],
+            }
+            for r in results
+        ],
+        "timeseries": {
+            "dates":  stats["dates"],
+            "q_p10":  stats["q_p10"],
+            "q_mean": stats["q_mean"],
+            "q_p90":  stats["q_p90"],
+        },
+    }
     stats_path = outputs_dir / "ensemble_stats.json"
-    save_json(stats, stats_path)
+    save_json(dashboard_stats, stats_path)
     print(f"  Hotspot: {stats['hotspot_date']} (spread {stats['hotspot_spread']} m³/s)")
     print(f"  Resultaat: {stats_path}")
 
