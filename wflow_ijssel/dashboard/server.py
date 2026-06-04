@@ -131,6 +131,21 @@ def get_ensemble():
     return JSONResponse({"available": True, "interpretation": interpretation, **stats})
 
 
+MULTIMODEL_DIR = Path("/home/bob/waterlab/multimodel_data/outputs")
+
+
+@app.get("/api/multimodel")
+def get_multimodel():
+    stats_path = MULTIMODEL_DIR / "multimodel_stats.json"
+    if not stats_path.exists():
+        return JSONResponse({"available": False})
+    try:
+        stats = json.loads(stats_path.read_text())
+    except Exception:
+        return JSONResponse({"available": False})
+    return JSONResponse({"available": True, **stats})
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)
