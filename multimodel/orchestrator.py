@@ -92,6 +92,6 @@ def orchestrate(network_result: dict, settings: dict) -> dict:
         critical_node=critical,
         catchment_map=catchment_map,
         multipliers=multipliers,
-        scenario_name=names,
+        scenario_names=names,
         llm_explanation=explanation,
     )
