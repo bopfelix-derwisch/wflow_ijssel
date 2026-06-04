@@ -1110,6 +1110,51 @@
     Multimodel pipeline nog niet uitgevoerd. Draai: <code>python run_multimodel.py</code>
   </div>
   <div id="multimodel-content" style="display:none;">
+
+    <!-- Inleiding -->
+    <div style="background:#0d1b2a; border:1px solid #2a3a50; border-radius:8px; padding:1.2rem 1.4rem; margin-bottom:1.5rem;">
+      <h3 style="color:#90caf9; margin:0 0 .8rem 0;">AI-Orchestrated Multimodel Water System</h3>
+      <p style="color:#ccc; line-height:1.8; margin-bottom:.8rem;">
+        Dit dashboard demonstreert een geïntegreerde AI-pipeline waarbij een <strong>landelijk waternetworkmodel</strong>
+        en een <strong>lokaal hydrologisch model</strong> (wflow SBM) samenwerken onder regie van een grote taalmodel (LLM).
+        De workflow is als volgt:
+      </p>
+      <ol style="color:#aaa; line-height:2; margin:0 0 .8rem 1.2rem; padding:0;">
+        <li><strong style="color:#90caf9;">Netwerk</strong> — Het Rijn/IJssel-netwerk simuleert de waterstandsverdeling over vier knooppunten onder een droogtescenario.</li>
+        <li><strong style="color:#90caf9;">AI-detectie</strong> — De orchestrator (Qwen2.5-32B) identificeert automatisch het meest kritieke knooppunt op basis van waterdeficit.</li>
+        <li><strong style="color:#90caf9;">Detailmodel</strong> — wflow SBM draait een ensemble van vijf droogte-scenario's voor het geselecteerde stroomgebied.</li>
+        <li><strong style="color:#90caf9;">Interpretatie</strong> — De AI genereert een hydrologische beslissingsmotivatie voor de waterbeheerder.</li>
+      </ol>
+      <p style="color:#aaa; line-height:1.8; margin:0;">
+        Het systeem draait volledig lokaal op een <strong>NVIDIA Jetson AGX Orin</strong> (ARM edge hardware) —
+        zonder cloud, zonder externe API's. Zowel de wflow-simulaties als de LLM-inferentie worden on-device uitgevoerd.
+      </p>
+    </div>
+
+    <!-- Kaart-toelichting -->
+    <div style="background:#0d1b2a; border:1px solid #2a3a50; border-radius:8px; padding:1rem 1.4rem; margin-bottom:1rem;">
+      <h4 style="color:#90caf9; margin:0 0 .5rem 0;">Rijn/IJssel netwerkkaart — droogtescenario zomer 2018</h4>
+      <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem;">
+        De kaart visualiseert het gesimuleerde waternetwerk. De gekleurde cirkels tonen het <strong>waterdeficit per knooppunt</strong>:
+        het percentage waarmee de gemiddelde berekende waterstand onder de veiligheidsdremelwaarde blijft.
+        De <strong>kritieke knoop</strong> (hoogste deficit) heeft een zwarte rand en triggert automatisch de wflow-detailmodellering.
+      </p>
+      <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem;">
+        <strong>Waarom 2018?</strong> De zomer van 2018 was de ernstigste droogte in Nederland sinds decennia.
+        De Lobith-afvoer daalde naar 500–700 m³/s (normaal ~2.000 m³/s in de zomer), waterstanden op de
+        Neder-Rijn, IJssel en Lek bereikten recordlaagtestanden, en de scheepvaart en zoetwaterinname kwamen
+        ernstig in gevaar. Als droogte-referentiescenario is 2018 daarmee de meest relevante en herkenbare
+        casus voor Nederlandse waterbeheerders. In dit prototype wordt de Lobith-inflow gesimuleerd als een
+        sinusvorm rond 600 m³/s — representatief voor de gemiddelde afvoer in die periode.
+      </p>
+      <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:12px; color:#888;">
+        <span>🟢 Deficit 0–20% — normaal</span>
+        <span>🟠 Deficit 20–50% — laag</span>
+        <span>🔴 Deficit &gt;50% — kritiek</span>
+        <span>⚫ rand = geselecteerde knoop</span>
+      </div>
+    </div>
+
     <div id="multimodel-map"></div>
     <div class="llm-block" style="border-left:4px solid #1565c0;">
       <strong>AI Beslissing</strong>
@@ -1176,6 +1221,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=13"></script>
+<script src="/static/app.js?v=14"></script>
 </body>
 </html>
