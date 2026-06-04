@@ -8,6 +8,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from dashboard.forecast import build_forecast
+
 ROOT       = Path(__file__).parent.parent
 STATIC_DIR = Path(__file__).parent
 
@@ -16,6 +18,8 @@ OUTPUT_DIRS = {
     "2021":      ROOT / "data" / "output_2021_real",   # echte gemeten inflow
     "2021synth": ROOT / "data" / "output_2021",        # synthetische inflow (vergelijking)
 }
+
+ENSEMBLE_DIR = Path("/mnt/nvme/waterlab/ensemble/outputs")
 
 app = FastAPI(title="IJssel Hoogwater Dashboard API")
 
@@ -97,6 +101,34 @@ def get_timeseries_legacy(station: str):
 @app.get("/api/river/{day}")
 def get_river_day_legacy(day: str):
     return get_river_day("1995", day)
+
+
+@app.get("/api/forecast")
+def get_forecast():
+    try:
+        return JSONResponse(build_forecast())
+    except Exception as e:
+        raise HTTPException(503, f"Voorspelling niet beschikbaar: {e}")
+
+
+@app.get("/api/ensemble")
+def get_ensemble():
+    stats_path  = ENSEMBLE_DIR / "ensemble_stats.json"
+    interp_path = ENSEMBLE_DIR / "interpretation.txt"
+
+    if not stats_path.exists():
+        return JSONResponse({"available": False})
+
+    try:
+        stats = json.loads(stats_path.read_text())
+    except Exception:
+        return JSONResponse({"available": False})
+
+    interpretation = ""
+    if interp_path.exists():
+        interpretation = interp_path.read_text().strip()
+
+    return JSONResponse({"available": True, "interpretation": interpretation, **stats})
 
 
 if __name__ == "__main__":

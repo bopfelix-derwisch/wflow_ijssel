@@ -127,9 +127,55 @@
     .compare-bar-ref  { height: 100%; border-radius: 4px; position: absolute; top: 0; left: 0; background: rgba(255,255,255,0.07); }
 
     /* ── uitleg panel ── */
-    .year-tab.active-uitleg { background: #01579b; border-color: #4fc3f7; color: #fff; }
+    .year-tab.active-uitleg    { background: #01579b; border-color: #4fc3f7; color: #fff; }
+    .year-tab.active-forecast  { background: #00695c; border-color: #4db6ac; color: #fff; }
+    .year-tab.active-ensemble  { background: #e65100; border-color: #ff6d00; color: #fff; }
+
+    /* ── ensemble panel ── */
+    #ensemble-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #ensemble-panel.visible { display: block; }
+    #ensemble-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    #ensemble-chart { width: 100%; height: 220px; margin: 0 0 16px; }
+    #ensemble-unavailable { text-align: center; padding: 60px 20px; }
+    #ensemble-unavailable .eu-icon  { font-size: 48px; display: block; margin-bottom: 16px; }
+    #ensemble-unavailable .eu-title { font-size: 16px; color: #666; margin-bottom: 8px; }
+    #ensemble-unavailable .eu-sub   { font-size: 12px; color: #555; line-height: 1.7; }
+    #ensemble-unavailable code { background: #0d1b2a; padding: 2px 6px; border-radius: 3px; }
+    .ensemble-scenario-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 0 0 20px; }
+    .ensemble-scenario-table th { background: #0d1b2a; color: #ffb74d; padding: 6px 10px; text-align: left; border-bottom: 1px solid #1a3a5c; }
+    .ensemble-scenario-table td { padding: 5px 10px; border-bottom: 1px solid #0d1b2a; color: #ccc; }
+    .ensemble-scenario-table tr:hover td { background: #0d1b2a; }
+    .ensemble-scenario-table .sc-baseline td { color: #fff; font-weight: 600; }
+    .llm-block { background: #0d1b2a; border: 1px solid #2a3a50; border-left: 3px solid #ffb74d; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; }
+    .llm-block .llm-header { font-size: 10px; color: #ffb74d; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+    .llm-block .llm-text   { font-size: 13px; color: #ccc; line-height: 1.7; }
+    .llm-block .llm-loading { color: #555; font-style: italic; }
     #uitleg-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #uitleg-panel.visible { display: block; }
+
+    /* ── forecast panel ── */
+    #forecast-panel { display: none; overflow-y: auto; max-height: calc(100vh - 52px); }
+    #forecast-panel.visible { display: block; }
+    #forecast-kpi-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 10px; padding: 10px 16px; background: #0a1220;
+      border-bottom: 1px solid #1a3a5c;
+    }
+    #forecast-kpi-row .kpi .value { color: #4db6ac; }
+    #forecast-kpi-row .kpi.alert-verhoogd .value { color: #ff9800; }
+    #forecast-kpi-row .kpi.alert-hoog .value     { color: #f44336; }
+    #forecast-source {
+      padding: 4px 16px 0; font-size: 10px; color: #556; text-align: right;
+      background: #0a1220; border-bottom: 1px solid #1a3a5c;
+    }
+    #forecast-chart-wrap { padding: 8px 16px 0; }
+    #forecast-chart  { width: 100%; height: 220px; }
+    #forecast-precip { width: 100%; height: 130px; }
+    #forecast-disclaimer {
+      margin: 0 16px 12px; padding: 8px 12px;
+      background: #0a1220; border: 1px solid #1a3a5c; border-radius: 6px;
+      font-size: 10px; color: #666; line-height: 1.6;
+    }
     .audience-header {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 16px; border-radius: 6px; margin: 0 0 20px;
@@ -184,7 +230,9 @@
   <div id="year-tabs">
     <button class="year-tab active-1995" data-year="1995">Jan 1995</button>
     <button class="year-tab" data-year="2021">Jul 2021</button>
+    <button class="year-tab" data-year="forecast">Verwachting</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
+    <button class="year-tab" data-year="ensemble">Ensemble AI</button>
     <button class="year-tab" data-year="uitleg">Uitleg</button>
   </div>
 </div>
@@ -526,6 +574,44 @@
   </div>
 
 </div><!-- /#info-panel -->
+
+<!-- ── forecast-view ── -->
+<div id="forecast-panel">
+  <div id="forecast-kpi-row">
+    <div class="kpi" id="fkpi-now">
+      <div class="label">Huidig debiet Kampen</div>
+      <div class="value" id="fval-now">—</div>
+      <div class="sub">m³/s · RWS + routing</div>
+    </div>
+    <div class="kpi" id="fkpi-peak">
+      <div class="label">Verwacht max 14 dagen</div>
+      <div class="value" id="fval-peak">—</div>
+      <div class="sub" id="fsub-peak">m³/s</div>
+    </div>
+    <div class="kpi" id="fkpi-precip">
+      <div class="label">Neerslag komende 14 d</div>
+      <div class="value" id="fval-precip">—</div>
+      <div class="sub">mm totaal · Open-Meteo</div>
+    </div>
+    <div class="kpi" id="fkpi-alert">
+      <div class="label">Waakzaamheidsniveau</div>
+      <div class="value" id="fval-alert">—</div>
+      <div class="sub" id="fsub-alert">drempel: 1500 m³/s</div>
+    </div>
+  </div>
+  <div id="forecast-source" id="forecast-source-bar">—</div>
+  <div id="forecast-chart-wrap">
+    <div id="forecast-chart"></div>
+    <div id="forecast-precip"></div>
+  </div>
+  <div id="forecast-disclaimer">
+    ⚠ <strong>Indicatieve verwachting</strong> — geen gekalibreerd model.
+    Gebaseerd op statistisch recessiemodel toegepast op RWS Waterinfo debietsmeting (Westervoort)
+    + neerslagimpulsrespons (Open-Meteo ERA5/IFS, 14 dagen).
+    Marge neemt toe tot ±70% op dag 14. Gebruik RWS waterstandsberichten voor operationele beslissingen.
+    Bron: <strong>RWS Waterinfo</strong> (meting) · <strong>Open-Meteo</strong> (neerslag) · cache 15 min.
+  </div>
+</div>
 
 <!-- ── uitleg-view ── -->
 <div id="uitleg-panel">
@@ -873,9 +959,148 @@
 
 </div><!-- /#uitleg-panel -->
 
+<!-- ── ensemble-view ── -->
+<div id="ensemble-panel">
+
+  <!-- Niet beschikbaar -->
+  <div id="ensemble-unavailable">
+    <span class="eu-icon">🤖</span>
+    <div class="eu-title">Ensemble nog niet uitgevoerd</div>
+    <div class="eu-sub">
+      Voer de ensemble simulatie uit om resultaten te zien:<br><br>
+      <code>python run_ensemble.py</code><br><br>
+      De vijf scenario's (neerslag ×0.70 t/m ×1.30) worden sequentieel gesimuleerd
+      en de resultaten worden hier automatisch zichtbaar.
+    </div>
+  </div>
+
+  <!-- Data beschikbaar -->
+  <div id="ensemble-content" style="display:none">
+
+    <!-- KPI's -->
+    <div id="ensemble-kpi-row">
+      <div class="info-card">
+        <div class="ic-label">Scenario bereik piek Q</div>
+        <div class="ic-value" id="ens-kpi-range" style="color:#ffb74d">—</div>
+        <div class="ic-sub">droog → nat scenario</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Baseline piek Q</div>
+        <div class="ic-value" id="ens-kpi-baseline" style="color:#fff">—</div>
+        <div class="ic-sub">neerslag ×1.00</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">P10–P90 max spread</div>
+        <div class="ic-value" id="ens-kpi-spread" style="color:#4db6ac">—</div>
+        <div class="ic-sub">onzekerheidsbreedte</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Ensemble piekdag</div>
+        <div class="ic-value" id="ens-kpi-hotspot" style="color:#f44336">—</div>
+        <div class="ic-sub">gemiddeld over scenario's</div>
+      </div>
+    </div>
+
+    <!-- Grafiek -->
+    <div class="info-section" style="margin-bottom:8px">
+      <h2>Onzekerheidsband — debiet bij Kampen (m³/s)</h2>
+    </div>
+    <div id="ensemble-chart"></div>
+
+    <!-- LLM interpretatie -->
+    <div class="llm-block">
+      <div class="llm-header">🤖 AI-interpretatie (Qwen2.5-32B · lokaal)</div>
+      <div class="llm-text" id="ens-llm-text"><span class="llm-loading">Laden...</span></div>
+    </div>
+
+    <!-- Scenario tabel -->
+    <div class="info-section" style="margin-bottom:8px">
+      <h2>Scenario vergelijking</h2>
+    </div>
+    <table class="ensemble-scenario-table">
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th>Neerslagfactor</th>
+          <th>Piek Q Kampen</th>
+          <th>Piekdatum</th>
+          <th>Dagen &gt; 1500 m³/s</th>
+        </tr>
+      </thead>
+      <tbody id="ens-scenario-tbody">
+        <tr><td colspan="5" style="color:#555;text-align:center">Laden...</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Uitleg -->
+    <div class="audience-header" style="background:linear-gradient(135deg,#bf360c,#7f2008);margin-top:8px">
+      <span class="aud-icon">🎲</span>
+      <span class="aud-title">Wat is ensemble-analyse?</span>
+      <span class="aud-sub">Onzekerheid kwantificeren in hydrologische voorspellingen</span>
+    </div>
+
+    <div class="info-section">
+      <h2>Principe: variaties op het basisscenario</h2>
+      <p>
+        Een <span class="highlight">ensemble</span> is een collectie van meerdere simulaties,
+        elk met licht andere invoer. Door de neerslagfactor systematisch te variëren
+        (van ×0,70 tot ×1,30) wordt de gevoeligheid van het model voor
+        onzekerheid in de forcingdata zichtbaar.
+      </p>
+      <div class="sim-steps" style="margin:14px 0">
+        <div class="sim-step">
+          <span class="ss-icon">🌧</span>
+          <div class="ss-label">ERA5 neerslag</div>
+          <div class="ss-sub">historisch · ×0.70–×1.30</div>
+        </div>
+        <div class="sim-sep">→</div>
+        <div class="sim-step">
+          <span class="ss-icon">🔄</span>
+          <div class="ss-label">5 Wflow runs</div>
+          <div class="ss-sub">sequentieel op Jetson</div>
+        </div>
+        <div class="sim-sep">→</div>
+        <div class="sim-step">
+          <span class="ss-icon">📊</span>
+          <div class="ss-label">Statistieken</div>
+          <div class="ss-sub">P10 · gemiddelde · P90</div>
+        </div>
+        <div class="sim-sep">→</div>
+        <div class="sim-step">
+          <span class="ss-icon">🤖</span>
+          <div class="ss-label">LLM analyse</div>
+          <div class="ss-sub">Qwen2.5-32B · lokaal</div>
+        </div>
+      </div>
+      <p>
+        De <span class="highlight">P10–P90 band</span> geeft aan: als de werkelijke neerslag
+        10–30% afwijkt van de ERA5-schatting, kan het piekdebiet in dit bereik vallen.
+        Een smalle band duidt op een robuust resultaat; een brede band op hoge gevoeligheid.
+      </p>
+    </div>
+
+    <div class="info-section">
+      <h2>Operationele context — EFAS en Deltares</h2>
+      <p>
+        Het <span class="highlight">EFAS-systeem</span> (European Flood Awareness System)
+        van Deltares/JRC maakt standaard gebruik van ensembles met 50+ leden van het ECMWF ENS-model.
+        Dit prototype demonstreert dezelfde aanpak op een edge-apparaat: vijf scenario's
+        in plaats van vijftig, maar hetzelfde principe.
+      </p>
+      <ul>
+        <li><span class="highlight">Onzekerheidsrapportage:</span> "Piekdebiet 700–1100 m³/s" is informatiever dan één getal</li>
+        <li><span class="highlight">Beslissingsbomen:</span> waterkeringbeheerders handelen anders bij P90 &gt; drempel versus P10 &gt; drempel</li>
+        <li><span class="highlight">Edge-computing:</span> de Jetson Orin voert 5 runs sequentieel uit zonder cloud — relevant voor crisisomstandigheden</li>
+      </ul>
+    </div>
+
+  </div><!-- /#ensemble-content -->
+
+</div><!-- /#ensemble-panel -->
+
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=9"></script>
+<script src="/static/app.js?v=11"></script>
 </body>
 </html>
