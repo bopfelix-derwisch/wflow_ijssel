@@ -1133,19 +1133,25 @@
 
     <!-- Kaart-toelichting -->
     <div style="background:#0d1b2a; border:1px solid #2a3a50; border-radius:8px; padding:1rem 1.4rem; margin-bottom:1rem;">
-      <h4 style="color:#90caf9; margin:0 0 .5rem 0;">Rijn/IJssel netwerkkaart — droogtescenario zomer 2018</h4>
+      <h4 style="color:#90caf9; margin:0 0 .5rem 0;">Rijn/IJssel netwerkmodel — synthetisch droogtescenario (referentie: zomer 2018)</h4>
       <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem;">
         De kaart visualiseert het gesimuleerde waternetwerk. De gekleurde cirkels tonen het <strong>waterdeficit per knooppunt</strong>:
         het percentage waarmee de gemiddelde berekende waterstand onder de veiligheidsdremelwaarde blijft.
         De <strong>kritieke knoop</strong> (hoogste deficit) heeft een zwarte rand en triggert automatisch de wflow-detailmodellering.
       </p>
       <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem;">
-        <strong>Waarom 2018?</strong> De zomer van 2018 was de ernstigste droogte in Nederland sinds decennia.
+        <strong>Waarom 2018 als referentie?</strong> De zomer van 2018 was de ernstigste droogte in Nederland sinds decennia.
         De Lobith-afvoer daalde naar 500–700 m³/s (normaal ~2.000 m³/s in de zomer), waterstanden op de
         Neder-Rijn, IJssel en Lek bereikten recordlaagtestanden, en de scheepvaart en zoetwaterinname kwamen
-        ernstig in gevaar. Als droogte-referentiescenario is 2018 daarmee de meest relevante en herkenbare
-        casus voor Nederlandse waterbeheerders. In dit prototype wordt de Lobith-inflow gesimuleerd als een
-        sinusvorm rond 600 m³/s — representatief voor de gemiddelde afvoer in die periode.
+        ernstig in gevaar. In dit prototype wordt de Lobith-inflow gesimuleerd als een synthetische sinusvorm
+        rond 600 m³/s — representatief voor de gemiddelde afvoer in die periode. Dit is het <em>netwerkmodel</em>.
+      </p>
+      <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem; border-left:3px solid #1565c0; padding-left:.8rem;">
+        <strong>Let op:</strong> Het netwerkmodel gebruikt een synthetisch 2018-scenario voor de Lobith-inflow.
+        Het <strong>wflow-ensemble hieronder</strong> gebruikt de bestaande ERA5-forcing van
+        <strong>december 1994 – januari 1995</strong> (dezelfde hydrologische dataset als de Jan 1995-tab op dit dashboard),
+        met neerslagreductie via multipliers ×0.10–×0.80 om droogte-scenario's te simuleren.
+        De datums in de grafiek en tabel zijn daarom 1994–1995, niet 2018.
       </p>
       <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:12px; color:#888;">
         <span>🟢 Deficit 0–20% — normaal</span>
@@ -1161,7 +1167,7 @@
       <p id="mm-trigger-reason" style="font-weight:bold; color:#1565c0;"></p>
       <p id="mm-llm-text"></p>
     </div>
-    <h3>wflow Droogte-ensemble</h3>
+    <h3>wflow Droogte-ensemble <small style="font-size:13px; color:#888; font-weight:normal;">— ERA5 dec 1994 – jan 1995 · neerslags reductie ×0.10–×0.80</small></h3>
     <div id="mm-ensemble-chart"></div>
     <table class="ensemble-scenario-table">
       <thead><tr><th>Scenario</th><th>Multiplier</th><th>Piek (m³/s)</th><th>Piekdatum</th><th>Dagen &gt; drempel</th></tr></thead>
@@ -1221,6 +1227,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=14"></script>
+<script src="/static/app.js?v=15"></script>
 </body>
 </html>
