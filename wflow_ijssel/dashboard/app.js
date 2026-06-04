@@ -102,6 +102,8 @@ function switchYear(year) {
     uitlegPnl.classList.remove("visible");
     forecastPnl.classList.remove("visible");
     ensemblePnl.classList.remove("visible");
+    const mmPnl = document.getElementById("multimodel-panel");
+    if (mmPnl) mmPnl.classList.remove("visible");
   }
 
   if (year === "forecast") {
@@ -137,6 +139,17 @@ function switchYear(year) {
     return;
   }
 
+  if (year === "multimodel") {
+    hideAll();
+    document.getElementById("multimodel-panel").classList.add("visible");
+    banner.textContent = "Multimodel · Rijn/IJssel netwerk → AI → wflow droogte-ensemble";
+    document.getElementById("alert-badge").textContent = "🌐 Multimodel";
+    document.getElementById("alert-badge").style.background = "#1565c0";
+    document.body.className = "";
+    loadMultimodel();
+    return;
+  }
+
   if (year === "uitleg") {
     hideAll();
     uitlegPnl.classList.add("visible");
@@ -153,6 +166,8 @@ function switchYear(year) {
   uitlegPnl.classList.remove("visible");
   forecastPnl.classList.remove("visible");
   ensemblePnl.classList.remove("visible");
+  const mmPnlSim = document.getElementById("multimodel-panel");
+  if (mmPnlSim) mmPnlSim.classList.remove("visible");
 
   const cfg = YEAR_CONFIG[year];
   document.body.className = cfg.themeClass;
@@ -766,4 +781,102 @@ function renderEnsembleScenarios(d) {
     </tr>`;
   });
   document.getElementById("ens-scenario-tbody").innerHTML = rows.join("");
+}
+
+let mmLeafletMap = null;
+
+async function loadMultimodel() {
+  const unavail = document.getElementById("multimodel-unavailable");
+  const content = document.getElementById("multimodel-content");
+  try {
+    const resp = await fetch("/api/multimodel");
+    const data = await resp.json();
+    if (!data.available) {
+      unavail.style.display = "block";
+      content.style.display = "none";
+      return;
+    }
+    unavail.style.display = "none";
+    content.style.display = "block";
+    renderMultimodelMap(data);
+    document.getElementById("mm-trigger-reason").textContent =
+      data.orchestrator.trigger_reason;
+    document.getElementById("mm-llm-text").textContent =
+      data.orchestrator.llm_explanation;
+    renderMultimodelChart(data);
+    renderMultimodelScenarios(data);
+  } catch (e) {
+    unavail.style.display = "block";
+    content.style.display = "none";
+  }
+}
+
+function renderMultimodelMap(d) {
+  if (mmLeafletMap) {
+    mmLeafletMap.remove();
+    mmLeafletMap = null;
+  }
+  mmLeafletMap = L.map("multimodel-map").setView([52.1, 5.9], 8);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(mmLeafletMap);
+
+  const rivers = [
+    [[51.862, 6.112], [51.850, 6.000], [51.960, 5.970]],
+    [[51.960, 5.970], [52.252, 6.157], [52.555, 5.921]],
+    [[51.960, 5.970], [51.960, 5.800], [51.900, 5.000]],
+  ];
+  rivers.forEach(r => L.polyline(r, {color: "#1565c0", weight: 3, opacity: 0.7})
+    .addTo(mmLeafletMap));
+
+  const criticalNode = d.ribasim.critical_node;
+  d.ribasim.nodes.forEach(node => {
+    const deficit = node.deficit_pct;
+    const color   = deficit > 50 ? "#d32f2f" : deficit > 20 ? "#f57c00" : "#388e3c";
+    const isCrit  = node.name === criticalNode;
+    const circle  = L.circleMarker([node.lat, node.lon], {
+      radius:      isCrit ? 14 : 10,
+      fillColor:   color,
+      color:       isCrit ? "#000" : "#fff",
+      weight:      isCrit ? 3 : 1,
+      fillOpacity: 0.85,
+    }).addTo(mmLeafletMap);
+    circle.bindPopup(
+      `<b>${node.name}</b><br>` +
+      `Peil: ${node.mean_level.toFixed(3)} m NAP<br>` +
+      `Drempel: ${node.threshold_level} m<br>` +
+      `Deficit: <b>${node.deficit_pct.toFixed(1)}%</b>` +
+      (isCrit ? "<br><b>⚠ Kritieke knoop</b>" : "")
+    );
+  });
+
+  L.marker([51.862, 6.112])
+    .bindPopup("<b>Lobith</b><br>Bovenstroomse inflow")
+    .addTo(mmLeafletMap);
+}
+
+function renderMultimodelChart(d) {
+  const ts = d.ensemble.timeseries;
+  const traces = [
+    {x: ts.dates, y: ts.q_p10,  name: "P10",  line: {color: "#90caf9", dash: "dash"}},
+    {x: ts.dates, y: ts.q_mean, name: "Gemiddeld", line: {color: "#1565c0", width: 2}},
+    {x: ts.dates, y: ts.q_p90,  name: "P90",  line: {color: "#ef9a9a", dash: "dash"}},
+  ];
+  Plotly.newPlot("mm-ensemble-chart", traces, {
+    margin: {t: 10, b: 40, l: 50, r: 10},
+    yaxis:  {title: "Afvoer (m³/s)"},
+    legend: {orientation: "h"},
+    paper_bgcolor: "transparent", plot_bgcolor: "transparent",
+  });
+}
+
+function renderMultimodelScenarios(d) {
+  const tbody = document.getElementById("mm-scenario-tbody");
+  tbody.innerHTML = "";
+  d.ensemble.scenarios.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${s.name}</td><td>×${s.multiplier.toFixed(2)}</td>` +
+      `<td>${s.peak_q}</td><td>${s.peak_date}</td><td>${s.days_above}</td>`;
+    tbody.appendChild(tr);
+  });
 }

@@ -130,6 +130,10 @@
     .year-tab.active-uitleg    { background: #01579b; border-color: #4fc3f7; color: #fff; }
     .year-tab.active-forecast  { background: #00695c; border-color: #4db6ac; color: #fff; }
     .year-tab.active-ensemble  { background: #e65100; border-color: #ff6d00; color: #fff; }
+    .year-tab.active-multimodel { background: #1565c0; }
+    #multimodel-panel { display: none; }
+    #multimodel-panel.visible { display: block; }
+    #multimodel-map { height: 350px; width: 100%; border-radius: 8px; margin-bottom: 1rem; }
 
     /* ── ensemble panel ── */
     #ensemble-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
@@ -221,6 +225,8 @@
     .sim-step .ss-sub   { font-size: 10px; color: #888; margin-top: 3px; }
     .sim-sep { color: #2a4a6a; font-size: 20px; padding-top: 20px; align-self: flex-start; }
   </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -233,6 +239,7 @@
     <button class="year-tab" data-year="forecast">Verwachting</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
     <button class="year-tab" data-year="ensemble">Ensemble AI</button>
+    <button class="year-tab" data-year="multimodel">Multimodel</button>
     <button class="year-tab" data-year="uitleg">Uitleg</button>
   </div>
 </div>
@@ -1098,9 +1105,29 @@
 
 </div><!-- /#ensemble-panel -->
 
+<div id="multimodel-panel">
+  <div id="multimodel-unavailable" style="display:none; padding:2rem; text-align:center; color:#888;">
+    Multimodel pipeline nog niet uitgevoerd. Draai: <code>python run_multimodel.py</code>
+  </div>
+  <div id="multimodel-content" style="display:none;">
+    <div id="multimodel-map"></div>
+    <div class="llm-block" style="border-left:4px solid #1565c0;">
+      <strong>AI Beslissing</strong>
+      <p id="mm-trigger-reason" style="font-weight:bold; color:#1565c0;"></p>
+      <p id="mm-llm-text"></p>
+    </div>
+    <h3>wflow Droogte-ensemble</h3>
+    <div id="mm-ensemble-chart"></div>
+    <table class="ensemble-scenario-table">
+      <thead><tr><th>Scenario</th><th>Multiplier</th><th>Piek (m³/s)</th><th>Piekdatum</th><th>Dagen &gt; drempel</th></tr></thead>
+      <tbody id="mm-scenario-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=11"></script>
+<script src="/static/app.js?v=12"></script>
 </body>
 </html>
