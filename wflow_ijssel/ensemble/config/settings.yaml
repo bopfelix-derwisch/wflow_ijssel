@@ -1,0 +1,23 @@
+wflow_root: "/home/bob/waterlab/wflow_ijssel"
+base_forcing: "data/input/forcing-ijssel.nc"
+base_config:  "data/output/ijssel_config.toml"
+julia_project: "/home/bob/waterlab/wflow_ijssel"
+run_script:   "run_ijssel.jl"
+
+ensemble_data_root: "/mnt/nvme/waterlab/ensemble"
+
+scenarios:
+  parameter: "precip_multiplier"
+  values: [0.70, 0.85, 1.00, 1.15, 1.30]
+  names:  ["droog", "normaal_droog", "baseline", "normaal_nat", "nat"]
+
+llm:
+  base_url: "http://127.0.0.1:8080"
+  model:    "qwen2.5-32b-instruct-q4_k_m-00001-of-00005.gguf"
+  max_tokens: 600
+  temperature: 0.3
+
+analysis:
+  station_lon: 5.921
+  station_lat: 52.555
+  threshold_q: 1500.0
