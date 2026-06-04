@@ -37,6 +37,8 @@ def generate_scenarios(settings: dict, out_dir: Path) -> list[dict]:
         if not forcing_out.exists():
             with xr.open_dataset(base_forcing) as ds:
                 ds["precip"] = (ds["precip"] * mult).clip(min=0)
+                if "inflow" in ds:
+                    ds["inflow"] = (ds["inflow"] * mult).clip(min=0)
                 ds.to_netcdf(str(forcing_out))
 
         toml_out = scenario_dir / "config.toml"

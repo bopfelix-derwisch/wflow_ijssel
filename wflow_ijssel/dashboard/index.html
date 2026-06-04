@@ -1151,11 +1151,11 @@
         rond 600 m³/s — representatief voor de gemiddelde afvoer in die periode. Dit is het <em>netwerkmodel</em>.
       </p>
       <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem; border-left:3px solid #1565c0; padding-left:.8rem;">
-        <strong>Let op:</strong> Het netwerkmodel gebruikt een synthetisch 2018-scenario voor de Lobith-inflow.
-        Het <strong>wflow-ensemble hieronder</strong> gebruikt de bestaande ERA5-forcing van
-        <strong>december 1994 – januari 1995</strong> (dezelfde hydrologische dataset als de Jan 1995-tab op dit dashboard),
-        met neerslagreductie via multipliers ×0.10–×0.80 om droogte-scenario's te simuleren.
-        De datums in de grafiek en tabel zijn daarom 1994–1995, niet 2018.
+        <strong>Koppeling:</strong> Het netwerkmodel gebruikt een synthetisch 2018-scenario voor de Lobith-inflow.
+        Het <strong>wflow-ensemble hieronder</strong> gebruikt echte ERA5-Land forcing van
+        <strong>mei–augustus 2018</strong> — het werkelijke droogtejaar.
+        Neerslag én bovenstroomse afvoer (Westervoort) worden geschaald met multipliers ×0.10–×0.80
+        om droogte-ernstgraden te simuleren. De datums in de grafiek en tabel zijn daarom 2018.
       </p>
       <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:12px; color:#888;">
         <span>🟢 Deficit 0–20% — normaal</span>
@@ -1171,7 +1171,7 @@
       <p id="mm-trigger-reason" style="font-weight:bold; color:#1565c0;"></p>
       <p id="mm-llm-text"></p>
     </div>
-    <h3>wflow Droogte-ensemble <small style="font-size:13px; color:#888; font-weight:normal;">— ERA5 dec 1994 – jan 1995 · neerslags reductie ×0.10–×0.80</small></h3>
+    <h3>wflow Droogte-ensemble <small style="font-size:13px; color:#888; font-weight:normal;">— ERA5 mei–aug 2018 · neerslag + inflow reductie ×0.10–×0.80</small></h3>
     <div id="mm-ensemble-chart"></div>
     <table class="ensemble-scenario-table">
       <thead><tr><th>Scenario</th><th>Multiplier</th><th>Piek (m³/s)</th><th>Piekdatum</th><th>Dagen &gt; drempel</th></tr></thead>
@@ -1202,10 +1202,12 @@
 
       <h4 style="color:#ccc; margin-bottom:.5rem;">wflow SBM droogte-ensemble</h4>
       <p style="color:#aaa; line-height:1.7; margin-bottom:1rem;">
-        Voor het geselecteerde stroomgebied (IJssel) draait wflow SBM vijf neerslag-scenario's met
-        multipliers van ×0.10 tot ×0.80 — wat overeenkomt met extreem droog tot licht droog.
-        De modelperiode is december 1994 – januari 1995 (zelfde forcing als de overige simulaties op dit
-        dashboard). De grafiek toont P10/gemiddelde/P90 over de vijf scenario's; de tabel geeft de
+        Voor het geselecteerde stroomgebied (IJssel) draait wflow SBM vijf droogte-scenario's met
+        multipliers van ×0.10 tot ×0.80, toegepast op zowel <strong>neerslag</strong> als
+        <strong>bovenstroomse afvoer</strong> (Westervoort-inflow). Dit vertegenwoordigt droogte-ernstgraden
+        van extreem droog (10% van het 2018 zomerniveau) tot licht droog (80% van dat niveau).
+        De modelperiode is <strong>mei–augustus 2018</strong> (ERA5-Land, echte droogte-forcing).
+        De grafiek toont P10/gemiddelde/P90 over de vijf scenario's; de tabel geeft de
         piekafvoer bij Kampen per scenario.
       </p>
 
@@ -1231,6 +1233,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=16"></script>
+<script src="/static/app.js?v=17"></script>
 </body>
 </html>
