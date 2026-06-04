@@ -32,6 +32,9 @@ network:
       flow_fraction: 1.0
   catchment_map:
     "IJssel-Kampen": "ijssel"
+    "Neder-Rijn": "ijssel"
+    "Lek": "ijssel"
+    "Pannerdensch-Kanaal": "ijssel"
 
 llm:
   base_url: "http://127.0.0.1:8080"
