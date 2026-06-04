@@ -1,6 +1,6 @@
 wflow_root: "/home/bob/waterlab/wflow_ijssel"
 base_forcing: "data/input_2018/forcing-ijssel-2018.nc"
-base_config:  "data/output_2018/ijssel_config_2018.toml"
+base_config:  "ijssel_config_2018.toml"
 julia_project: "/home/bob/waterlab/wflow_ijssel"
 run_script:   "run_ijssel.jl"
 multimodel_data_root: "/home/bob/waterlab/multimodel_data"

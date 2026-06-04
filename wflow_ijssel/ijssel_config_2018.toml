@@ -1,0 +1,124 @@
+dir_input  = "data/input_2018"
+dir_output = "data/output_2018"
+
+[time]
+calendar   = "proleptic_gregorian"
+starttime  = 2018-05-01T00:00:00
+endtime    = 2018-08-31T00:00:00
+time_units = "days since 1900-01-01 00:00:00"
+timestepsecs = 86400
+
+[logging]
+loglevel = "info"
+
+[state]
+path_input  = "instates-ijssel.nc"
+path_output = "outstates-ijssel-2018.nc"
+
+[state.variables]
+vegetation_canopy_water__depth               = "canopystorage"
+soil_water_saturated_zone__depth             = "satwaterdepth"
+soil_layer_water_unsaturated_zone__depth     = "ustorelayerdepth"
+soil_surface__temperature                    = "tsoil"
+snowpack_dry_snow__leq_depth                 = "snow"
+snowpack_liquid_water__depth                 = "snowwater"
+land_surface_water__instantaneous_volume_flow_rate = "q_land"
+land_surface_water__depth                    = "h_land"
+subsurface_water__volume_flow_rate           = "ssf"
+river_water__instantaneous_volume_flow_rate  = "q_river"
+river_water__depth                           = "h_river"
+
+[input]
+path_forcing = "forcing-ijssel-2018.nc"
+path_static  = "staticmaps-ijssel.nc"
+
+basin__local_drain_direction = "wflow_ldd"
+river_location__mask         = "wflow_river"
+subbasin_location__count     = "wflow_subcatch"
+
+[input.forcing]
+atmosphere_water__precipitation_volume_flux            = "precip"
+land_surface_water__potential_evaporation_volume_flux  = "pet"
+atmosphere_air__temperature                            = "temp"
+river_water__external_inflow_volume_flow_rate          = "inflow"
+
+[input.static]
+land_surface__slope                                    = "Slope"
+river__length                                          = "wflow_riverlength"
+river__slope                                           = "RiverSlope"
+river_water_flow__manning_n_parameter                  = "N_River"
+river__width                                           = "wflow_riverwidth"
+river_bank_water__depth                                = "RiverDepth"
+river_bank_water__elevation                            = "RiverZ"
+
+land_surface_water_flow__manning_n_parameter           = "N"
+subsurface_water__horizontal_to_vertical_saturated_hydraulic_conductivity_ratio = "KsatHorFrac"
+compacted_soil__area_fraction                          = "PathFrac"
+land_water_covered__area_fraction                      = "WaterFrac"
+
+vegetation_canopy__light_extinction_coefficient        = "Kext"
+vegetation__specific_leaf_storage                      = "Sl"
+vegetation_wood_water__storage_capacity                = "Swood"
+vegetation_root__depth                                 = "RootingDepth"
+vegetation_canopy_water__mean_evaporation_to_mean_precipitation_ratio = "EoverR"
+
+soil_water__saturated_volume_fraction                  = "thetaS"
+soil_water__residual_volume_fraction                   = "thetaR"
+soil__thickness                                        = "SoilThickness"
+soil_layer_water__brooks_corey_exponent                = "c_layer"
+soil_water__vertical_saturated_hydraulic_conductivity_scale_parameter = "f"
+soil_water_saturated_zone_bottom__max_leakage_volume_flux = "MaxLeakage"
+soil_wet_root__sigmoid_function_shape_parameter        = "rootdistpar"
+soil_surface_water__infiltration_reduction_parameter   = "cf_soil"
+compacted_soil_surface_water__infiltration_capacity    = "InfiltCapPath"
+
+atmosphere_air__snowfall_temperature_threshold         = "TT"
+atmosphere_air__snowfall_temperature_interval          = "TTI"
+snowpack__melting_temperature_threshold                = "TTM"
+snowpack__degree_day_coefficient                       = "Cfmax"
+snowpack__liquid_water_holding_capacity                = "WHC"
+
+[input.static.soil_surface_water__vertical_saturated_hydraulic_conductivity]
+netcdf_variable_name = "KsatVer"
+scale  = 1.0
+offset = 0.0
+
+[input.cyclic]
+vegetation__leaf_area_index = "LAI"
+
+[model]
+type                               = "sbm"
+snow__flag                         = true
+cold_start__flag                   = true
+snow_gravitational_transport__flag = false
+kinematic_wave__adaptive_time_step_flag = false
+soil_layer__thickness              = [100, 300, 800]
+river_routing                      = "kinematic_wave"
+
+[output.netcdf_grid]
+path = "output_ijssel_2018.nc"
+
+[output.netcdf_grid.variables]
+river_water__depth            = "h_river"
+river_water__volume_flow_rate = "q_river"
+
+[output.csv]
+path = "output_ijssel_2018.csv"
+
+[[output.csv.column]]
+header       = "Q_kampen"
+coordinate.x = 5.496
+coordinate.y = 53.221
+parameter    = "river_water__volume_flow_rate"
+
+[[output.csv.column]]
+header       = "h_kampen"
+coordinate.x = 5.496
+coordinate.y = 53.221
+parameter    = "river_water__depth"
+
+[[output.csv.column]]
+header       = "Q_westervoort"
+coordinate.x = 6.154
+coordinate.y = 51.987
+parameter    = "river_water__volume_flow_rate"
