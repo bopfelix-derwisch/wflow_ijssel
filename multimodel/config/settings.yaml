@@ -1,0 +1,49 @@
+wflow_root: "/home/bob/waterlab/wflow_ijssel"
+base_forcing: "data/input/forcing-ijssel.nc"
+base_config:  "data/output/ijssel_config.toml"
+julia_project: "/home/bob/waterlab/wflow_ijssel"
+run_script:   "run_ijssel.jl"
+multimodel_data_root: "/home/bob/waterlab/multimodel_data"
+
+network:
+  simulation_days: 90
+  lobith_base_flow: 600.0
+  lobith_amplitude:  150.0
+  nodes:
+    - name: "IJssel-Kampen"
+      lon: 5.921
+      lat: 52.555
+      threshold_level: 0.5
+      flow_fraction: 0.30
+    - name: "Neder-Rijn"
+      lon: 5.800
+      lat: 51.960
+      threshold_level: 1.2
+      flow_fraction: 0.35
+    - name: "Lek"
+      lon: 5.000
+      lat: 51.900
+      threshold_level: 0.8
+      flow_fraction: 0.35
+    - name: "Pannerdensch-Kanaal"
+      lon: 6.000
+      lat: 51.850
+      threshold_level: 2.0
+      flow_fraction: 1.0
+  catchment_map:
+    "IJssel-Kampen": "ijssel"
+
+llm:
+  base_url: "http://127.0.0.1:8080"
+  model: "qwen2.5-32b-instruct-q4_k_m-00001-of-00005.gguf"
+  max_tokens: 400
+  temperature: 0.3
+
+analysis:
+  station_lon: 5.921
+  station_lat: 52.555
+  threshold_q: 800.0
+
+scenarios:
+  values: [0.10, 0.25, 0.40, 0.60, 0.80]
+  names:  ["extreem_droog", "droog", "matig_droog", "licht_droog", "normaal"]
