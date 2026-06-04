@@ -2,6 +2,9 @@
 
 Eenmalig uitvoeren. Vereist internettoegang (~500 MB download).
 Uitvoer: data/input/staticmaps-ijssel.nc en instates-ijssel.nc
+
+river_geom_fn: PDOK NWB Vaarwegen (download_river_geom.py) — corrigeert
+de D8-routing van MERIT voor de IJssel Zwolle→Kampen bocht.
 """
 import logging
 from pathlib import Path
@@ -15,6 +18,8 @@ ROOT = Path(__file__).parent
 INPUT = ROOT / "data" / "input"
 INPUT.mkdir(parents=True, exist_ok=True)
 
+RIVER_GEOM = INPUT / "river_geom_ijssel.gpkg"
+
 # Kampen: monding IJssel in IJsselmeer (~5.92°E, 52.55°N)
 OUTLET = [5.92, 52.55]
 RIVER_UPA = 30.0
@@ -22,8 +27,10 @@ RES = 0.008333
 
 
 def build() -> None:
+    assert RIVER_GEOM.exists(), f"Voer eerst download_river_geom.py uit: {RIVER_GEOM}"
     build_root = str(ROOT / "wflow_build")
     logger.info("HydroMT model bouwen in %s ...", build_root)
+    logger.info("river_geom_fn: %s", RIVER_GEOM)
 
     model = WflowModel(root=build_root, mode="w+", data_libs=["artifact_data"], logger=logger)
     model.build(
@@ -36,6 +43,7 @@ def build() -> None:
             },
             "setup_rivers": {
                 "hydrography_fn": "merit_hydro",
+                "river_geom_fn": str(RIVER_GEOM),
                 "river_upa": RIVER_UPA,
                 "river_length_ratio": 1.0,
             },

@@ -219,6 +219,46 @@ Change `isel(x=xi, y=yi)` → `isel(lon=xi, lat=yi)` throughout `export_output.p
 
 ---
 
+### 2.7 MERIT D8 routing: IJssel gaat na Zwolle naar het noordoosten in plaats van naar Kampen
+
+**Symptom:**  
+Dashboard-balken volgen na Zwolle (52.47°N, 6.17°E) een noordoostelijk pad richting Meppel/Friesland. De echte IJssel buigt hier naar het noordwesten naar Kampen (52.55°N, 5.92°E) en stroomt vervolgens in het Ketelmeer/IJsselmeer.
+
+**Root cause:**  
+MERIT Hydro's D8-algoritme berekent de lokale stroomrichting uit hoogtegradiënten in een 90 m DEM. In het vlakke Nederlandse polderlandschap zijn deze gradiënten kleiner dan de verticale ruis in het DEM. Het algoritme koos bij de Zwolle-bifurcatie ten onrechte voor NE, wat overeenkomt met het Zwarte Water/Meppeldiep-systeem in plaats van de Geldersche IJssel richting Kampen.
+
+**Technische details:**  
+- Het model-stroomgebied (`wflow_subcatch`) was berekend op basis van de verkeerde D8-routing en dekte daardoor de westelijke Zwolle→Kampen-corridor (lon < 6.06°E) niet.
+- Wflow's `flowgraph()` doet `to_node = searchsortedfirst(indices, to_index)`: als een actieve subcatch-cel wijst naar een cel buiten de subcatch, wijst `searchsortedfirst` naar de eerstvolgende actieve cel in gesorteerde volgorde — wat een zelf-lus (`from_node → from_node`) kan creëren en zo een "One or more cycles detected" fout veroorzaakt.
+- Cellen die al in de subcatch lagen maar voorheen `wflow_river=0` hadden, kregen `wflow_riverlength=0` — dit leidde na activering als rivier-cel tot "river length must be positive on river cells".
+
+**Fix applied:**  
+`fix_staticmaps.py` past drie arrays aan in `staticmaps-ijssel.nc`:
+
+1. **`wflow_ldd`**: junctiecel (52.4708°N, 6.1708°E) van NE→W; 57 cellen langs PDOK NWB-centerline bijgewerkt
+2. **`wflow_river`**: alle 57 ketencellen op 1 gezet
+3. **`wflow_subcatch`**: 40 cellen buiten het originele stroomgebied toegevoegd (subcatch-ID=1)
+
+Parameter-fill voor 55 cellen die ontbrekende waarden hadden:
+- Landparameters (`Slope`, bodem, vegetatie): nearest-neighbour uit bestaande subcatch-cellen
+- Rivierparameters (`wflow_riverlength`, `wflow_riverwidth`, `RiverSlope`, `RiverDepth`): nearest-neighbour uitsluitend uit bestaande **rivier**-cellen (om te voorkomen dat 0-waarden van niet-rivier-buren worden overgenomen)
+
+```python
+# Kern van de fix — drie cascaderende problemen opgelost:
+subcatch[yi, xi] = 1.0        # (1) voorkomt searchsortedfirst-zelf-lus → cycle
+ldd[yi, xi]      = ldd_new    # (2) correcte stroomrichting
+river[yi, xi]    = 1          # (3) riviercel activeren
+# + NN-fill voor alle statische parameters van de nieuwe/geactiveerde cellen
+```
+
+**Recommendation to Deltares:**
+- Voeg een pre-run validatiestap toe die controleert dat elke actieve subcatch-cel wijst naar een andere actieve cel (of een pit is). Dit vangt `searchsortedfirst`-cycli op vóór het model start.
+- De foutmelding "One or more cycles detected" geeft geen locatie. Voeg de CartesianIndex van de betrokken cellen toe.
+- Overweeg een HydroMT-optie om een gebruikersopgegeven vector-centerline (bijv. PDOK NWB) te gebruiken om D8-routing te overschrijven in vlakke gebieden, analoog aan de bestaande `river_geom_fn` parameter.
+- Documenteer dat `fix_staticmaps`-achtige correcties ook `wflow_subcatch` moeten bijwerken — niet alleen `wflow_ldd` en `wflow_river`.
+
+---
+
 ## 3. Summary table
 
 | # | Component | Problem | Fix | Effort |
@@ -236,6 +276,9 @@ Change `isel(x=xi, y=yi)` → `isel(lon=xi, lat=yi)` throughout `export_output.p
 | 8 | Python/xarray | `dask` not installed, `open_mfdataset` fails | `pip install dask` or pass `chunks=None` | Env fix |
 | 9 | Python/scipy | numpy 2.x / scipy 1.x binary incompatibility | `pip install --upgrade scipy` | Env fix |
 | 10 | Dashboard/browser | Old `app.js` cached by iPad Safari | `?v=N` cache-bust + `Cache-Control: no-store` | Code fix |
+| 11 | Input data/routing | MERIT D8 stuurt IJssel na Zwolle naar NE i.p.v. NW naar Kampen | PDOK-centerline branden in ldd + river + subcatch; NN-fill parameters | Data fix |
+| 11a | Wflow/network | Subcatch-cel buiten subcatch → `searchsortedfirst` zelf-lus → cycle-fout | `wflow_subcatch=1` voor alle ketencellen | Data fix |
+| 11b | Input data | Nieuw geactiveerde rivier-cellen hebben `riverlength=0` | Aparte NN-fill vanuit rivier-cellen voor river-specifieke parameters | Data fix |
 
 ---
 

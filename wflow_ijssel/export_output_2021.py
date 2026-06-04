@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__)
 
 ROOT          = Path(__file__).parent
 OUTPUT        = ROOT / "data" / "output_2021"
-RIVER_LAT_MAX = 52.63
+RIVER_LAT_MAX = 52.65
 MAX_Q_THR     = 150.0
-MIN_LON       = 6.025
+MIN_LON       = 5.80
 MAX_LON       = 6.25
 
-KAMPEN_LON,      KAMPEN_LAT      = 6.104, 52.654
+KAMPEN_LON,      KAMPEN_LAT      = 5.921, 52.555
 WESTERVOORT_LON, WESTERVOORT_LAT = 6.154, 51.987
 DISCHARGE_THRESHOLD = 1500.0
 
