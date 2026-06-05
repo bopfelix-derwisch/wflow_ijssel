@@ -59,7 +59,7 @@ function buildDays(start, end) {
 
 // ── state ─────────────────────────────────────────────────────────────────────
 
-let currentYear = "1995";
+let currentYear = "intro";
 let dayIdx      = 0;
 let playing     = false;
 let playTimer   = null;

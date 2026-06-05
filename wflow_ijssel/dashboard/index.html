@@ -137,7 +137,8 @@
     .year-tab.active-intro     { background: #263238; border-color: #78909c; color: #eceff1; }
 
     /* ── intro panel ── */
-    #intro-panel { display: none; overflow-y: auto; max-height: calc(100vh - 52px); }
+    #intro-panel { overflow-y: auto; max-height: calc(100vh - 52px); }
+    #intro-panel:not(.visible) { display: none; }
     #intro-panel.visible { display: block; }
     .intro-hero {
       background: linear-gradient(135deg, #0d1b2a 0%, #0a1520 60%, #0d2030 100%);
@@ -289,10 +290,10 @@
 
 <div id="header">
   <h1>🌊 IJssel Hoogwater Dashboard</h1>
-  <span class="badge" id="alert-badge">⏳ Laden...</span>
+  <span class="badge" id="alert-badge" style="background:#37474f">⚗ Waterlab</span>
   <div id="year-tabs">
-    <button class="year-tab" data-year="intro">Waterlab</button>
-    <button class="year-tab active-1995" data-year="1995">Jan 1995</button>
+    <button class="year-tab active-intro" data-year="intro">Waterlab</button>
+    <button class="year-tab" data-year="1995">Jan 1995</button>
     <button class="year-tab" data-year="2018">Zomer 2018</button>
     <button class="year-tab" data-year="2021">Jul 2021</button>
     <button class="year-tab" data-year="forecast">Verwachting</button>
@@ -304,11 +305,11 @@
 </div>
 
 <div id="event-banner">
-  Wflow SBM simulatie &nbsp;·&nbsp; Westervoort → Kampen &nbsp;·&nbsp; ERA5-Land forcing
+  IJssel Waterlab &nbsp;·&nbsp; experimentele onderzoeksomgeving &nbsp;·&nbsp; NVIDIA Jetson AGX Orin
 </div>
 
 <!-- ── simulatie-view ── -->
-<div id="sim-view">
+<div id="sim-view" style="display:none">
   <div id="kpi-row">
     <div class="kpi" id="kpi-peak">
       <div class="label">Piekafvoer Kampen</div>
@@ -1164,7 +1165,7 @@
 
 </div><!-- /#ensemble-panel -->
 
-<div id="intro-panel">
+<div id="intro-panel" class="visible">
   <!-- Hero -->
   <div class="intro-hero">
     <div class="intro-badge">⚗ Experimentele omgeving</div>
@@ -1538,6 +1539,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=20"></script>
+<script src="/static/app.js?v=21"></script>
 </body>
 </html>
