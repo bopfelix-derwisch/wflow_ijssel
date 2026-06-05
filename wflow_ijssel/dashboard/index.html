@@ -1124,7 +1124,7 @@
         De workflow is als volgt:
       </p>
       <ol style="color:#aaa; line-height:2; margin:0 0 .8rem 1.2rem; padding:0;">
-        <li><strong style="color:#90caf9;">Netwerk</strong> — Het Rijn/IJssel-netwerk simuleert de waterstandsverdeling over vier knooppunten onder een droogtescenario.</li>
+        <li><strong style="color:#90caf9;">Netwerk</strong> — <strong>Ribasim</strong> (Deltares, Julia-solver) simuleert de hydraulische waterstandsverdeling over vier knooppunten onder een droogtescenario.</li>
         <li><strong style="color:#90caf9;">AI-detectie</strong> — De orchestrator (Qwen2.5-32B) identificeert automatisch het meest kritieke knooppunt op basis van waterdeficit.</li>
         <li><strong style="color:#90caf9;">Detailmodel</strong> — wflow SBM draait een ensemble van vijf droogte-scenario's voor het geselecteerde stroomgebied.</li>
         <li><strong style="color:#90caf9;">Interpretatie</strong> — De AI genereert een hydrologische beslissingsmotivatie voor de waterbeheerder.</li>
@@ -1137,7 +1137,7 @@
 
     <!-- Kaart-toelichting -->
     <div style="background:#0d1b2a; border:1px solid #2a3a50; border-radius:8px; padding:1rem 1.4rem; margin-bottom:1rem;">
-      <h4 style="color:#90caf9; margin:0 0 .5rem 0;">Rijn/IJssel netwerkmodel — synthetisch droogtescenario (referentie: zomer 2018)</h4>
+      <h4 style="color:#90caf9; margin:0 0 .5rem 0;">Rijn/IJssel netwerkmodel — Ribasim hydraulische routing (referentie: zomer 2018)</h4>
       <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem;">
         De kaart visualiseert het gesimuleerde waternetwerk. De gekleurde cirkels tonen het <strong>waterdeficit per knooppunt</strong>:
         het percentage waarmee de gemiddelde berekende waterstand onder de veiligheidsdremelwaarde blijft.
@@ -1147,15 +1147,16 @@
         <strong>Waarom 2018 als referentie?</strong> De zomer van 2018 was de ernstigste droogte in Nederland sinds decennia.
         De Lobith-afvoer daalde naar 500–700 m³/s (normaal ~2.000 m³/s in de zomer), waterstanden op de
         Neder-Rijn, IJssel en Lek bereikten recordlaagtestanden, en de scheepvaart en zoetwaterinname kwamen
-        ernstig in gevaar. In dit prototype wordt de Lobith-inflow gesimuleerd als een synthetische sinusvorm
-        rond 600 m³/s — representatief voor de gemiddelde afvoer in die periode. Dit is het <em>netwerkmodel</em>.
+        ernstig in gevaar. De Lobith-inflow wordt als synthetische randvoorwaarde (sinusvorm ~600 m³/s)
+        ingevoerd in het <strong>Ribasim</strong>-netwerkmodel, dat de hydraulische routing per tak berekent
+        via FlowBoundary → Basin → TRC knooppunten, opgelost door de Julia-solver.
       </p>
       <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem; border-left:3px solid #1565c0; padding-left:.8rem;">
-        <strong>Koppeling:</strong> Het netwerkmodel gebruikt een synthetisch 2018-scenario voor de Lobith-inflow.
-        Het <strong>wflow-ensemble hieronder</strong> gebruikt echte ERA5-Land forcing van
+        <strong>Koppeling:</strong> Stap 1 (Ribasim) gebruikt een synthetische Lobith-randvoorwaarde op basis van 2018-condities.
+        Het <strong>wflow-ensemble hieronder (Stap 3)</strong> gebruikt echte ERA5-Land forcing van
         <strong>mei–augustus 2018</strong> — het werkelijke droogtejaar.
-        Neerslag én bovenstroomse afvoer (Westervoort) worden geschaald met multipliers ×0.10–×0.80
-        om droogte-ernstgraden te simuleren. De datums in de grafiek en tabel zijn daarom 2018.
+        Neerslag én bovenstroomse afvoer (Westervoort) worden geschaald met multipliers ×0.10–×1.00
+        om droogte-ernstgraden te simuleren, waarbij ×1.00 de werkelijke 2018-condities representeert.
       </p>
       <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:12px; color:#888;">
         <span>🟢 Deficit 0–20% — normaal</span>
@@ -1182,14 +1183,17 @@
     <div style="margin-top:2rem; border-top:1px solid #2a3a50; padding-top:1.5rem;">
       <h3 style="color:#90caf9; margin-bottom:1rem;">Wat u ziet — toelichting voor hydrologen</h3>
 
-      <h4 style="color:#ccc; margin-bottom:.5rem;">Landelijk netwerkmodel (kaart)</h4>
+      <h4 style="color:#ccc; margin-bottom:.5rem;">Landelijk netwerkmodel — Ribasim (kaart)</h4>
       <p style="color:#aaa; line-height:1.7; margin-bottom:1rem;">
-        De kaart toont een vereenvoudigd Rijn/IJssel netwerk met vier knooppunten: Pannerdensch Kanaal,
-        IJssel bij Kampen, Neder-Rijn en Lek. Als bovenstroomse randvoorwaarde bij Lobith wordt een
-        droogtescenario gebruikt: een sinusvormige afvoer rond 600 m³/s (representatief voor zomer 2018,
-        waarbij de werkelijke Lobith-afvoer daalde tot ~500–700 m³/s). Per knoop wordt het waterdeficit
-        berekend als het percentage waarmee de gemiddelde waterstand onder de ingestelde drempelstand blijft.
-        Knopen worden groen (0–20%), oranje (20–50%) of rood (&gt;50%) weergegeven.
+        De kaart toont het Rijn/IJssel-netwerk met vier knooppunten: Pannerdensch Kanaal,
+        IJssel bij Kampen, Neder-Rijn en Lek. Het netwerkmodel is gebouwd met
+        <strong>Ribasim</strong> (Deltares open-source netwerkmodel), draaiend via de
+        <strong>Julia-solver</strong> op de Jetson ARM64. Per knoop wordt een
+        FlowBoundary→Basin→TabulatedRatingCurve keten gesimuleerd, met als bovenstroomse randvoorwaarde
+        een sinusvormige Lobith-afvoer van ~600 m³/s (droogtecondities zomer 2018).
+        Het waterdeficit per knoop is het percentage waarmee de gemiddelde berekende
+        afvoer onder de drempelwaarde blijft; knopen worden groen (0–20%), oranje (20–50%)
+        of rood (&gt;50%) weergegeven.
       </p>
 
       <h4 style="color:#ccc; margin-bottom:.5rem;">AI-beslissingslaag</h4>
@@ -1218,13 +1222,14 @@
                     letter-spacing:.8px; margin-bottom:8px;">⚠ Disclaimer</div>
         <p style="color:#ccc; font-size:13px; line-height:1.7; margin:0;">
           Dit is een <strong>prototype voor onderzoeks- en demonstratiedoeleinden</strong>.
-          Het netwerkmodel is een sterk vereenvoudigde representatie van het Rijn/IJssel-systeem
-          en is <em>niet</em> gekalibreerd of gevalideerd tegen historische meetreeksen.
-          De Lobith-inflow is synthetisch (sinusvorm) en vertegenwoordigt geen specifieke historische gebeurtenis.
+          Het netwerkmodel gebruikt <strong>Ribasim</strong> voor hydraulische routing, maar is
+          <em>niet</em> gekalibreerd of gevalideerd tegen historische meetreeksen — het
+          is een vereenvoudigd prototype met een synthetische Lobith-randvoorwaarde.
+          De bassinprofielen en rating curves zijn niet gebaseerd op opgemeten geometrie.
           De AI-gegenereerde beslissingsmotivatie is indicatief en vervangt geen hydrologisch oordeel van een expert.
           Gebruik de uitkomsten van dit systeem <strong>niet</strong> voor operationeel waterbeheer,
-          beleidsvorming of veiligheidsbeoordelingen. Deltares Ribasim (het volwaardige netwerkmodel)
-          en een gevalideerde wflow-kalibratie zijn vereist voor professionele toepassingen.
+          beleidsvorming of veiligheidsbeoordelingen. Een gevalideerde Ribasim-kalibratie
+          en gecalibreerde wflow-parameters zijn vereist voor professionele toepassingen.
         </p>
       </div>
     </div>
@@ -1234,6 +1239,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=18"></script>
+<script src="/static/app.js?v=19"></script>
 </body>
 </html>
