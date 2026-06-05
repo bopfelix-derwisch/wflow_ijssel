@@ -48,5 +48,5 @@ analysis:
   threshold_q: 800.0
 
 scenarios:
-  values: [0.10, 0.25, 0.40, 0.60, 0.80]
-  names:  ["extreem_droog", "droog", "matig_droog", "licht_droog", "normaal"]
+  values: [0.10, 0.25, 0.50, 0.75, 1.00]
+  names:  ["extreem_droog", "ernstig_droog", "matig_droog", "licht_droog", "referentie_2018"]
