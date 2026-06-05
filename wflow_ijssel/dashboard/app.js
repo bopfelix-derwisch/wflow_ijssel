@@ -110,6 +110,7 @@ function switchYear(year) {
   const uitlegPnl   = document.getElementById("uitleg-panel");
   const forecastPnl = document.getElementById("forecast-panel");
   const ensemblePnl = document.getElementById("ensemble-panel");
+  const introPnl    = document.getElementById("intro-panel");
   const banner      = document.getElementById("event-banner");
 
   function hideAll() {
@@ -118,8 +119,19 @@ function switchYear(year) {
     uitlegPnl.classList.remove("visible");
     forecastPnl.classList.remove("visible");
     ensemblePnl.classList.remove("visible");
+    introPnl.classList.remove("visible");
     const mmPnl = document.getElementById("multimodel-panel");
     if (mmPnl) mmPnl.classList.remove("visible");
+  }
+
+  if (year === "intro") {
+    hideAll();
+    introPnl.classList.add("visible");
+    banner.textContent = "IJssel Waterlab · experimentele onderzoeksomgeving · NVIDIA Jetson AGX Orin";
+    document.getElementById("alert-badge").textContent = "⚗ Waterlab";
+    document.getElementById("alert-badge").style.background = "#37474f";
+    document.body.className = "";
+    return;
   }
 
   if (year === "forecast") {
