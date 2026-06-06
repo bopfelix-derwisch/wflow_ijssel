@@ -1623,7 +1623,7 @@
       </div>
 
       <!-- Beat button -->
-      <button class="beat-btn" id="beat-btn" title="Beat aan/uit">🎵</button>
+      <button class="beat-btn" id="beat-btn" onclick="toggleBeat()" title="Beat aan/uit">🎵</button>
     </div>
   </div>
 
@@ -3012,6 +3012,87 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=30"></script>
+<script src="/static/app.js?v=31"></script>
+<script>
+/* ── HIP-HOP BEAT (Web Audio API) — apart script zodat MapLibre-fouten dit niet blokkeren ── */
+(function() {
+  var ctx = null, beatPlaying = false, nextBeat = 0, beatStep = 0, schedId = null;
+  var BPM = 88, SWING = 0.06;
+  var kick  = [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,1,0];
+  var snare = [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0];
+  var hat   = [1,0,1,1, 0,1,1,0, 1,0,1,1, 0,1,1,0];
+  var perc  = [0,0,1,0, 0,0,0,1, 0,0,1,0, 0,1,0,0];
+
+  function initCtx() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  function mg() { var g=ctx.createGain(); g.gain.value=0.7; g.connect(ctx.destination); return g; }
+
+  function playKick(t) {
+    var o=ctx.createOscillator(), g=ctx.createGain();
+    o.connect(g); g.connect(mg());
+    o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(40,t+0.12);
+    g.gain.setValueAtTime(1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.35);
+    o.start(t); o.stop(t+0.35);
+  }
+  function playSnare(t) {
+    var buf=ctx.createBuffer(1,ctx.sampleRate*0.15,ctx.sampleRate), d=buf.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    var src=ctx.createBufferSource(), g=ctx.createGain(), f=ctx.createBiquadFilter();
+    f.type='bandpass'; f.frequency.value=2800; f.Q.value=0.8;
+    src.buffer=buf; src.connect(f); f.connect(g); g.connect(mg());
+    g.gain.setValueAtTime(0.55,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
+    src.start(t); src.stop(t+0.18);
+    var o=ctx.createOscillator(), g2=ctx.createGain();
+    o.connect(g2); g2.connect(mg()); o.frequency.value=200;
+    g2.gain.setValueAtTime(0.3,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+    o.start(t); o.stop(t+0.08);
+  }
+  function playHat(t) {
+    var buf=ctx.createBuffer(1,ctx.sampleRate*0.05,ctx.sampleRate), d=buf.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    var src=ctx.createBufferSource(), g=ctx.createGain(), f=ctx.createBiquadFilter();
+    f.type='highpass'; f.frequency.value=9000;
+    src.buffer=buf; src.connect(f); f.connect(g); g.connect(mg());
+    g.gain.setValueAtTime(0.18,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+    src.start(t); src.stop(t+0.06);
+  }
+  function playPerc(t) {
+    var o=ctx.createOscillator(), g=ctx.createGain(); o.type='triangle';
+    o.connect(g); g.connect(mg());
+    o.frequency.setValueAtTime(320,t); o.frequency.exponentialRampToValueAtTime(180,t+0.06);
+    g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
+    o.start(t); o.stop(t+0.1);
+  }
+  function schedule() {
+    var stepLen=(60/BPM)/4;
+    while(nextBeat < ctx.currentTime+0.15) {
+      var t=nextBeat+(beatStep%2===1 ? SWING*stepLen : 0);
+      if(kick[beatStep])  playKick(t);
+      if(snare[beatStep]) playSnare(t);
+      if(hat[beatStep])   playHat(t);
+      if(perc[beatStep])  playPerc(t);
+      nextBeat+=stepLen; beatStep=(beatStep+1)%16;
+    }
+    schedId=setTimeout(schedule,50);
+  }
+  function startBeat() {
+    try { initCtx(); } catch(e) { return; }
+    beatPlaying=true;
+    var btn=document.getElementById('beat-btn');
+    btn.textContent='⏹'; btn.classList.add('playing');
+    document.getElementById('eq-bars').classList.remove('paused');
+    var p=ctx.state==='suspended' ? ctx.resume() : Promise.resolve();
+    p.then(function(){ nextBeat=ctx.currentTime+0.05; beatStep=0; schedule(); });
+  }
+  function stopBeat() {
+    clearTimeout(schedId); beatPlaying=false;
+    var btn=document.getElementById('beat-btn');
+    btn.textContent='🎵'; btn.classList.remove('playing');
+    document.getElementById('eq-bars').classList.add('paused');
+  }
+  window.toggleBeat = function() { beatPlaying ? stopBeat() : startBeat(); };
+})();
+</script>
 </body>
 </html>
