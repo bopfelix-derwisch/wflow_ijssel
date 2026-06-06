@@ -73,10 +73,9 @@ def test_get_wflow_timeseries_unknown_combo_returns_empty(fake_output_dir, monke
 
 
 def test_get_waterinfo_timeseries_returns_empty_on_import_error(monkeypatch):
+    import sys
     import fews_poc.data_adapter as da
-    monkeypatch.setattr("builtins.__import__", lambda name, *a, **kw: (_ for _ in ()).throw(
-        ImportError("no rws_waterinfo")
-    ) if name == "rws_waterinfo" else __import__(name, *a, **kw))
+    monkeypatch.setitem(sys.modules, "rws_waterinfo", None)
 
     events = da.get_waterinfo_timeseries("KAMPEN", "H.meting")
     assert events == []

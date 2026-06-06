@@ -349,6 +349,7 @@ def get_multimodel():
 @app.get("/api/fews/data")
 def get_fews_data(location: str = "KAMPEN", period: str = "1995"):
     sim_raw = get_wflow_timeseries(location, "Q.sim", period)
+    # Q.meting is alleen beschikbaar bij WESTERVOORT via Waterinfo (ongeacht gevraagde locatie)
     obs_raw = get_waterinfo_timeseries("WESTERVOORT", "Q.meting")
     return {
         "location": location,
