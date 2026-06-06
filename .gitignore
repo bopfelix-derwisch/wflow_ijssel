@@ -4,5 +4,7 @@ __pycache__/
 data/
 wflow_build/
 *.bak
-../multimodel_data/
-../.env
+.env
+.superpowers/
+ensemble_data/
+multimodel_data/
