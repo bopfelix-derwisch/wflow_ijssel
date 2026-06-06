@@ -232,6 +232,24 @@
     .logo-tagline span { color: #00e676; animation: blink 1.2s step-end infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
+    /* ── mini logo (alle panels) ── */
+    .mini-logo {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 20px;
+      background: linear-gradient(90deg, #020d06 0%, #010a10 100%);
+      border-bottom: 1px solid #0d2a18;
+    }
+    .mini-logo-title {
+      font-size: 13px; font-weight: 800; letter-spacing: -.3px;
+      background: linear-gradient(135deg, #00e676 0%, #1de9b6 60%, #40c4ff 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .mini-logo-sub {
+      font-size: 10px; color: #2e6b4a; letter-spacing: 1px;
+      text-transform: uppercase; margin-left: 2px;
+    }
+
     /* beat button */
     .beat-btn {
       position: relative; z-index: 2;
@@ -3013,6 +3031,45 @@
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <script src="/static/app.js?v=31"></script>
+<script>
+/* ── MINI LOGO op alle panels ── */
+(function() {
+  var miniHTML =
+    '<div class="mini-logo">' +
+      '<svg width="22" height="22" viewBox="0 0 72 72">' +
+        '<defs>' +
+          '<linearGradient id="mlg" x1="0%" y1="0%" x2="100%" y2="100%">' +
+            '<stop offset="0%" stop-color="#00e676"/>' +
+            '<stop offset="100%" stop-color="#40c4ff"/>' +
+          '</linearGradient>' +
+          '<linearGradient id="mlg2" x1="0%" y1="0%" x2="0%" y2="100%">' +
+            '<stop offset="0%" stop-color="#1de9b6" stop-opacity=".85"/>' +
+            '<stop offset="100%" stop-color="#00695c" stop-opacity=".35"/>' +
+          '</linearGradient>' +
+        '</defs>' +
+        '<path d="M36,8 C36,8 16,30 16,44 C16,55 25,64 36,64 C47,64 56,55 56,44 C56,30 36,8 36,8 Z" fill="url(#mlg2)" stroke="url(#mlg)" stroke-width="2"/>' +
+        '<clipPath id="mlc"><path d="M36,8 C36,8 16,30 16,44 C16,55 25,64 36,64 C47,64 56,55 56,44 C56,30 36,8 36,8 Z"/></clipPath>' +
+        '<g clip-path="url(#mlc)"><path d="M14,48 C22,42 28,54 36,48 C44,42 50,54 58,48 L58,65 L14,65 Z" fill="#004d40" opacity=".85"/></g>' +
+      '</svg>' +
+      '<span class="mini-logo-title">Waterlab</span>' +
+      '<span class="mini-logo-sub">leren met AI</span>' +
+    '</div>';
+
+  var panels = [
+    'uitleg-panel','forecast-panel','ensemble-panel','multimodel-panel',
+    'fews-panel','pocs-panel','arch-panel','roadmap-panel','info-panel'
+  ];
+  document.addEventListener('DOMContentLoaded', function() {
+    panels.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.insertAdjacentHTML('afterbegin', miniHTML);
+    });
+    /* sim-view panels (1995/2018/2021) */
+    var sv = document.getElementById('sim-view');
+    if (sv) sv.insertAdjacentHTML('afterbegin', miniHTML);
+  });
+})();
+</script>
 <script>
 /* ── HIP-HOP BEAT v3 ── */
 (function() {
