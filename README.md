@@ -1,20 +1,34 @@
-# IJssel Waterlab
+# Waterlab
 
-**Experimentele onderzoeksomgeving voor hydrologische modellering en AI-integratie op de IJssel**
+**Persoonlijk micro-innovatielab voor hydrologische modellering en AI-integratie in waterbeheer**
 
-🌐 **Live demo:** [waterlab.felixisfelix.com](https://waterlab.felixisfelix.com)
+🌐 **Live:** [waterlab.felixisfelix.com](https://waterlab.felixisfelix.com)
 
-> **Experimenteel.** Dit is een onderzoeks- en leerplatform, geen operationeel systeem.
-> Simulaties zijn indicatief en niet gekalibreerd voor operationele waterbeheerbeslissingen.
+> **Experimenteel — 1 persoon.** Doel: leren van modellen, het vakgebied en AI-innovaties,
+> en verkennen hoe een modern kennisinstrumentarium voor waterbeheer eruit zou kunnen zien.
+> Simulaties zijn indicatief. Dit is geen operationeel systeem.
 
 ---
 
-## Overzicht
+## Doelen
 
-IJssel Waterlab draait volledig op een **NVIDIA Jetson AGX Orin** (ARM64 edge device) en
-combineert een gedistribueerd hydrologisch model, een hydraulisch netwerkmodel, twee LLM-integraties
-en live datafeeds in één interactief dashboard. Het project test hoe ver je kunt gaan met
-modelkoppelingen en AI-assistentie zonder cloud-infrastructuur voor de zware berekeningen.
+Drie leerdoelen sturen de experimenten:
+
+1. **Modellen begrijpen** — wflow SBM, Ribasim, ensemble-methoden, data-assimilatie: hoe werken ze, wat geven ze, waar zitten de grenzen?
+2. **Vakgebied verkennen** — RWS-processen, waterschappen, het Deltares-ecosysteem en FEWS: hoe ziet het huidige kennisinstrumentarium eruit?
+3. **AI-innovaties testen** — LLM-orkestratie, expert-agents, tool use, real-time integratie: wat voegt AI concreet toe aan hydrologische analyse?
+
+Achterliggende vraag: hoe zou een modern kennisinstrumentarium voor waterbeheer eruitzien
+als je het vandaag opnieuw ontwerpt — API-first, AI-ondersteund, zonder legacy GUI-afhankelijkheden?
+
+---
+
+## Platform
+
+Waterlab draait volledig op een **NVIDIA Jetson AGX Orin** (ARM64 edge device) en
+combineert een hydrologisch model, een hydraulisch netwerkmodel, twee LLM-integraties
+en live datafeeds. Het project test hoe ver je kunt gaan met modelkoppelingen en AI-assistentie
+op één edge computer.
 
 ---
 
