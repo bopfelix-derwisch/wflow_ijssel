@@ -411,6 +411,63 @@
     .sim-step .ss-label { font-size: 11px; color: #ccc; font-weight: 600; }
     .sim-step .ss-sub   { font-size: 10px; color: #888; margin-top: 3px; }
     .sim-sep { color: #2a4a6a; font-size: 20px; padding-top: 20px; align-self: flex-start; }
+
+  /* ── POC's pagina ─────────────────────────────────────────────────── */
+
+  .poc-doc { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .poc-doc-title { font-size: 1.5rem; font-weight: 700; color: #e0e0e0; margin: 0 0 .25rem; }
+  .poc-doc-sub   { color: #546e7a; font-size: 13px; margin: 0 0 2rem; }
+  .poc-card {
+    background: #07111c;
+    border: 1px solid #1a2e3f;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .poc-card-header {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.1rem 1.4rem;
+    border-bottom: 1px solid #1a2e3f;
+  }
+  .poc-num {
+    font-size: 1.6rem; font-weight: 800; min-width: 2rem; text-align: center;
+  }
+  .poc-card-header h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #e0e0e0; }
+  .poc-card-header .poc-tag {
+    margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .06em;
+    padding: 2px 9px; border-radius: 10px; white-space: nowrap;
+  }
+  .poc-body { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+  .poc-col {
+    padding: 1.1rem 1.4rem;
+    border-right: 1px solid #0e1e2a;
+  }
+  .poc-col:last-child { border-right: none; }
+  .poc-col-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; margin-bottom: .6rem;
+  }
+  .poc-col p { font-size: 12px; color: #78909c; line-height: 1.7; margin: 0 0 .5rem; }
+  .poc-col p:last-child { margin-bottom: 0; }
+  .poc-col strong { color: #90a4ae; }
+  .poc-col code { color: #4db6ac; background: #001a13; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+  .poc-col ul { margin: 0; padding: 0 0 0 1.1rem; font-size: 12px; color: #78909c; line-height: 1.7; }
+  .poc-col li { margin-bottom: .2rem; }
+  .poc-goto {
+    display: inline-block; margin-top: .75rem; padding: 4px 12px;
+    border: 1px solid; border-radius: 10px; cursor: pointer;
+    background: transparent; font-size: 11px; font-weight: 600;
+    transition: all .15s;
+  }
+  .poc-goto:hover { opacity: .8; }
+  .poc-divider {
+    height: 1px; background: #0e1e2a; margin: .75rem 0;
+  }
+  @media (max-width: 700px) {
+    .poc-body { grid-template-columns: 1fr; }
+    .poc-col { border-right: none; border-bottom: 1px solid #0e1e2a; }
+  }
+
   </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -953,98 +1010,9 @@
     </ul>
   </div>
 
-  <!-- 3. 1995 vs 2021 -->
-  <div class="info-section">
-    <h2>3 · Twee hoogwatergolven: 1995 en 2021</h2>
-    <div class="event-compare">
-      <div class="event-card ev-1995">
-        <div class="ec-year">Januari 1995</div>
-        <div class="ec-stat">🌧 <strong>Oorzaak:</strong> langdurige regen over heel West-Europa</div>
-        <div class="ec-stat">📍 <strong>Rijn piek Lobith:</strong> ~12.600 m³/s op 31 jan</div>
-        <div class="ec-stat">📊 <strong>IJssel piek Kampen:</strong> ~3.340 m³/s (gesimuleerd)</div>
-        <div class="ec-stat">🚨 <strong>250.000 mensen</strong> preventief geëvacueerd</div>
-        <div class="ec-stat">🛡 Dijken hielden ternauwernood stand</div>
-        <div class="ec-stat">🌡 Neerslag +182% boven klimaatnorm (KNMI)</div>
-        <div class="ec-stat">⏱ 16 dagen boven hoogwater-drempel (1.500 m³/s)</div>
-        <button class="uitleg-goto-btn btn-1995" onclick="switchYear('1995')">Bekijk simulatie →</button>
-      </div>
-      <div class="event-card ev-2021">
-        <div class="ec-year">Juli 2021</div>
-        <div class="ec-stat">⛈ <strong>Oorzaak:</strong> extreme buien boven Eifel en Ardennen</div>
-        <div class="ec-stat">📍 <strong>Rijn piek Lobith:</strong> 6.687 m³/s op 18 jul (RWS)</div>
-        <div class="ec-stat">📊 <strong>IJssel piek Kampen:</strong> 1.767 m³/s (sim. gemeten inflow)</div>
-        <div class="ec-stat">🇩🇪 Ahr-vallei: meer dan 180 doden, duizenden huizen verwoest</div>
-        <div class="ec-stat">🇳🇱 Nederland: verhoogde waakzaamheid, geen evacuaties</div>
-        <div class="ec-stat">🌡 Neerslag +120% boven zomernorm (ERA5)</div>
-        <div class="ec-stat">⏱ 2 dagen boven hoogwater-drempel (1.500 m³/s)</div>
-        <button class="uitleg-goto-btn btn-2021" onclick="switchYear('2021')">Bekijk simulatie →</button>
-      </div>
-    </div>
-    <p>
-      Het debiet bij Kampen in 1995 (~3.340 m³/s) was bijna <span class="highlight">twee keer zo hoog</span>
-      als in 2021 (1.767 m³/s). In 1995 bleef de IJssel wekenlang boven de hoogwater-drempel;
-      in 2021 slechts twee dagen. Toch veroorzaakte 2021 meer maatschappelijke schade —
-      doordat het water bovenstrooms in Duitsland veel sneller steeg dan verwacht.
-    </p>
-  </div>
 </div><!-- /#uitleg-panel -->
 
 <div id="pocs-panel">
-<style>
-  .poc-doc { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-  .poc-doc-title { font-size: 1.5rem; font-weight: 700; color: #e0e0e0; margin: 0 0 .25rem; }
-  .poc-doc-sub   { color: #546e7a; font-size: 13px; margin: 0 0 2rem; }
-  .poc-card {
-    background: #07111c;
-    border: 1px solid #1a2e3f;
-    border-radius: 10px;
-    margin-bottom: 2rem;
-    overflow: hidden;
-  }
-  .poc-card-header {
-    display: flex; align-items: center; gap: 1rem;
-    padding: 1.1rem 1.4rem;
-    border-bottom: 1px solid #1a2e3f;
-  }
-  .poc-num {
-    font-size: 1.6rem; font-weight: 800; min-width: 2rem; text-align: center;
-  }
-  .poc-card-header h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #e0e0e0; }
-  .poc-card-header .poc-tag {
-    margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .06em;
-    padding: 2px 9px; border-radius: 10px; white-space: nowrap;
-  }
-  .poc-body { display: grid; grid-template-columns: 1fr 1fr 1fr; }
-  .poc-col {
-    padding: 1.1rem 1.4rem;
-    border-right: 1px solid #0e1e2a;
-  }
-  .poc-col:last-child { border-right: none; }
-  .poc-col-label {
-    font-size: 10px; font-weight: 700; letter-spacing: .08em;
-    text-transform: uppercase; margin-bottom: .6rem;
-  }
-  .poc-col p { font-size: 12px; color: #78909c; line-height: 1.7; margin: 0 0 .5rem; }
-  .poc-col p:last-child { margin-bottom: 0; }
-  .poc-col strong { color: #90a4ae; }
-  .poc-col code { color: #4db6ac; background: #001a13; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
-  .poc-col ul { margin: 0; padding: 0 0 0 1.1rem; font-size: 12px; color: #78909c; line-height: 1.7; }
-  .poc-col li { margin-bottom: .2rem; }
-  .poc-goto {
-    display: inline-block; margin-top: .75rem; padding: 4px 12px;
-    border: 1px solid; border-radius: 10px; cursor: pointer;
-    background: transparent; font-size: 11px; font-weight: 600;
-    transition: all .15s;
-  }
-  .poc-goto:hover { opacity: .8; }
-  .poc-divider {
-    height: 1px; background: #0e1e2a; margin: .75rem 0;
-  }
-  @media (max-width: 700px) {
-    .poc-body { grid-template-columns: 1fr; }
-    .poc-col { border-right: none; border-bottom: 1px solid #0e1e2a; }
-  }
-</style>
 
 <div class="poc-doc">
   <p class="poc-doc-title">🧪 Waterlab — zeven proeven</p>
