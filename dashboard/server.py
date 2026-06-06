@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from dashboard.forecast import build_forecast
+from fews_poc.router import router as _fews_router
 
 # Laad .env als ANTHROPIC_API_KEY nog niet in omgeving staat
 _env_file = Path(__file__).parent.parent.parent / ".env"
@@ -32,6 +33,7 @@ OUTPUT_DIRS = {
 ENSEMBLE_DIR = Path("/home/bob/waterlab/ensemble_data/outputs")
 
 app = FastAPI(title="Waterlab API")
+app.include_router(_fews_router)
 
 if os.path.isdir(str(STATIC_DIR)):
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -341,6 +343,25 @@ def get_multimodel():
     except Exception:
         return JSONResponse({"available": False})
     return JSONResponse({"available": True, **stats})
+
+
+@app.get("/api/fews/data")
+def get_fews_data(location: str = "KAMPEN", period: str = "1995"):
+    from fews_poc.data_adapter import get_wflow_timeseries, get_waterinfo_timeseries
+    sim_raw = get_wflow_timeseries(location, "Q.sim", period)
+    obs_raw = get_waterinfo_timeseries(location, "Q.meting")
+    return {
+        "location": location,
+        "period":   period,
+        "sim": {
+            "dates":  [e["date"]        for e in sim_raw],
+            "values": [float(e["value"]) for e in sim_raw],
+        },
+        "obs": {
+            "dates":  [e["date"]        for e in obs_raw],
+            "values": [float(e["value"]) for e in obs_raw],
+        },
+    }
 
 
 if __name__ == "__main__":
