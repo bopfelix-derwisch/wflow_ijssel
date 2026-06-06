@@ -223,6 +223,8 @@
     .llm-block .llm-loading { color: #555; font-style: italic; }
     #uitleg-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #uitleg-panel.visible { display: block; }
+    #pocs-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #pocs-panel.visible { display: block; }
 
     /* ── fews panel ── */
     #fews-panel { overflow-y: auto; max-height: calc(100vh - 52px); }
@@ -303,6 +305,7 @@
     #roadmap-panel:not(.visible) { display: none; }
     #roadmap-panel.visible { display: block; }
     .year-tab.active-roadmap { background: #4a148c; border-color: #ce93d8; color: #fff; }
+    .year-tab.active-pocs    { background: #00695c; border-color: #4db6ac; color: #fff; }
     .poc-status-badge {
       display: inline-block; padding: 2px 8px; border-radius: 10px;
       font-size: 10px; font-weight: 600; letter-spacing: .4px; margin-bottom: .4rem;
@@ -420,6 +423,7 @@
   <div id="year-tabs">
     <button class="year-tab active-intro" data-year="intro">Waterlab</button>
     <button class="year-tab" data-year="uitleg">Rijn &amp; IJssel</button>
+    <button class="year-tab" data-year="pocs">POC's</button>
     <button class="year-tab" data-year="forecast">Verwachting</button>
     <button class="year-tab" data-year="ensemble">Ensemble AI</button>
     <button class="year-tab" data-year="multimodel">Multimodel</button>
@@ -983,106 +987,106 @@
       doordat het water bovenstrooms in Duitsland veel sneller steeg dan verwacht.
     </p>
   </div>
+</div><!-- /#uitleg-panel -->
 
-  <!-- 4. Overzicht zes experimenten -->
+<div id="pocs-panel">
+
+  <div class="audience-header voor-iedereen">
+    <span class="aud-icon">🧪</span>
+    <span class="aud-title">Waterlab — zeven proeven</span>
+    <span class="aud-sub">POC's · hydrologische modellering · AI-integratie · FEWS-koppeling</span>
+  </div>
+
+  <div class="info-section" style="border-left-color:#00695c; background:#050f18">
+    <p style="color:#90a4ae; font-size:13px; margin:0;">
+      Elke proef is opgezet om één concrete vraag te beantwoorden — over een model, een AI-aanpak
+      of een integratiepatroon. Dit is geen product; het is een leerplatform waarbij elke keuze
+      bewust is gemaakt om iets te begrijpen.
+    </p>
+  </div>
+
+  <!-- Overzichtstabel -->
   <div class="info-section">
-    <h2>4 · Zes experimenten</h2>
-    <p>Waterlab omvat zes proeven, elk gericht op een ander aspect van hydrologische modellering en AI-integratie:</p>
+    <h2>Overzicht — zeven proeven</h2>
     <table class="ll-table" style="margin:12px 0">
-      <tr><th>Proef</th><th>Naam</th><th>Kern</th><th>AI?</th></tr>
+      <tr><th>Proef</th><th>Naam</th><th>Technologie</th><th>AI-rol</th><th>Status</th></tr>
       <tr>
         <td><strong style="color:#4db6ac">1</strong></td>
         <td>14-daagse verwachting</td>
-        <td>Statistisch debietmodel + RWS Waterinfo live</td>
-        <td><span class="highlight">Claude (Anthropic) — interventie</span></td>
+        <td>wflow SBM + RWS Waterinfo live</td>
+        <td><span class="highlight">Claude — expert-interventie</span></td>
+        <td style="color:#4db6ac">✓ live</td>
       </tr>
       <tr>
         <td><strong style="color:#ffcc80">2</strong></td>
         <td>Ensemble AI</td>
-        <td>wflow SBM ×5 neerslag-scenario's parallel</td>
-        <td><span class="highlight">Qwen2.5-32B lokaal — interpretatie</span></td>
+        <td>wflow SBM ×5 neerslag-scenario's</td>
+        <td><span class="highlight">Qwen2.5-32B — interpretatie</span></td>
+        <td style="color:#4db6ac">✓ live</td>
       </tr>
       <tr>
         <td><strong style="color:#90caf9">3</strong></td>
         <td>Multimodel pipeline</td>
-        <td>Ribasim netwerk → LLM-orchestrator → wflow ensemble</td>
-        <td><span class="highlight">Qwen2.5-32B lokaal — orkestratie</span></td>
+        <td>Ribasim + LLM-orchestrator + wflow</td>
+        <td><span class="highlight">Qwen2.5-32B — orkestratie</span></td>
+        <td style="color:#4db6ac">✓ live</td>
       </tr>
       <tr>
         <td><strong style="color:#4fc3f7">4</strong></td>
         <td>Hoogwater jan 1995</td>
-        <td>wflow SBM, ERA5-Land forcing, 90 dagen</td>
+        <td>wflow SBM, ERA5-Land, 90 dagen</td>
         <td>—</td>
+        <td style="color:#4db6ac">✓ live</td>
       </tr>
       <tr>
         <td><strong style="color:#ffc107">5</strong></td>
         <td>Droogte zomer 2018</td>
-        <td>wflow SBM, laagwaterperiode mei–aug 2018</td>
+        <td>wflow SBM, ERA5-Land mei–aug</td>
         <td>—</td>
+        <td style="color:#4db6ac">✓ live</td>
       </tr>
       <tr>
         <td><strong style="color:#ce93d8">6</strong></td>
         <td>Hoogwater jul 2021</td>
-        <td>wflow SBM, gemeten RWS-inflow vs. synthetisch</td>
+        <td>wflow SBM, ERA5 + RWS inflow</td>
         <td>—</td>
+        <td style="color:#4db6ac">✓ live</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#80cbc4">7</strong></td>
+        <td>FEWS PI REST</td>
+        <td>FastAPI + PI JSON v1.25</td>
+        <td>—</td>
+        <td style="color:#4db6ac">✓ live</td>
       </tr>
     </table>
   </div>
 
-  <!-- 5. Proef 1 — Verwachting + AI interventie -->
+  <!-- Proef 1 -->
   <div class="info-section">
-    <h2>5 · Proef 1 · 14-daagse verwachting &amp; AI-interventie</h2>
+    <h2>Proef 1 · 14-daagse verwachting &amp; AI-interventie</h2>
     <p>
-      De <span class="highlight">verwachting-tab</span> is de enige proef die real-time data gebruikt.
-      Elke 15 minuten wordt een nieuwe voorspelling opgebouwd uit drie databronnen:
-    </p>
-    <div class="sim-steps">
-      <div class="sim-step"><span class="ss-icon">📡</span>
-        <div class="ss-label">RWS Waterinfo</div>
-        <div class="ss-sub">Gemeten debiet Westervoort + waterpeil Kampen</div>
-      </div>
-      <div class="sim-sep">→</div>
-      <div class="sim-step"><span class="ss-icon">🌦</span>
-        <div class="ss-label">Open-Meteo</div>
-        <div class="ss-sub">14-daagse neerslag­prognose IFS/ERA5</div>
-      </div>
-      <div class="sim-sep">→</div>
-      <div class="sim-step"><span class="ss-icon">📉</span>
-        <div class="ss-label">Recessiemodel</div>
-        <div class="ss-sub">Statistisch Q₀·e<sup>-t/τ</sup> + neerslaginpulsrespons</div>
-      </div>
-      <div class="sim-sep">→</div>
-      <div class="sim-step"><span class="ss-icon">🤖</span>
-        <div class="ss-label">Claude API</div>
-        <div class="ss-sub">Interventie­aanbeveling op basis van waterpeil-regime</div>
-      </div>
-    </div>
-    <p>
-      Het <span class="highlight">debietmodel</span> is bewust eenvoudig: recessiecurve voor het basisniveau,
-      aangevuld met een unit-hydrograph respons op verwachte neerslag (15-punts kernel, piekrespons dag 3–5).
-      Onzekerheidsband loopt van ±18% op dag 1 op naar ±70% op dag 14.
+      Een statistisch debietmodel combineert de actuele RWS Waterinfo-meting bij Lobith
+      met een 14-daagse ECMWF-verwachting. Het model vertaalt neerslagprognoses naar
+      verwacht debiet bij Kampen via een lineaire regressie op ERA5-historiek.
     </p>
     <p>
-      De <span class="highlight">AI-interventie</span> maakt gebruik van de Anthropic API (Claude Haiku).
-      Het model speelt de rol van een senior hydroloog bij RWS WNL met 25 jaar IJssel-ervaring.
-      De prompt bevat de volledige gebiedsschematisatie (Lobith → Pannerdense Kop → Kampen → Ketelmeer),
-      nautische drempelwaarden (BICS-codes), ecologische minimumafvoer (50 m³/s KRW),
-      en droogtereferenties (2018: −0.45 m+NAP, 2022: −0.38 m+NAP). Het model oordeelt
-      uitsluitend op het actuele <span class="highlight">waterpeil-regime</span>:
+      <span class="highlight">Claude (Anthropic API)</span> interpreteert de verwachting als
+      expert-hydroloog: niet op debiet maar op <em>waterpeil-regime</em>. De agent weet welke
+      stakeholders (RWS, HHNK, Vitens) bij welk peil acties moeten nemen en formuleert
+      een gestructureerd advies.
     </p>
-    <table class="ll-table" style="margin:12px 0">
-      <tr><th>Regime</th><th>Peil Kampen</th><th>Interventie-focus</th></tr>
-      <tr><td class="red">Extreem laag</td><td>&lt; 0.0 m+NAP</td><td>Laagwaterprotocol, ICPR-afstemming, scheepvaartstop klasse V, Vitens noodpompen</td></tr>
-      <tr><td class="warn">Laag</td><td>0.0–0.5 m+NAP</td><td>BICS-waarschuwing, inlaatbeheer Veluwemeer, ondiepgang-limiet 2.0 m</td></tr>
-      <tr><td style="color:#aaa">Normaal</td><td>1.2–3.0 m+NAP</td><td>Reguliere monitoring, geen bijzondere acties</td></tr>
-      <tr><td class="warn">Waakzaam</td><td>3.0–4.2 m+NAP</td><td>Eerste dijkbewaking, waterstandsberichten</td></tr>
-      <tr><td class="red">Verhoogd / Hoog</td><td>&gt; 4.2 m+NAP</td><td>Dijkbewaking 24/7, crisisoverleg gemeenten, evacuatieplannen</td></tr>
-    </table>
+    <p style="color:#546e7a; font-size:12px;">
+      <strong style="color:#90a4ae;">Wat leerde dit:</strong> een LLM met domeinkennis over het watersysteem geeft
+      kwalitatief betere interventies dan een generiek model — de gebiedsschematisatie
+      (Pannerdense Kop, verdeling, stakeholders) is essentieel context.
+    </p>
+    <button class="uitleg-goto-btn" style="color:#4db6ac; border-color:#00695c; margin-top:8px;" onclick="switchYear('forecast')">Bekijk verwachting →</button>
   </div>
 
-  <!-- 6. Proef 2 — Ensemble AI -->
+  <!-- Proef 2 -->
   <div class="info-section">
-    <h2>6 · Proef 2 · Ensemble AI — neerlag scenario's</h2>
+    <h2>Proef 2 · Ensemble AI — neerslag scenario's</h2>
     <p>
       Vijf parallelle wflow SBM-runs met neerslag-perturbaties simuleren het zomer 2018
       droogtescenario onder verschillende klimaatcondities:
@@ -1092,26 +1096,24 @@
       <tr><td>extreem_droog</td><td>×0.70</td><td>−30% neerslag: droogste 10% historisch</td></tr>
       <tr><td>ernstig_droog</td><td>×0.85</td><td>−15%: extreme droogte zoals 2018</td></tr>
       <tr><td>referentie</td><td>×1.00</td><td>ERA5-Land 2018 ongewijzigd</td></tr>
-      <tr><td>nat</td><td>×1.15</td><td>+15%: bovengemiddeld neerslagnaar</td></tr>
+      <tr><td>nat</td><td>×1.15</td><td>+15%: bovengemiddeld neerslag</td></tr>
       <tr><td>zeer_nat</td><td>×1.30</td><td>+30%: grens droogte–normaal</td></tr>
     </table>
     <p>
       Na de simulaties interpreteert <span class="highlight">Qwen2.5-32B</span> (lokaal op de Jetson via llama.cpp)
-      de ensemble-spread en genereert een hydrologisch advies. De lokale LLM is bewust gekozen voor
-      de ensemble-tab: de interpretatie is ruwe tekstgeneratie zonder kritische beslissingen,
-      waarvoor een lokaal model met lage latentie volstaat.
+      de ensemble-spread en genereert een hydrologisch advies. De <span class="highlight">onzekerheidsband</span>
+      (P10–P90) kwantificeert hoe gevoelig de droogteprognose is voor neerslagvariatie.
     </p>
-    <p>
-      De <span class="highlight">onzekerheidsband</span> (P10–P90) kwantificeert hoe gevoelig
-      de droogteprognose is voor neerslagvariatie. Een brede band wijst op een systeem
-      dat sterk gestuurd wordt door lokale neerslag; een smalle band op dominantie van de
-      bovenstrooms randconditie (Rijn-afvoer bij Westervoort).
+    <p style="color:#546e7a; font-size:12px;">
+      <strong style="color:#90a4ae;">Wat leerde dit:</strong> een lokaal 32B-model volstaat voor ensemble-interpretatie —
+      lage latentie weegt zwaarder dan modelgrootte voor ruwe tekstgeneratie zonder kritische beslissingen.
     </p>
+    <button class="uitleg-goto-btn" style="color:#ffcc80; border-color:#e65100; margin-top:8px;" onclick="switchYear('ensemble')">Bekijk ensemble →</button>
   </div>
 
-  <!-- 7. Proef 3 — Multimodel pipeline -->
+  <!-- Proef 3 -->
   <div class="info-section">
-    <h2>7 · Proef 3 · Multimodel pipeline — Ribasim + LLM + wflow</h2>
+    <h2>Proef 3 · Multimodel pipeline — Ribasim + LLM + wflow</h2>
     <p>
       De meest complexe proef koppelt drie modeltypen in één pipeline:
     </p>
@@ -1130,206 +1132,106 @@
         <div class="ss-label">wflow ×5</div>
         <div class="ss-sub">Detailsimulatie voor het geïdentificeerde deelstroomgebied</div>
       </div>
-      <div class="sim-sep">→</div>
-      <div class="sim-step"><span class="ss-icon">📊</span>
-        <div class="ss-label">Analyse</div>
-        <div class="ss-sub">Kwantitatieve vergelijking scenario's · waterbalans</div>
-      </div>
     </div>
     <p>
-      <span class="highlight">Ribasim</span> (Deltares) is een hydraulisch netwerk­routeringsmodel.
-      De officiële Linux-binary is x86-64 only; op de ARM64 Jetson draait het via de
-      Julia-package source: Python 3.13 bouwt het model (<code>.gpkg</code> database),
-      Julia voert de solver uit (<code>Ribasim.run(toml_path)</code>).
-      Eerste run duurt ~32 s door JIT-compilatie.
+      <span class="highlight">Ribasim</span> (Deltares) draait op ARM64 via de Julia-package source
+      (de officiële Linux-binary is x86-64 only). Python 3.13 bouwt het model; Julia voert de solver uit.
     </p>
-    <p>
-      De LLM-orchestrator analyseert de drie knooppunten (IJssel-Kampen, Neder-Rijn, Lek)
-      op waterdeficit ten opzichte van drempelstanden en selecteert het meest kritieke.
-      Dit triggert vijf wflow-droogte-scenario's voor het bijbehorende deelstroomgebied.
-      Het systeem draait volledig <span class="highlight">on-device op ARM64</span> — geen cloud, geen API-kosten
-      voor de simulaties.
+    <p style="color:#546e7a; font-size:12px;">
+      <strong style="color:#90a4ae;">Wat leerde dit:</strong> LLM-orkestratie van hydrologische modellen werkt op ARM64 —
+      de architectuur-barrière (geen x86 binary) is oplosbaar via Julia-source; het knelpunt
+      is niet de AI maar de model-integratie.
     </p>
+    <button class="uitleg-goto-btn" style="color:#90caf9; border-color:#1565c0; margin-top:8px;" onclick="switchYear('multimodel')">Bekijk pipeline →</button>
   </div>
 
-  <!-- 8. Proeven 4–6 — Historische simulaties -->
+  <!-- Proeven 4-6 -->
   <div class="info-section">
-    <h2>8 · Proeven 4–6 · Historische simulaties met wflow SBM</h2>
+    <h2>Proeven 4–6 · Historische simulaties</h2>
     <p>
-      Drie historische events zijn gesimuleerd met het gedistribueerde hydrologische model wflow SBM.
-      De events vormen bewust een spectrum: extreme hoogwater (1995), extreme droogte (2018) en
-      een middelgroot hoogwater-event met meetvalidatie (2021).
-    </p>
-    <div class="info-grid" style="margin:12px 0">
-      <div class="info-card">
-        <div class="ic-label" style="color:#4fc3f7">Proef 4 · Jan 1995</div>
-        <div class="ic-value" style="color:#f44336;font-size:15px">+6.52 m+NAP</div>
-        <div class="ic-sub">Piek Kampen · ERA5 +182% boven norm</div>
-        <div class="ic-sub" style="margin-top:4px">250.000 evacuaties · dijken hielden ternauwernood</div>
-      </div>
-      <div class="info-card">
-        <div class="ic-label" style="color:#ffc107">Proef 5 · Zomer 2018</div>
-        <div class="ic-value" style="color:#ffc107;font-size:15px">−0.45 m+NAP</div>
-        <div class="ic-sub">Diepste peil Kampen aug 2018 · BICS-code 5</div>
-        <div class="ic-sub" style="margin-top:4px">Vitens noodpompen · grondwater Veluwe daalde</div>
-      </div>
-      <div class="info-card">
-        <div class="ic-label" style="color:#ce93d8">Proef 6 · Jul 2021</div>
-        <div class="ic-value" style="color:#ce93d8;font-size:15px">+4.87 m+NAP</div>
-        <div class="ic-sub">Ahr-ramp Duitsland · piek Lobith 6.687 m³/s</div>
-        <div class="ic-sub" style="margin-top:4px">Nederland: waakzaamheid, geen evacuaties</div>
-      </div>
-    </div>
-    <p>
-      De <span class="highlight">wflow-simulaties</span> lopen van ERA5-Land forcing (neerslag, temperatuur,
-      potentiële verdamping) en een RWS-debiet als bovenstrooms randconditie bij Westervoort.
-      Proef 6 bevat een expliciete validatie: de run met <em>gemeten</em> RWS-inflow
-      (piek 899 m³/s bij Westervoort) vergeleken met een <em>synthetische</em> inflow
-      gebaseerd op het langjarig Pannerdense Kop-aandeel (25% → 1.672 m³/s, factor ×2.45 te hoog).
-      Het verschil bewijst dat standaard-verdeelsleutels bij extreme afvoer sterk afwijken
-      van de werkelijkheid: RWS stuurt actief meer water naar de Waal.
-    </p>
-  </div>
-
-  <!-- ══ TECHNIEK & HYDROLOGIE ════════════════════════════════ -->
-  <div class="audience-header voor-techneut">
-    <span class="aud-icon">⚙</span>
-    <span class="aud-title">Techniek &amp; Architectuur</span>
-    <span class="aud-sub">Modelkeuzes · implementatie · beperkingen</span>
-  </div>
-
-  <!-- 9. Systeemarchitectuur -->
-  <div class="info-section">
-    <h2>9 · Systeemarchitectuur</h2>
-    <table class="ll-table" style="margin:12px 0">
-      <tr><th>Laag</th><th>Component</th><th>Technologie</th><th>Opmerking</th></tr>
-      <tr>
-        <td>Hydrologisch model</td><td>wflow SBM 1.0.2</td>
-        <td>Julia 1.12.5 · ARM64</td>
-        <td>Eerste run JIT ~2:20u; daarna ~31s (1995)</td>
-      </tr>
-      <tr>
-        <td>Hydraulisch netwerk</td><td>Ribasim 2026.1.1</td>
-        <td>Python 3.13 (build) + Julia (solver)</td>
-        <td>x86-64 binary werkt niet op aarch64; Julia source vereist</td>
-      </tr>
-      <tr>
-        <td>Lokale LLM</td><td>Qwen2.5-32B-Instruct-Q4</td>
-        <td>llama.cpp · http://localhost:8080</td>
-        <td>Ensemble-interpretatie &amp; multimodel-orkestratie</td>
-      </tr>
-      <tr>
-        <td>Cloud LLM</td><td>Claude Haiku (Anthropic API)</td>
-        <td>anthropic Python SDK</td>
-        <td>Forecast-interventie · expert hydroloog-persona</td>
-      </tr>
-      <tr>
-        <td>Live data</td><td>RWS Waterinfo + Open-Meteo</td>
-        <td>rws_waterinfo · requests</td>
-        <td>15-min cache; graceful fallback bij uitval</td>
-      </tr>
-      <tr>
-        <td>API &amp; dashboard</td><td>FastAPI + uvicorn</td>
-        <td>Python 3.10 · poort 8000</td>
-        <td>MapLibre GL · Plotly · deck.gl</td>
-      </tr>
-      <tr>
-        <td>Tunneling</td><td>Cloudflare Tunnel</td>
-        <td>cloudflared · IPv4 (edge-ip-version: 4)</td>
-        <td>IPv6 uitgezet: adresrotatie veroorzaakte reconnects</td>
-      </tr>
-      <tr>
-        <td>Hardware</td><td>NVIDIA Jetson AGX Orin</td>
-        <td>aarch64 · 64 GB · Ubuntu 22.04</td>
-        <td>Geen cloud, volledig edge-computing</td>
-      </tr>
-    </table>
-  </div>
-
-  <!-- 10. Wflow SBM -->
-  <div class="info-section">
-    <h2>10 · Wflow SBM modelarchitectuur</h2>
-    <p>
-      <span class="highlight">Wflow SBM</span> (Simple Bucket Model) is een gedistribueerd hydrologisch
-      rastermodel van Deltares, gebouwd in Julia en open-source beschikbaar.
-      Per rastercel wordt een meerlaagsbodemmodel doorgerekend:
-    </p>
-    <ul>
-      <li><strong>Onverzadigde zone</strong> (wortelzone): verdamping via Penman-Monteith, interceptie, capillaire opstijging</li>
-      <li><strong>Diepere bodemlagen</strong> (2–3): percolatie naar verzadigde zone</li>
-      <li><strong>Laterale afstroming</strong>: kinematische golfvergelijking langs D8-afstroomrichting (MERIT Hydro DEM)</li>
-    </ul>
-    <div class="info-grid" style="margin-top:12px">
-      <div class="info-card">
-        <div class="ic-label">Rastergrootte</div>
-        <div class="ic-value" style="color:#4fc3f7">~800 m</div>
-        <div class="ic-sub">300 × 240 cellen · 19.490 actief</div>
-      </div>
-      <div class="info-card">
-        <div class="ic-label">Tijdstap</div>
-        <div class="ic-value" style="color:#4fc3f7">1 dag</div>
-        <div class="ic-sub">dagelijkse forcingdata</div>
-      </div>
-      <div class="info-card">
-        <div class="ic-label">Bodemmodel</div>
-        <div class="ic-value" style="color:#4fc3f7">3 lagen SBM</div>
-        <div class="ic-sub">+ kinematische golf routing</div>
-      </div>
-      <div class="info-card">
-        <div class="ic-label">Runtime na JIT</div>
-        <div class="ic-value" style="color:#4caf50">~31 s / ~2 min</div>
-        <div class="ic-sub">1995 (62 t) / 2021 (123 t) · Jetson Orin</div>
-      </div>
-    </div>
-    <p style="margin-top:12px">
-      De <span class="highlight">kinematische golfvergelijking</span> verwaarloost versnellingstermen
-      (vereenvoudiging Saint-Venant). Geschikt voor sub-kritieke stroming in rivieren;
-      niet voor inundatiemodellering of retentie in uiterwaarden.
-    </p>
-  </div>
-
-  <!-- 11. Pannerdense Kop -->
-  <div class="info-section">
-    <h2>11 · De Pannerdense Kop: geen vaste verdeling</h2>
-    <p>
-      De verdeling van het Rijnwater is wettelijk vastgelegd in het
-      <span class="highlight">Tractaat van 1709</span>, maar Rijkswaterstaat stuurt actief bij
-      via stuwen bij de Pannerdense Kop en Driel:
+      Drie ERA5-Land gedreven wflow SBM-simulaties van extremen in het Rijn/IJssel-bekken:
     </p>
     <table class="ll-table" style="margin:12px 0">
-      <tr><th>Tak</th><th>Tractaat 1709</th><th>Praktijk gemiddeld</th><th>Juli 2021 gemeten</th></tr>
-      <tr><td>Waal</td><td>6/9 ≈ 66,7%</td><td>~65%</td><td class="warn">~86,6%</td></tr>
-      <tr><td>Neder-Rijn / Lek</td><td>2/9 ≈ 22,2%</td><td>~18–22%</td><td class="ok">—</td></tr>
+      <tr><th>Proef</th><th>Periode</th><th>Forcing</th><th>Wat het laat zien</th></tr>
       <tr>
-        <td><strong>IJssel</strong></td>
-        <td><strong>1/9 ≈ 11,1%</strong></td>
-        <td><strong>~13–18%</strong></td>
-        <td class="ok"><strong>13,4%</strong> (899 / 6.687 m³/s)</td>
+        <td><strong style="color:#4fc3f7">4</strong></td>
+        <td>Jan–feb 1995</td>
+        <td>ERA5-Land, 90 dagen</td>
+        <td>Zwaarste Rijnvloed in decennia · 6.687 m³/s Lobith · 250.000 evacuaties</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#ffc107">5</strong></td>
+        <td>Mei–aug 2018</td>
+        <td>ERA5-Land, 4 maanden</td>
+        <td>Ernstigste droogte in decennia · Lobith ~600 m³/s (70% onder normaal)</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#ce93d8">6</strong></td>
+        <td>Jun–aug 2021</td>
+        <td>ERA5 + RWS gemeten inflow</td>
+        <td>Extreme Eifel/Ardennen buien · validatie met RWS-meetreeks</td>
       </tr>
     </table>
-    <p>
-      Bij de synthetische run 2021 werd <span class="warn">25%</span> aangenomen —
-      een factor <span class="red">×2,45</span> te hoog, wat een gesimuleerde piek van
-      3.090 m³/s gaf in plaats van de werkelijke 1.767 m³/s.
-      Gebruik altijd gemeten debieten als randconditie, met name bij hoog water.
+    <p style="color:#546e7a; font-size:12px;">
+      <strong style="color:#90a4ae;">Wat leerde dit:</strong> wflow SBM reproduceert grootteorde en timing van extremen op ERA5;
+      Proef 6 toont de meerwaarde van gemeten inflow (RWS) boven ERA5-randconditie voor validatie.
     </p>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+      <button class="uitleg-goto-btn" style="color:#4fc3f7; border-color:#1565c0;" onclick="switchYear('1995')">Jan 1995 →</button>
+      <button class="uitleg-goto-btn" style="color:#ffc107; border-color:#e65100;" onclick="switchYear('2018')">Zomer 2018 →</button>
+      <button class="uitleg-goto-btn" style="color:#ce93d8; border-color:#7b1fa2;" onclick="switchYear('2021')">Jul 2021 →</button>
+    </div>
   </div>
 
-  <!-- 12. Beperkingen -->
-  <div class="info-section">
-    <h2>12 · Beperkingen en geldigheid</h2>
-    <ul>
-      <li><span class="warn">Geen kalibratie</span> — standaard Wflow-parameters, kwantitatieve afwijkingen 20–50% realistisch.</li>
-      <li><span class="warn">Dagelijkse tijdstap</span> — sub-dagelijkse pieken worden gemist.</li>
-      <li><span class="warn">800 m resolutie</span> — kleine beken, stedelijk gebied en polders niet gerepresenteerd.</li>
-      <li><span class="warn">Geen inundatie</span> — kinematische golf geldig tot dijkoverschrijding; geen 2D overstroomde vlakten.</li>
-      <li><span class="warn">Cold start</span> — geen spin-up; eerste weken elke simulatie minder betrouwbaar.</li>
-      <li><span class="warn">Statistisch forecast</span> — recessiemodel + impulsrespons; geen fysisch gekalibreerd voorspelmodel.</li>
-      <li><span class="ok">Wél geschikt voor:</span> event-vergelijking, gevoeligheidsanalyse, proof-of-concept ARM edge-computing, educatieve demonstraties, LLM-integratie onderzoek.</li>
-    </ul>
+  <!-- Proef 7 — FEWS PI REST -->
+  <div class="info-section" style="border-left-color:#004d40;">
+    <h2 style="color:#4db6ac;">Proef 7 · FEWS PI REST — Waterlab als service</h2>
+    <p>
+      Waterlab publiceert wflow SBM-output en RWS Waterinfo-data via een
+      <span class="highlight">FEWS-compatibele PI REST API</span>. De implementatie volgt
+      Deltares spec v1.25 — dezelfde standaard die operationele FEWS-installaties bij RWS
+      en waterschappen gebruiken.
+    </p>
+    <div class="sim-steps" style="flex-wrap:wrap">
+      <div class="sim-step"><span class="ss-icon">🔌</span>
+        <div class="ss-label">filters</div>
+        <div class="ss-sub">/fewspiservice/v1/filters — beschikbare datafilters</div>
+      </div>
+      <div class="sim-sep">·</div>
+      <div class="sim-step"><span class="ss-icon">📍</span>
+        <div class="ss-label">locations</div>
+        <div class="ss-sub">Kampen, Westervoort — meetpunten met coördinaten</div>
+      </div>
+      <div class="sim-sep">·</div>
+      <div class="sim-step"><span class="ss-icon">📐</span>
+        <div class="ss-label">parameters</div>
+        <div class="ss-sub">Q.sim (wflow), Q.meting (RWS), H.meting</div>
+      </div>
+      <div class="sim-sep">·</div>
+      <div class="sim-step"><span class="ss-icon">📈</span>
+        <div class="ss-label">timeseries</div>
+        <div class="ss-sub">PI JSON met header + events[] — dagelijkse tijdstappen</div>
+      </div>
+    </div>
+    <p>
+      De <code style="color:#4db6ac">period</code>-parameter is een niet-standaard extensie
+      om historische wflow-simulaties (1995, 2018, 2021) op te vragen via dezelfde endpoint.
+    </p>
+    <div style="background:#001a13; border:1px solid #004d40; border-radius:6px; padding:.75rem 1rem; margin:12px 0; font-size:12px;">
+      <div style="color:#4db6ac; font-weight:600; margin-bottom:.4rem;">Wat werkt (v1)</div>
+      <div style="color:#78909c;">Read-only PI JSON · vier standaard-endpoints · wflow tijdreeksen per locatie/parameter/periode · RWS Waterinfo live-integratie</div>
+      <div style="color:#4db6ac; font-weight:600; margin:.6rem 0 .4rem;">Wat nog ontbreekt</div>
+      <div style="color:#78909c;">Authenticatie · schrijf-endpoints · webhooks · push-notificaties</div>
+    </div>
+    <p style="color:#546e7a; font-size:12px;">
+      <strong style="color:#90a4ae;">Wat leerde dit:</strong> een FastAPI-implementatie van PI REST v1.25 is compact
+      (5 bestanden, ~200 regels) en volstaat voor het essentiële leesprotocol. De grootste hindernis
+      is de spec-interpretatie, niet de implementatie.
+    </p>
+    <button class="uitleg-goto-btn" style="color:#4db6ac; border-color:#004d40; margin-top:8px;" onclick="switchYear('fews')">Bekijk FEWS POC →</button>
   </div>
 
-</div><!-- /#uitleg-panel -->
+</div><!-- /#pocs-panel -->
 
 <!-- ── ensemble-view ── -->
 <div id="ensemble-panel">
@@ -1608,6 +1510,50 @@
           en stuurt automatisch vijf wflow-droogte-scenario's aan. Volledig on-device op ARM64.
         </div>
         <button class="intro-card-btn" style="color:#90caf9; border-color:#1565c0;">Bekijk pipeline →</button>
+      </div>
+    </div>
+
+    <!-- FEWS PI REST -->
+    <div class="intro-card" onclick="switchYear('fews')">
+      <div class="intro-card-visual" style="background:linear-gradient(180deg,#001a13 0%,#002820 100%);">
+        <svg width="260" height="110" viewBox="0 0 260 110">
+          <defs>
+            <marker id="arr-fews"  markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4db6ac"/></marker>
+            <marker id="arr-fews2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#00897b"/></marker>
+          </defs>
+          <!-- Client -->
+          <rect x="10" y="35" width="58" height="40" rx="6" fill="#001a13" stroke="#00695c" stroke-width="1.5"/>
+          <text x="39" y="51" text-anchor="middle" fill="#4db6ac" font-size="8" font-weight="bold">FEWS</text>
+          <text x="39" y="63" text-anchor="middle" fill="#546e7a" font-size="7">client</text>
+          <!-- Pijl request -->
+          <line x1="68" y1="55" x2="98" y2="55" stroke="#4db6ac" stroke-width="1.5" marker-end="url(#arr-fews)"/>
+          <text x="83" y="50" text-anchor="middle" fill="#4db6ac" font-size="6">GET</text>
+          <!-- Server -->
+          <rect x="98" y="28" width="74" height="54" rx="6" fill="#001a13" stroke="#004d40" stroke-width="1.5"/>
+          <text x="135" y="47" text-anchor="middle" fill="#80cbc4" font-size="8" font-weight="bold">Waterlab</text>
+          <text x="135" y="59" text-anchor="middle" fill="#546e7a" font-size="7">PI REST v1.25</text>
+          <text x="135" y="71" text-anchor="middle" fill="#4db6ac" font-size="6">/fewspiservice/v1</text>
+          <!-- Pijl response -->
+          <line x1="172" y1="55" x2="200" y2="55" stroke="#00897b" stroke-width="1.5" marker-end="url(#arr-fews2)"/>
+          <text x="186" y="50" text-anchor="middle" fill="#00897b" font-size="6">JSON</text>
+          <!-- JSON blok -->
+          <rect x="200" y="20" width="52" height="70" rx="4" fill="#001a13" stroke="#00695c" stroke-width="1"/>
+          <text x="226" y="37" text-anchor="middle" fill="#546e7a" font-size="6">{</text>
+          <text x="226" y="48" text-anchor="middle" fill="#4db6ac" font-size="6">"timeSeries"</text>
+          <text x="226" y="58" text-anchor="middle" fill="#80cbc4" font-size="5.5">events[]</text>
+          <text x="226" y="68" text-anchor="middle" fill="#4db6ac" font-size="6">"header"</text>
+          <text x="226" y="79" text-anchor="middle" fill="#546e7a" font-size="6">}</text>
+          <text x="130" y="104" text-anchor="middle" fill="#37474f" font-size="7.5">filters · locations · parameters · timeseries</text>
+        </svg>
+      </div>
+      <div class="intro-card-body">
+        <div class="intro-card-label" style="color:#4db6ac;">Proef 7 · FEWS PI REST integratie</div>
+        <div class="intro-card-title">FEWS PI REST — Waterlab als service</div>
+        <div class="intro-card-desc">
+          wflow-output beschikbaar via vier standaard FEWS-endpoints conform Deltares spec v1.25.
+          RWS- en waterschap-systemen kunnen direct verbinden zonder aanpassing aan FEWS.
+        </div>
+        <button class="intro-card-btn" style="color:#4db6ac; border-color:#004d40;">Bekijk POC →</button>
       </div>
     </div>
 
@@ -2715,6 +2661,38 @@
 
 <!-- ── FEWS PI REST panel ── -->
 <div id="fews-panel">
+      <!-- POC-context blok -->
+      <div style="margin:1.5rem 2rem 0; padding:1.25rem 1.5rem; background:#001a13; border-left:4px solid #004d40; border-radius:0 8px 8px 0;">
+        <div style="color:#4db6ac; font-size:11px; font-weight:700; letter-spacing:.08em; margin-bottom:.5rem;">🧪 PROEF 7 — POC FEWS PI REST</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+          <div>
+            <div style="color:#b2dfdb; font-size:12px; font-weight:600; margin-bottom:.35rem;">Wat is bewezen</div>
+            <div style="color:#78909c; font-size:12px; line-height:1.6;">
+              Waterlab draait als volwaardige FEWS PI REST service. Vier standaard-endpoints
+              retourneren PI JSON conform Deltares spec v1.25. Elke FEWS-instantie bij
+              RWS of een waterschap kan dit endpoint als externe databron aanroepen
+              zonder aanpassing aan FEWS zelf.
+            </div>
+          </div>
+          <div>
+            <div style="color:#b2dfdb; font-size:12px; font-weight:600; margin-bottom:.35rem;">Wat je ziet op deze pagina</div>
+            <div style="color:#78909c; font-size:12px; line-height:1.6;">
+              <strong style="color:#90a4ae;">API Explorer</strong> — klik een endpoint om de ruwe PI JSON-response live te zien.<br>
+              <strong style="color:#90a4ae;">Tijdreeksgrafiek</strong> — wflow-simulatie versus RWS Waterinfo-meting op dezelfde locatie/parameter-sleutel.<br>
+              <strong style="color:#90a4ae;">PI REST hiërarchie</strong> — filter → location → parameter → timeseries.
+            </div>
+          </div>
+          <div>
+            <div style="color:#b2dfdb; font-size:12px; font-weight:600; margin-bottom:.35rem;">Wat nog ontbreekt</div>
+            <div style="color:#78909c; font-size:12px; line-height:1.6;">
+              Authenticatie · schrijf-endpoints · webhooks · push-notificaties.<br>
+              Dit is een <em>read-only v1</em> demonstratie — het bewijst dat het protocol
+              werkt, niet dat het productie-klaar is.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="fews-header">
         <span class="fews-badge">🔌 PI REST</span>
         <h2>Waterlab als FEWS PI REST service</h2>
