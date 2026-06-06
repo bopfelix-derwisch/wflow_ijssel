@@ -78,3 +78,16 @@ def test_get_waterinfo_timeseries_returns_empty_on_import_error(monkeypatch):
 
     events = da.get_waterinfo_timeseries("KAMPEN", "H.meting")
     assert events == []
+
+
+def test_get_waterinfo_timeseries_returns_empty_on_api_error(monkeypatch):
+    import sys
+    import unittest.mock as mock
+    import fews_poc.data_adapter as da
+
+    fake_rw = mock.MagicMock()
+    fake_rw.get_data.side_effect = RuntimeError("timeout")
+    monkeypatch.setitem(sys.modules, "rws_waterinfo", fake_rw)
+
+    events = da.get_waterinfo_timeseries("KAMPEN", "H.meting")
+    assert events == []

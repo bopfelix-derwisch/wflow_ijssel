@@ -97,4 +97,6 @@ def get_waterinfo_timeseries(location_id: str, parameter_id: str, days: int = 30
         _cache[cache_key] = (time.monotonic(), events)
         return events
     except Exception:
+        if cache_key in _cache:
+            return _cache[cache_key][1]
         return []
