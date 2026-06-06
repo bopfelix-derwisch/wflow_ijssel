@@ -17,6 +17,20 @@ const YEAR_CONFIG = {
     precipLabel:  "+182% (KNMI, jan 1995)",
     alertText:    "⚠ EXTREEM HOOGWATER",
     alertBg:      "#c62828",
+    threshold:    1500,
+    thresholdLabel: "Drempel 1500 m³/s",
+  },
+  "2018": {
+    days: buildDays("2018-06-01", "2018-08-31"),
+    accentColor:  [255, 193, 7],
+    sliderColor:  "#ffc107",
+    themeClass:   "year-2018",
+    eventLabel:   "Droogte zomer 2018 — Lobith ~600 m³/s (normaal ~2 000 m³/s) · IJssel laag peil",
+    precipLabel:  "−40% (ERA5, zomer 2018)",
+    alertText:    "⚠ ERNSTIGE DROOGTE",
+    alertBg:      "#e65100",
+    threshold:    200,
+    thresholdLabel: "Laagwater 200 m³/s",
   },
   "2021": {
     days: buildDays("2021-07-01", "2021-08-31"),
@@ -27,6 +41,8 @@ const YEAR_CONFIG = {
     precipLabel:  "+120% (ERA5, jul 2021)",
     alertText:    "⚠ ERNSTIG HOOGWATER",
     alertBg:      "#6a1b9a",
+    threshold:    1500,
+    thresholdLabel: "Drempel 1500 m³/s",
   },
 };
 
@@ -43,7 +59,7 @@ function buildDays(start, end) {
 
 // ── state ─────────────────────────────────────────────────────────────────────
 
-let currentYear = "1995";
+let currentYear = "intro";
 let dayIdx      = 0;
 let playing     = false;
 let playTimer   = null;
@@ -89,16 +105,37 @@ function switchYear(year) {
     if (b.dataset.year === year) b.classList.add(`active-${year}`);
   });
 
-  const simView    = document.getElementById("sim-view");
-  const infoPnl    = document.getElementById("info-panel");
-  const uitlegPnl  = document.getElementById("uitleg-panel");
+  const simView     = document.getElementById("sim-view");
+  const infoPnl     = document.getElementById("info-panel");
+  const uitlegPnl   = document.getElementById("uitleg-panel");
   const forecastPnl = document.getElementById("forecast-panel");
-  const banner     = document.getElementById("event-banner");
+  const ensemblePnl = document.getElementById("ensemble-panel");
+  const introPnl    = document.getElementById("intro-panel");
+  const banner      = document.getElementById("event-banner");
 
-  if (year === "forecast") {
+  function hideAll() {
     simView.style.display = "none";
     infoPnl.classList.remove("visible");
     uitlegPnl.classList.remove("visible");
+    forecastPnl.classList.remove("visible");
+    ensemblePnl.classList.remove("visible");
+    introPnl.classList.remove("visible");
+    const mmPnl = document.getElementById("multimodel-panel");
+    if (mmPnl) mmPnl.classList.remove("visible");
+  }
+
+  if (year === "intro") {
+    hideAll();
+    introPnl.classList.add("visible");
+    banner.textContent = "IJssel Waterlab · experimentele onderzoeksomgeving · NVIDIA Jetson AGX Orin";
+    document.getElementById("alert-badge").textContent = "⚗ Waterlab";
+    document.getElementById("alert-badge").style.background = "#37474f";
+    document.body.className = "";
+    return;
+  }
+
+  if (year === "forecast") {
+    hideAll();
     forecastPnl.classList.add("visible");
     banner.textContent = "Live verwachting IJssel · RWS Waterinfo + Open-Meteo · indicatief 14 dagen";
     document.getElementById("alert-badge").textContent = "📡 Verwachting";
@@ -109,10 +146,8 @@ function switchYear(year) {
   }
 
   if (year === "info") {
-    simView.style.display = "none";
+    hideAll();
     infoPnl.classList.add("visible");
-    uitlegPnl.classList.remove("visible");
-    forecastPnl.classList.remove("visible");
     banner.textContent = "Uitleg proef · Lessons learned · Analyse resultaten 2021";
     document.getElementById("alert-badge").textContent = "ℹ Info";
     document.getElementById("alert-badge").style.background = "#00695c";
@@ -121,11 +156,31 @@ function switchYear(year) {
     return;
   }
 
+  if (year === "ensemble") {
+    hideAll();
+    ensemblePnl.classList.add("visible");
+    banner.textContent = "Ensemble AI · 5 neerslag-scenario's (×0.70–×1.30) · Qwen2.5-32B interpretatie";
+    document.getElementById("alert-badge").textContent = "🎲 Ensemble";
+    document.getElementById("alert-badge").style.background = "#e65100";
+    document.body.className = "";
+    loadEnsemble();
+    return;
+  }
+
+  if (year === "multimodel") {
+    hideAll();
+    document.getElementById("multimodel-panel").classList.add("visible");
+    banner.textContent = "Multimodel · Rijn/IJssel netwerk → AI → wflow droogte-ensemble";
+    document.getElementById("alert-badge").textContent = "🌐 Multimodel";
+    document.getElementById("alert-badge").style.background = "#1565c0";
+    document.body.className = "";
+    loadMultimodel();
+    return;
+  }
+
   if (year === "uitleg") {
-    simView.style.display = "none";
-    infoPnl.classList.remove("visible");
+    hideAll();
     uitlegPnl.classList.add("visible");
-    forecastPnl.classList.remove("visible");
     banner.textContent = "Uitleg & Achtergrond  ·  IJssel-systeem  ·  Wflow SBM  ·  ERA5";
     document.getElementById("alert-badge").textContent = "📖 Uitleg";
     document.getElementById("alert-badge").style.background = "#01579b";
@@ -138,6 +193,9 @@ function switchYear(year) {
   infoPnl.classList.remove("visible");
   uitlegPnl.classList.remove("visible");
   forecastPnl.classList.remove("visible");
+  ensemblePnl.classList.remove("visible");
+  const mmPnlSim = document.getElementById("multimodel-panel");
+  if (mmPnlSim) mmPnlSim.classList.remove("visible");
 
   const cfg = YEAR_CONFIG[year];
   document.body.className = cfg.themeClass;
@@ -230,9 +288,9 @@ function renderChart(tsK, tsW, days, cfg, measured) {
     },
     {
       x: tsK.dates,
-      y: Array(tsK.dates.length).fill(DISCHARGE_THRESHOLD),
+      y: Array(tsK.dates.length).fill(cfg.threshold ?? DISCHARGE_THRESHOLD),
       type: "scatter", mode: "lines",
-      name: "Drempel 1500 m³/s",
+      name: cfg.thresholdLabel ?? "Drempel 1500 m³/s",
       line: { color: "#ff9800", width: 1, dash: "dash" },
       yaxis: "y",
     },
@@ -427,6 +485,8 @@ async function loadForecast() {
     const al = ALERT_LABELS[data.alert] || ALERT_LABELS.normaal;
     badge.textContent = `🌊 ${al.text}`;
     badge.style.background = al.color;
+
+    loadForecastIntervention();
 
     const src = document.getElementById("forecast-source");
     const src_str = data.data_available
@@ -640,4 +700,227 @@ async function loadInfoKpis() {
         real.days_above_threshold;
     }
   } catch (_) {}
+}
+
+async function loadForecastIntervention() {
+  const el = document.getElementById("forecast-llm-text");
+  try {
+    const data = await fetch(`${API}/api/forecast/intervention`).then(r => r.json());
+    if (data.available && data.intervention) {
+      el.innerHTML = data.intervention.replace(/\n/g, "<br>");
+    } else {
+      el.innerHTML = "<span class=\"llm-loading\">Geen AI-interventie beschikbaar</span>";
+    }
+  } catch (_) {
+    el.innerHTML = "<span class=\"llm-loading\">AI-interventie niet beschikbaar</span>";
+  }
+}
+
+// ── ensemble tab ──────────────────────────────────────────────────────────────
+
+async function loadEnsemble() {
+  const unavail  = document.getElementById("ensemble-unavailable");
+  const content  = document.getElementById("ensemble-content");
+  const llmEl    = document.getElementById("ens-llm-text");
+
+  try {
+    const data = await fetch(`${API}/api/ensemble`).then(r => {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+
+    if (!data.available) {
+      unavail.style.display = "";
+      content.style.display = "none";
+      return;
+    }
+
+    unavail.style.display = "none";
+    content.style.display = "";
+
+    renderEnsembleKpis(data);
+    renderEnsembleChart(data);
+    renderEnsembleScenarios(data);
+
+    if (data.interpretation) {
+      llmEl.innerHTML = data.interpretation.replace(/\n/g, "<br>");
+    } else {
+      llmEl.innerHTML = "<span class=\"llm-loading\">Geen AI-interpretatie beschikbaar</span>";
+    }
+  } catch (err) {
+    unavail.style.display = "";
+    content.style.display = "none";
+    console.warn("ensemble load failed:", err);
+  }
+}
+
+function renderEnsembleKpis(d) {
+  const qs       = d.scenarios.map(s => s.peak_q);
+  const qMin     = Math.min(...qs);
+  const qMax     = Math.max(...qs);
+  const baseline = d.scenarios.find(s => Math.abs(s.multiplier - 1.0) < 0.01) || d.scenarios[2];
+
+  document.getElementById("ens-kpi-range").textContent =
+    `${qMin.toLocaleString("nl-NL")} – ${qMax.toLocaleString("nl-NL")} m³/s`;
+  document.getElementById("ens-kpi-baseline").textContent =
+    `${baseline.peak_q.toLocaleString("nl-NL")} m³/s`;
+
+  const ts     = d.timeseries;
+  const spread = Math.round(Math.max(...ts.q_p90) - Math.min(...ts.q_p10));
+  document.getElementById("ens-kpi-spread").textContent =
+    spread.toLocaleString("nl-NL") + " m³/s";
+
+  const maxMeanIdx  = ts.q_mean.indexOf(Math.max(...ts.q_mean));
+  const hotspotDate = ts.dates[maxMeanIdx];
+  document.getElementById("ens-kpi-hotspot").textContent =
+    new Date(hotspotDate + "T12:00:00Z").toLocaleDateString("nl-NL",
+      { day: "numeric", month: "short", year: "numeric" });
+}
+
+function renderEnsembleChart(d) {
+  const ts = d.timeseries;
+  const x0 = ts.dates[0];
+  const x1 = ts.dates[ts.dates.length - 1];
+
+  const traces = [
+    { x: ts.dates, y: ts.q_p10, type: "scatter", mode: "lines",
+      line: { width: 0 }, showlegend: false, hoverinfo: "skip" },
+    { x: ts.dates, y: ts.q_p90, type: "scatter", mode: "lines",
+      line: { width: 0 }, fill: "tonexty", fillcolor: "rgba(255,183,77,0.15)",
+      name: "P10–P90 band", hoverinfo: "skip" },
+    { x: ts.dates, y: ts.q_p10, type: "scatter", mode: "lines",
+      name: "P10 (droog)", line: { color: "#ffe082", width: 1, dash: "dot" } },
+    { x: ts.dates, y: ts.q_p90, type: "scatter", mode: "lines",
+      name: "P90 (nat)", line: { color: "#ff6d00", width: 1, dash: "dot" } },
+    { x: ts.dates, y: ts.q_mean, type: "scatter", mode: "lines",
+      name: "Ensemble gemiddelde", line: { color: "#ffb74d", width: 2.5 } },
+    { x: [x0, x1], y: [1500, 1500], type: "scatter", mode: "lines",
+      name: "Drempel 1500 m³/s",
+      line: { color: "#f44336", width: 1, dash: "dash" }, hoverinfo: "skip" },
+  ];
+
+  Plotly.react("ensemble-chart", traces, {
+    paper_bgcolor: "#080c14",
+    plot_bgcolor:  "#0d1b2a",
+    font:   { color: "#e0e0e0", size: 11 },
+    margin: { t: 8, b: 36, l: 58, r: 14 },
+    legend: { orientation: "h", y: -0.28, font: { size: 10 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: {
+      title: "Debiet (m³/s)", gridcolor: "#1a3a5c",
+      titlefont: { color: "#ffb74d" }, tickfont: { color: "#ffb74d" },
+    },
+  }, { responsive: true, displayModeBar: false });
+}
+
+function renderEnsembleScenarios(d) {
+  const rows = d.scenarios.map(sc => {
+    const isBase = Math.abs(sc.multiplier - 1.0) < 0.01;
+    return `<tr class="${isBase ? "sc-baseline" : ""}">
+      <td>${sc.name}</td>
+      <td>×${sc.multiplier.toFixed(2)}</td>
+      <td>${sc.peak_q.toLocaleString("nl-NL")} m³/s</td>
+      <td>${sc.peak_date}</td>
+      <td>${sc.days_above}</td>
+    </tr>`;
+  });
+  document.getElementById("ens-scenario-tbody").innerHTML = rows.join("");
+}
+
+let mmLeafletMap = null;
+
+async function loadMultimodel() {
+  const unavail = document.getElementById("multimodel-unavailable");
+  const content = document.getElementById("multimodel-content");
+  try {
+    const resp = await fetch("/api/multimodel");
+    const data = await resp.json();
+    if (!data.available) {
+      unavail.style.display = "block";
+      content.style.display = "none";
+      return;
+    }
+    unavail.style.display = "none";
+    content.style.display = "block";
+    renderMultimodelMap(data);
+    document.getElementById("mm-trigger-reason").textContent =
+      data.orchestrator.trigger_reason;
+    document.getElementById("mm-llm-text").textContent =
+      data.orchestrator.llm_explanation;
+    renderMultimodelChart(data);
+    renderMultimodelScenarios(data);
+  } catch (e) {
+    unavail.style.display = "block";
+    content.style.display = "none";
+  }
+}
+
+function renderMultimodelMap(d) {
+  if (mmLeafletMap) {
+    mmLeafletMap.remove();
+    mmLeafletMap = null;
+  }
+  mmLeafletMap = L.map("multimodel-map").setView([52.1, 5.9], 8);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+  }).addTo(mmLeafletMap);
+
+  const rivers = [
+    [[51.862, 6.112], [51.850, 6.000], [51.960, 5.970]],
+    [[51.960, 5.970], [52.252, 6.157], [52.555, 5.921]],
+    [[51.960, 5.970], [51.960, 5.800], [51.900, 5.000]],
+  ];
+  rivers.forEach(r => L.polyline(r, {color: "#1565c0", weight: 3, opacity: 0.7})
+    .addTo(mmLeafletMap));
+
+  const criticalNode = d.ribasim.critical_node;
+  d.ribasim.nodes.forEach(node => {
+    const deficit = node.deficit_pct;
+    const color   = deficit > 50 ? "#d32f2f" : deficit > 20 ? "#f57c00" : "#388e3c";
+    const isCrit  = node.name === criticalNode;
+    const circle  = L.circleMarker([node.lat, node.lon], {
+      radius:      isCrit ? 14 : 10,
+      fillColor:   color,
+      color:       isCrit ? "#000" : "#fff",
+      weight:      isCrit ? 3 : 1,
+      fillOpacity: 0.85,
+    }).addTo(mmLeafletMap);
+    circle.bindPopup(
+      `<b>${node.name}</b><br>` +
+      `Peil: ${node.mean_level.toFixed(3)} m NAP<br>` +
+      `Drempel: ${node.threshold_level} m<br>` +
+      `Deficit: <b>${node.deficit_pct.toFixed(1)}%</b>` +
+      (isCrit ? "<br><b>⚠ Kritieke knoop</b>" : "")
+    );
+  });
+
+  L.marker([51.862, 6.112])
+    .bindPopup("<b>Lobith</b><br>Bovenstroomse inflow")
+    .addTo(mmLeafletMap);
+}
+
+function renderMultimodelChart(d) {
+  const ts = d.ensemble.timeseries;
+  const traces = [
+    {x: ts.dates, y: ts.q_p10,  name: "P10",  line: {color: "#90caf9", dash: "dash"}},
+    {x: ts.dates, y: ts.q_mean, name: "Gemiddeld", line: {color: "#1565c0", width: 2}},
+    {x: ts.dates, y: ts.q_p90,  name: "P90",  line: {color: "#ef9a9a", dash: "dash"}},
+  ];
+  Plotly.newPlot("mm-ensemble-chart", traces, {
+    margin: {t: 10, b: 40, l: 50, r: 10},
+    yaxis:  {title: "Afvoer (m³/s)"},
+    legend: {orientation: "h"},
+    paper_bgcolor: "transparent", plot_bgcolor: "transparent",
+  });
+}
+
+function renderMultimodelScenarios(d) {
+  const tbody = document.getElementById("mm-scenario-tbody");
+  tbody.innerHTML = "";
+  d.ensemble.scenarios.forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${s.name}</td><td>×${s.multiplier.toFixed(2)}</td>` +
+      `<td>${s.peak_q}</td><td>${s.peak_date}</td><td>${s.days_above}</td>`;
+    tbody.appendChild(tr);
+  });
 }

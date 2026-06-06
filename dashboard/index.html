@@ -26,6 +26,7 @@
       color: #888; transition: all .2s;
     }
     .year-tab.active-1995 { background: #1565c0; border-color: #1565c0; color: #fff; }
+    .year-tab.active-2018 { background: #e65100; border-color: #ffc107; color: #fff; }
     .year-tab.active-2021 { background: #7b1fa2; border-color: #7b1fa2; color: #fff; }
     .year-tab.active-info { background: #00695c; border-color: #00695c; color: #fff; }
     .year-tab:not([class*="active"]):hover { border-color: #4fc3f7; color: #4fc3f7; }
@@ -63,8 +64,10 @@
       width: 26px; height: 26px; border: none; border-radius: 50%;
       color: white; cursor: pointer; font-size: 12px; flex-shrink: 0; background: #1565c0;
     }
+    .year-2018 #play-btn { background: #e65100; }
     .year-2021 #play-btn { background: #7b1fa2; }
     #day-slider { flex: 1; accent-color: #f44336; }
+    .year-2018 #day-slider { accent-color: #ffc107; }
     .year-2021 #day-slider { accent-color: #ce93d8; }
     #day-label { font-size: 11px; color: #4fc3f7; white-space: nowrap; min-width: 110px; }
 
@@ -129,6 +132,86 @@
     /* ── uitleg panel ── */
     .year-tab.active-uitleg    { background: #01579b; border-color: #4fc3f7; color: #fff; }
     .year-tab.active-forecast  { background: #00695c; border-color: #4db6ac; color: #fff; }
+    .year-tab.active-ensemble  { background: #e65100; border-color: #ff6d00; color: #fff; }
+    .year-tab.active-multimodel { background: #1565c0; }
+    .year-tab.active-intro     { background: #263238; border-color: #78909c; color: #eceff1; }
+
+    /* ── intro panel ── */
+    #intro-panel { overflow-y: auto; max-height: calc(100vh - 52px); }
+    #intro-panel:not(.visible) { display: none; }
+    #intro-panel.visible { display: block; }
+    .intro-hero {
+      background: linear-gradient(135deg, #0d1b2a 0%, #0a1520 60%, #0d2030 100%);
+      border-bottom: 1px solid #1a3a5c;
+      padding: 2rem 2.5rem 1.8rem;
+    }
+    .intro-hero h2 { font-size: 22px; font-weight: 700; color: #e0f2fe; margin-bottom: .6rem; letter-spacing: -.3px; }
+    .intro-hero p  { color: #90a4ae; line-height: 1.8; max-width: 700px; }
+    .intro-badge {
+      display: inline-block; background: #263238; border: 1px solid #546e7a;
+      color: #b0bec5; font-size: 10px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; padding: 3px 10px; border-radius: 10px; margin-bottom: 1rem;
+    }
+    .intro-stack {
+      display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1rem;
+    }
+    .intro-stack span {
+      background: #0d2a3a; border: 1px solid #1a4a6a; border-radius: 4px;
+      color: #4fc3f7; font-size: 10px; font-weight: 600; padding: 2px 8px; letter-spacing: .4px;
+    }
+    .intro-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.2rem;
+      padding: 1.5rem 2.5rem 2rem;
+    }
+    .intro-card {
+      background: #0d1b2a; border: 1px solid #1a3a5c; border-radius: 10px;
+      overflow: hidden; cursor: pointer; transition: border-color .2s, transform .15s;
+      display: flex; flex-direction: column;
+    }
+    .intro-card:hover { border-color: #4fc3f7; transform: translateY(-2px); }
+    .intro-card-visual {
+      height: 130px; display: flex; align-items: center; justify-content: center;
+      overflow: hidden; flex-shrink: 0;
+    }
+    .intro-card-body { padding: 1rem 1.1rem 1.1rem; flex: 1; display: flex; flex-direction: column; }
+    .intro-card-label {
+      font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: .35rem; opacity: .7;
+    }
+    .intro-card-title { font-size: 14px; font-weight: 700; color: #e0e0e0; margin-bottom: .45rem; }
+    .intro-card-desc  { font-size: 12px; color: #90a4ae; line-height: 1.65; flex: 1; }
+    .intro-card-btn {
+      margin-top: .8rem; display: inline-block; font-size: 11px; font-weight: 700;
+      padding: 4px 14px; border-radius: 12px; border: 1px solid; cursor: pointer;
+      background: transparent; transition: background .15s;
+      align-self: flex-start;
+    }
+    .intro-card-btn:hover { opacity: .85; }
+    #multimodel-panel { display: none; }
+    #multimodel-panel.visible { display: block; }
+    #multimodel-map { height: 350px; width: 100%; border-radius: 8px; margin-bottom: 1rem; }
+
+    /* ── ensemble panel ── */
+    #ensemble-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #ensemble-panel.visible { display: block; }
+    #ensemble-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+    #ensemble-chart { width: 100%; height: 220px; margin: 0 0 16px; }
+    #ensemble-unavailable { text-align: center; padding: 60px 20px; }
+    #ensemble-unavailable .eu-icon  { font-size: 48px; display: block; margin-bottom: 16px; }
+    #ensemble-unavailable .eu-title { font-size: 16px; color: #666; margin-bottom: 8px; }
+    #ensemble-unavailable .eu-sub   { font-size: 12px; color: #555; line-height: 1.7; }
+    #ensemble-unavailable code { background: #0d1b2a; padding: 2px 6px; border-radius: 3px; }
+    .ensemble-scenario-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 0 0 20px; }
+    .ensemble-scenario-table th { background: #0d1b2a; color: #ffb74d; padding: 6px 10px; text-align: left; border-bottom: 1px solid #1a3a5c; }
+    .ensemble-scenario-table td { padding: 5px 10px; border-bottom: 1px solid #0d1b2a; color: #ccc; }
+    .ensemble-scenario-table tr:hover td { background: #0d1b2a; }
+    .ensemble-scenario-table .sc-baseline td { color: #fff; font-weight: 600; }
+    .llm-block { background: #0d1b2a; border: 1px solid #2a3a50; border-left: 3px solid #ffb74d; border-radius: 6px; padding: 14px 16px; margin-bottom: 20px; }
+    .llm-block .llm-header { font-size: 10px; color: #ffb74d; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+    .llm-block .llm-text   { font-size: 13px; color: #ccc; line-height: 1.7; }
+    .llm-block .llm-loading { color: #555; font-style: italic; }
     #uitleg-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #uitleg-panel.visible { display: block; }
 
@@ -200,27 +283,33 @@
     .sim-step .ss-sub   { font-size: 10px; color: #888; margin-top: 3px; }
     .sim-sep { color: #2a4a6a; font-size: 20px; padding-top: 20px; align-self: flex-start; }
   </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
 <div id="header">
   <h1>🌊 IJssel Hoogwater Dashboard</h1>
-  <span class="badge" id="alert-badge">⏳ Laden...</span>
+  <span class="badge" id="alert-badge" style="background:#37474f">⚗ Waterlab</span>
   <div id="year-tabs">
-    <button class="year-tab active-1995" data-year="1995">Jan 1995</button>
+    <button class="year-tab active-intro" data-year="intro">Waterlab</button>
+    <button class="year-tab" data-year="1995">Jan 1995</button>
+    <button class="year-tab" data-year="2018">Zomer 2018</button>
     <button class="year-tab" data-year="2021">Jul 2021</button>
     <button class="year-tab" data-year="forecast">Verwachting</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
+    <button class="year-tab" data-year="ensemble">Ensemble AI</button>
+    <button class="year-tab" data-year="multimodel">Multimodel</button>
     <button class="year-tab" data-year="uitleg">Uitleg</button>
   </div>
 </div>
 
 <div id="event-banner">
-  Wflow SBM simulatie &nbsp;·&nbsp; Westervoort → Kampen &nbsp;·&nbsp; ERA5-Land forcing
+  IJssel Waterlab &nbsp;·&nbsp; experimentele onderzoeksomgeving &nbsp;·&nbsp; NVIDIA Jetson AGX Orin
 </div>
 
 <!-- ── simulatie-view ── -->
-<div id="sim-view">
+<div id="sim-view" style="display:none">
   <div id="kpi-row">
     <div class="kpi" id="kpi-peak">
       <div class="label">Piekafvoer Kampen</div>
@@ -589,6 +678,12 @@
     Marge neemt toe tot ±70% op dag 14. Gebruik RWS waterstandsberichten voor operationele beslissingen.
     Bron: <strong>RWS Waterinfo</strong> (meting) · <strong>Open-Meteo</strong> (neerslag) · cache 15 min.
   </div>
+  <div class="llm-block" style="margin: 0 16px 16px">
+    <div class="llm-header">🤖 AI-interventie · Qwen2.5-32B · lokaal</div>
+    <div class="llm-text" id="forecast-llm-text">
+      <span class="llm-loading">Interventie genereren…</span>
+    </div>
+  </div>
 </div>
 
 <!-- ── uitleg-view ── -->
@@ -937,9 +1032,519 @@
 
 </div><!-- /#uitleg-panel -->
 
+<!-- ── ensemble-view ── -->
+<div id="ensemble-panel">
+
+  <!-- Niet beschikbaar -->
+  <div id="ensemble-unavailable">
+    <span class="eu-icon">🤖</span>
+    <div class="eu-title">Ensemble nog niet uitgevoerd</div>
+    <div class="eu-sub">
+      Voer de ensemble simulatie uit om resultaten te zien:<br><br>
+      <code>python run_ensemble.py</code><br><br>
+      De vijf scenario's (neerslag ×0.70 t/m ×1.30) worden sequentieel gesimuleerd
+      en de resultaten worden hier automatisch zichtbaar.
+    </div>
+  </div>
+
+  <!-- Data beschikbaar -->
+  <div id="ensemble-content" style="display:none">
+
+    <!-- KPI's -->
+    <div id="ensemble-kpi-row">
+      <div class="info-card">
+        <div class="ic-label">Scenario bereik piek Q</div>
+        <div class="ic-value" id="ens-kpi-range" style="color:#ffb74d">—</div>
+        <div class="ic-sub">droog → nat scenario</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Baseline piek Q</div>
+        <div class="ic-value" id="ens-kpi-baseline" style="color:#fff">—</div>
+        <div class="ic-sub">neerslag ×1.00</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">P10–P90 max spread</div>
+        <div class="ic-value" id="ens-kpi-spread" style="color:#4db6ac">—</div>
+        <div class="ic-sub">onzekerheidsbreedte</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label">Ensemble piekdag</div>
+        <div class="ic-value" id="ens-kpi-hotspot" style="color:#f44336">—</div>
+        <div class="ic-sub">gemiddeld over scenario's</div>
+      </div>
+    </div>
+
+    <!-- Grafiek -->
+    <div class="info-section" style="margin-bottom:8px">
+      <h2>Onzekerheidsband — debiet bij Kampen (m³/s)</h2>
+    </div>
+    <div id="ensemble-chart"></div>
+
+    <!-- LLM interpretatie -->
+    <div class="llm-block">
+      <div class="llm-header">🤖 AI-interpretatie (Qwen2.5-32B · lokaal)</div>
+      <div class="llm-text" id="ens-llm-text"><span class="llm-loading">Laden...</span></div>
+    </div>
+
+    <!-- Scenario tabel -->
+    <div class="info-section" style="margin-bottom:8px">
+      <h2>Scenario vergelijking</h2>
+    </div>
+    <table class="ensemble-scenario-table">
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th>Neerslagfactor</th>
+          <th>Piek Q Kampen</th>
+          <th>Piekdatum</th>
+          <th>Dagen &gt; 1500 m³/s</th>
+        </tr>
+      </thead>
+      <tbody id="ens-scenario-tbody">
+        <tr><td colspan="5" style="color:#555;text-align:center">Laden...</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Uitleg -->
+    <div class="audience-header" style="background:linear-gradient(135deg,#bf360c,#7f2008);margin-top:8px">
+      <span class="aud-icon">🎲</span>
+      <span class="aud-title">Wat is ensemble-analyse?</span>
+      <span class="aud-sub">Onzekerheid kwantificeren in hydrologische voorspellingen</span>
+    </div>
+
+    <div class="info-section">
+      <h2>Principe: variaties op het basisscenario</h2>
+      <p>
+        Een <span class="highlight">ensemble</span> is een collectie van meerdere simulaties,
+        elk met licht andere invoer. Door de neerslagfactor systematisch te variëren
+        (van ×0,70 tot ×1,30) wordt de gevoeligheid van het model voor
+        onzekerheid in de forcingdata zichtbaar.
+      </p>
+      <div class="sim-steps" style="margin:14px 0">
+        <div class="sim-step">
+          <span class="ss-icon">🌧</span>
+          <div class="ss-label">ERA5 neerslag</div>
+          <div class="ss-sub">historisch · ×0.70–×1.30</div>
+        </div>
+        <div class="sim-sep">→</div>
+        <div class="sim-step">
+          <span class="ss-icon">🔄</span>
+          <div class="ss-label">5 Wflow runs</div>
+          <div class="ss-sub">sequentieel op Jetson</div>
+        </div>
+        <div class="sim-sep">→</div>
+        <div class="sim-step">
+          <span class="ss-icon">📊</span>
+          <div class="ss-label">Statistieken</div>
+          <div class="ss-sub">P10 · gemiddelde · P90</div>
+        </div>
+        <div class="sim-sep">→</div>
+        <div class="sim-step">
+          <span class="ss-icon">🤖</span>
+          <div class="ss-label">LLM analyse</div>
+          <div class="ss-sub">Qwen2.5-32B · lokaal</div>
+        </div>
+      </div>
+      <p>
+        De <span class="highlight">P10–P90 band</span> geeft aan: als de werkelijke neerslag
+        10–30% afwijkt van de ERA5-schatting, kan het piekdebiet in dit bereik vallen.
+        Een smalle band duidt op een robuust resultaat; een brede band op hoge gevoeligheid.
+      </p>
+    </div>
+
+    <div class="info-section">
+      <h2>Operationele context — EFAS en Deltares</h2>
+      <p>
+        Het <span class="highlight">EFAS-systeem</span> (European Flood Awareness System)
+        van Deltares/JRC maakt standaard gebruik van ensembles met 50+ leden van het ECMWF ENS-model.
+        Dit prototype demonstreert dezelfde aanpak op een edge-apparaat: vijf scenario's
+        in plaats van vijftig, maar hetzelfde principe.
+      </p>
+      <ul>
+        <li><span class="highlight">Onzekerheidsrapportage:</span> "Piekdebiet 700–1100 m³/s" is informatiever dan één getal</li>
+        <li><span class="highlight">Beslissingsbomen:</span> waterkeringbeheerders handelen anders bij P90 &gt; drempel versus P10 &gt; drempel</li>
+        <li><span class="highlight">Edge-computing:</span> de Jetson Orin voert 5 runs sequentieel uit zonder cloud — relevant voor crisisomstandigheden</li>
+      </ul>
+    </div>
+
+  </div><!-- /#ensemble-content -->
+
+</div><!-- /#ensemble-panel -->
+
+<div id="intro-panel" class="visible">
+  <!-- Hero -->
+  <div class="intro-hero">
+    <div class="intro-badge">⚗ Experimentele omgeving</div>
+    <h2>IJssel Waterlab</h2>
+    <p>
+      Dit is een experimentele onderzoeksomgeving op een <strong style="color:#e0f2fe;">NVIDIA Jetson AGX Orin</strong> (ARM64 edge computer),
+      volledig offline draaiend zonder cloud of externe API's. Hier worden drie typen proeven gecombineerd:
+      <strong style="color:#e0f2fe;">historische simulaties</strong> (1995, 2018, 2021),
+      een <strong style="color:#e0f2fe;">live verwachting</strong> gebaseerd op open data,
+      en een <strong style="color:#e0f2fe;">AI-gestuurde multimodel pipeline</strong> waarbij Ribasim, wflow SBM en een lokale LLM samenwerken.
+      De resultaten zijn indicatief en geschikt voor demonstratie en onderzoek — niet voor operationeel waterbeheer.
+    </p>
+    <div class="intro-stack">
+      <span>wflow SBM</span><span>Ribasim</span><span>Julia</span><span>ERA5-Land</span>
+      <span>Qwen2.5-32B</span><span>FastAPI</span><span>MapLibre GL</span><span>ARM64 Jetson</span>
+    </div>
+  </div>
+
+  <!-- Proeven grid -->
+  <div class="intro-grid">
+
+    <!-- Jan 1995 -->
+    <div class="intro-card" onclick="switchYear('1995')">
+      <div class="intro-card-visual" style="background:linear-gradient(180deg,#0a1a3a 0%,#0d2a5a 100%);">
+        <svg width="260" height="110" viewBox="0 0 260 110">
+          <!-- water fill -->
+          <rect x="0" y="55" width="260" height="55" fill="#1565c0" opacity=".5"/>
+          <!-- wave top -->
+          <path d="M0,55 Q20,42 40,55 Q60,68 80,55 Q100,42 120,55 Q140,68 160,55 Q180,42 200,55 Q220,68 240,55 Q260,42 280,55 L280,110 L0,110 Z" fill="#1976d2" opacity=".8">
+            <animate attributeName="d" dur="3s" repeatCount="indefinite"
+              values="M0,55 Q20,42 40,55 Q60,68 80,55 Q100,42 120,55 Q140,68 160,55 Q180,42 200,55 Q220,68 240,55 Q260,42 280,55 L280,110 L0,110 Z;
+                      M0,55 Q20,68 40,55 Q60,42 80,55 Q100,68 120,55 Q140,42 160,55 Q180,68 200,55 Q220,42 240,55 Q260,68 280,55 L280,110 L0,110 Z;
+                      M0,55 Q20,42 40,55 Q60,68 80,55 Q100,42 120,55 Q140,68 160,55 Q180,42 200,55 Q220,68 240,55 Q260,42 280,55 L280,110 L0,110 Z"/>
+          </path>
+          <!-- dike silhouette -->
+          <polygon points="40,55 80,20 120,55" fill="#0a1220" opacity=".9"/>
+          <polygon points="130,55 170,28 210,55" fill="#0a1220" opacity=".9"/>
+          <!-- water level arrow -->
+          <line x1="228" y1="15" x2="228" y2="52" stroke="#f44336" stroke-width="2"/>
+          <polygon points="224,52 232,52 228,58" fill="#f44336"/>
+          <text x="234" y="36" fill="#f44336" font-size="9" font-weight="bold">6.687 m³/s</text>
+        </svg>
+      </div>
+      <div class="intro-card-body">
+        <div class="intro-card-label" style="color:#4fc3f7;">Proef 1 · Historische simulatie</div>
+        <div class="intro-card-title">Hoogwater — januari 1995</div>
+        <div class="intro-card-desc">
+          De zwaarste Rijnvloed in decennia. Lobith bereikte 6.687 m³/s; 250.000 mensen werden geëvacueerd.
+          wflow SBM simuleert 90 dagen op ERA5-Land forcing met kinematische golfrouting.
+        </div>
+        <button class="intro-card-btn" style="color:#4fc3f7; border-color:#1565c0;">Bekijk simulatie →</button>
+      </div>
+    </div>
+
+    <!-- Zomer 2018 -->
+    <div class="intro-card" onclick="switchYear('2018')">
+      <div class="intro-card-visual" style="background:linear-gradient(180deg,#1a0e00 0%,#2d1600 100%);">
+        <svg width="260" height="110" viewBox="0 0 260 110">
+          <!-- sun -->
+          <circle cx="200" cy="35" r="22" fill="#ff8f00" opacity=".9"/>
+          <circle cx="200" cy="35" r="16" fill="#ffca28"/>
+          <!-- sun rays -->
+          <g stroke="#ff8f00" stroke-width="1.5" opacity=".7">
+            <line x1="200" y1="6" x2="200" y2="1"/><line x1="200" y1="64" x2="200" y2="69"/>
+            <line x1="171" y1="35" x2="166" y2="35"/><line x1="229" y1="35" x2="234" y2="35"/>
+            <line x1="179" y1="14" x2="176" y2="11"/><line x1="221" y1="56" x2="224" y2="59"/>
+            <line x1="221" y1="14" x2="224" y2="11"/><line x1="179" y1="56" x2="176" y2="59"/>
+          </g>
+          <!-- dry riverbed -->
+          <path d="M0,75 Q65,65 130,70 Q195,75 260,68" stroke="#5d4037" stroke-width="3" fill="none"/>
+          <!-- cracked earth -->
+          <path d="M20,80 L30,90 M30,90 L45,85 M45,85 L50,95" stroke="#4e342e" stroke-width="1.5" fill="none" opacity=".8"/>
+          <path d="M80,82 L90,92 M90,92 L100,87" stroke="#4e342e" stroke-width="1.5" fill="none" opacity=".8"/>
+          <path d="M150,78 L158,88 M158,88 L170,82 M170,82 L175,92" stroke="#4e342e" stroke-width="1.5" fill="none" opacity=".8"/>
+          <!-- low water line -->
+          <rect x="0" y="85" width="260" height="25" fill="#3e2723" opacity=".6"/>
+          <text x="8" y="102" fill="#ffc107" font-size="9" font-weight="bold">~600 m³/s · normaal 2.000</text>
+        </svg>
+      </div>
+      <div class="intro-card-body">
+        <div class="intro-card-label" style="color:#ffc107;">Proef 2 · Droogte simulatie</div>
+        <div class="intro-card-title">Droogte — zomer 2018</div>
+        <div class="intro-card-desc">
+          Ernstigste droogte in Nederland in decennia. Lobith zakte naar ~600 m³/s — 70% onder normaal.
+          ERA5-Land forcing mei–aug 2018; wflow op echte droogte-condities.
+        </div>
+        <button class="intro-card-btn" style="color:#ffc107; border-color:#e65100;">Bekijk simulatie →</button>
+      </div>
+    </div>
+
+    <!-- Jul 2021 -->
+    <div class="intro-card" onclick="switchYear('2021')">
+      <div class="intro-card-visual" style="background:linear-gradient(180deg,#120820 0%,#1a0f2a 100%);">
+        <svg width="260" height="110" viewBox="0 0 260 110">
+          <!-- storm clouds -->
+          <ellipse cx="80" cy="30" rx="45" ry="22" fill="#4a148c" opacity=".9"/>
+          <ellipse cx="110" cy="22" rx="38" ry="18" fill="#6a1b9a" opacity=".9"/>
+          <ellipse cx="55" cy="25" rx="30" ry="15" fill="#4a148c" opacity=".8"/>
+          <ellipse cx="175" cy="35" rx="40" ry="18" fill="#38006b" opacity=".8"/>
+          <ellipse cx="200" cy="28" rx="32" ry="15" fill="#4a148c" opacity=".7"/>
+          <!-- rain lines -->
+          <g stroke="#b39ddb" stroke-width="1" opacity=".6">
+            <line x1="40" y1="50" x2="33" y2="70"/><line x1="60" y1="48" x2="53" y2="68"/>
+            <line x1="80" y1="52" x2="73" y2="72"/><line x1="100" y1="50" x2="93" y2="70"/>
+            <line x1="120" y1="48" x2="113" y2="68"/><line x1="140" y1="52" x2="133" y2="72"/>
+            <line x1="160" y1="50" x2="153" y2="70"/><line x1="180" y1="48" x2="173" y2="68"/>
+            <line x1="200" y1="52" x2="193" y2="72"/><line x1="220" y1="50" x2="213" y2="70"/>
+          </g>
+          <!-- flood water -->
+          <rect x="0" y="72" width="260" height="38" fill="#7b1fa2" opacity=".4"/>
+          <path d="M0,72 Q26,64 52,72 Q78,80 104,72 Q130,64 156,72 Q182,80 208,72 Q234,64 260,72 L260,110 L0,110 Z" fill="#8e24aa" opacity=".6"/>
+          <text x="8" y="105" fill="#ce93d8" font-size="9" font-weight="bold">Piek Maas · Limburg · Luik</text>
+        </svg>
+      </div>
+      <div class="intro-card-body">
+        <div class="intro-card-label" style="color:#ce93d8;">Proef 3 · Historische simulatie</div>
+        <div class="intro-card-title">Hoogwater — juli 2021</div>
+        <div class="intro-card-desc">
+          Extreme neerslag in 48 uur boven Ardennen en Eifel veroorzaakte catastrofale overstromingen
+          langs Maas en Roer. Vergelijking met ERA5 forcing en RWS meetreeksen.
+        </div>
+        <button class="intro-card-btn" style="color:#ce93d8; border-color:#7b1fa2;">Bekijk simulatie →</button>
+      </div>
+    </div>
+
+    <!-- Verwachting -->
+    <div class="intro-card" onclick="switchYear('forecast')">
+      <div class="intro-card-visual" style="background:linear-gradient(180deg,#00251a 0%,#003828 100%);">
+        <svg width="260" height="110" viewBox="0 0 260 110">
+          <!-- axes -->
+          <line x1="30" y1="90" x2="250" y2="90" stroke="#546e7a" stroke-width="1"/>
+          <line x1="30" y1="10" x2="30" y2="90" stroke="#546e7a" stroke-width="1"/>
+          <!-- today marker -->
+          <line x1="110" y1="10" x2="110" y2="90" stroke="#4db6ac" stroke-width="1" stroke-dasharray="3,3"/>
+          <text x="112" y="20" fill="#4db6ac" font-size="8">nu</text>
+          <!-- uncertainty band (forecast) -->
+          <path d="M110,50 Q140,40 170,35 Q200,28 240,20 L240,50 Q200,60 170,68 Q140,72 110,68 Z" fill="#00695c" opacity=".3"/>
+          <!-- historical line -->
+          <polyline points="30,75 55,68 80,72 110,50" stroke="#4caf50" stroke-width="2" fill="none"/>
+          <!-- forecast median -->
+          <polyline points="110,50 140,45 170,42 200,36 240,30" stroke="#4db6ac" stroke-width="2" fill="none" stroke-dasharray="5,3"/>
+          <!-- open-meteo label -->
+          <text x="115" y="85" fill="#546e7a" font-size="8">Open-Meteo + RWS Waterinfo</text>
+          <!-- data points -->
+          <circle cx="30" cy="75" r="3" fill="#4caf50"/>
+          <circle cx="110" cy="50" r="3" fill="#4caf50"/>
+        </svg>
+      </div>
+      <div class="intro-card-body">
+        <div class="intro-card-label" style="color:#4db6ac;">Proef 4 · Live verwachting</div>
+        <div class="intro-card-title">14-daagse verwachting</div>
+        <div class="intro-card-desc">
+          Actuele debietsverwachting bij Kampen op basis van Open-Meteo weersvoorspelling
+          en RWS Waterinfo meetdata. Automatisch ververst; onzekerheidsband zichtbaar.
+        </div>
+        <button class="intro-card-btn" style="color:#4db6ac; border-color:#00695c;">Bekijk verwachting →</button>
+      </div>
+    </div>
+
+    <!-- Ensemble AI -->
+    <div class="intro-card" onclick="switchYear('ensemble')">
+      <div class="intro-card-visual" style="background:linear-gradient(180deg,#1a0a00 0%,#2a1200 100%);">
+        <svg width="260" height="110" viewBox="0 0 260 110">
+          <!-- axes -->
+          <line x1="25" y1="95" x2="250" y2="95" stroke="#546e7a" stroke-width="1"/>
+          <!-- scenario fan lines -->
+          <polyline points="25,80 80,70 140,50 200,20 245,8" stroke="#ef9a9a" stroke-width="1.5" fill="none" opacity=".8"/>
+          <polyline points="25,80 80,72 140,58 200,35 245,22" stroke="#ffcc80" stroke-width="1.5" fill="none" opacity=".9"/>
+          <polyline points="25,80 80,74 140,64 200,48 245,38" stroke="#fff176" stroke-width="2" fill="none"/>
+          <polyline points="25,80 80,76 140,70 200,60 245,53" stroke="#a5d6a7" stroke-width="1.5" fill="none" opacity=".9"/>
+          <polyline points="25,80 80,78 140,76 200,72 245,68" stroke="#80deea" stroke-width="1.5" fill="none" opacity=".8"/>
+          <!-- labels right -->
+          <text x="247" y="11" fill="#ef9a9a" font-size="7">×1.30</text>
+          <text x="247" y="25" fill="#ffcc80" font-size="7">×1.15</text>
+          <text x="247" y="41" fill="#fff176" font-size="7">×1.00</text>
+          <text x="247" y="56" fill="#a5d6a7" font-size="7">×0.85</text>
+          <text x="247" y="71" fill="#80deea" font-size="7">×0.70</text>
+          <!-- AI chip icon -->
+          <rect x="8" y="8" width="22" height="22" rx="4" fill="#1a1a1a" stroke="#e65100" stroke-width="1.5"/>
+          <rect x="14" y="14" width="10" height="10" rx="2" fill="#e65100" opacity=".7"/>
+          <text x="11" y="40" fill="#e65100" font-size="7" font-weight="bold">AI</text>
+        </svg>
+      </div>
+      <div class="intro-card-body">
+        <div class="intro-card-label" style="color:#ffcc80;">Proef 5 · Ensemble + AI interpretatie</div>
+        <div class="intro-card-title">Ensemble AI — neerslag scenario's</div>
+        <div class="intro-card-desc">
+          Vijf neerslag-scenario's (×0.70–×1.30 multiplier) draaien parallel in wflow SBM.
+          Qwen2.5-32B (lokale LLM) interpreteert de spread en geeft een hydrologisch advies.
+        </div>
+        <button class="intro-card-btn" style="color:#ffcc80; border-color:#e65100;">Bekijk ensemble →</button>
+      </div>
+    </div>
+
+    <!-- Multimodel -->
+    <div class="intro-card" onclick="switchYear('multimodel')">
+      <div class="intro-card-visual" style="background:linear-gradient(180deg,#0a1020 0%,#0d1830 100%);">
+        <svg width="260" height="110" viewBox="0 0 260 110">
+          <!-- connection lines -->
+          <line x1="55" y1="55" x2="105" y2="55" stroke="#1565c0" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="155" y1="55" x2="200" y2="35" stroke="#1976d2" stroke-width="1.5"/>
+          <line x1="155" y1="55" x2="200" y2="55" stroke="#1976d2" stroke-width="1.5"/>
+          <line x1="155" y1="55" x2="200" y2="75" stroke="#1976d2" stroke-width="1.5"/>
+          <line x1="105" y1="55" x2="155" y2="55" stroke="#1976d2" stroke-width="1.5"/>
+          <defs>
+            <marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#4fc3f7"/>
+            </marker>
+          </defs>
+          <!-- Ribasim node -->
+          <circle cx="42" cy="55" r="18" fill="#0d2a5a" stroke="#1565c0" stroke-width="2"/>
+          <text x="42" y="52" text-anchor="middle" fill="#4fc3f7" font-size="7" font-weight="bold">Ribasim</text>
+          <text x="42" y="62" text-anchor="middle" fill="#90caf9" font-size="6">netwerk</text>
+          <!-- AI node -->
+          <circle cx="130" cy="55" r="18" fill="#1a1a2e" stroke="#e65100" stroke-width="2"/>
+          <text x="130" y="52" text-anchor="middle" fill="#ffcc80" font-size="7" font-weight="bold">LLM</text>
+          <text x="130" y="62" text-anchor="middle" fill="#ff9800" font-size="6">orchestrator</text>
+          <!-- wflow nodes -->
+          <rect x="192" y="22" width="52" height="26" rx="5" fill="#003300" stroke="#2e7d32" stroke-width="1.5"/>
+          <text x="218" y="35" text-anchor="middle" fill="#81c784" font-size="7" font-weight="bold">wflow</text>
+          <text x="218" y="44" text-anchor="middle" fill="#4caf50" font-size="6">×5 scenario</text>
+          <rect x="192" y="43" width="52" height="26" rx="5" fill="#003300" stroke="#2e7d32" stroke-width="1.5"/>
+          <text x="218" y="56" text-anchor="middle" fill="#81c784" font-size="7" font-weight="bold">wflow</text>
+          <text x="218" y="65" text-anchor="middle" fill="#4caf50" font-size="6">ERA5 2018</text>
+          <rect x="192" y="64" width="52" height="26" rx="5" fill="#003300" stroke="#2e7d32" stroke-width="1.5"/>
+          <text x="218" y="77" text-anchor="middle" fill="#81c784" font-size="7" font-weight="bold">wflow</text>
+          <text x="218" y="86" text-anchor="middle" fill="#4caf50" font-size="6">analyse</text>
+        </svg>
+      </div>
+      <div class="intro-card-body">
+        <div class="intro-card-label" style="color:#90caf9;">Proef 6 · AI-gestuurde multimodel pipeline</div>
+        <div class="intro-card-title">Multimodel — Ribasim + LLM + wflow</div>
+        <div class="intro-card-desc">
+          Ribasim (Julia-solver) simuleert het Rijn/IJssel-netwerk. Een LLM identificeert de kritieke knoop
+          en stuurt automatisch vijf wflow-droogte-scenario's aan. Volledig on-device op ARM64.
+        </div>
+        <button class="intro-card-btn" style="color:#90caf9; border-color:#1565c0;">Bekijk pipeline →</button>
+      </div>
+    </div>
+
+  </div><!-- /intro-grid -->
+</div><!-- /intro-panel -->
+
+<div id="multimodel-panel">
+  <div id="multimodel-unavailable" style="display:none; padding:2rem; text-align:center; color:#888;">
+    Multimodel pipeline nog niet uitgevoerd. Draai: <code>python run_multimodel.py</code>
+  </div>
+  <div id="multimodel-content" style="display:none;">
+
+    <!-- Inleiding -->
+    <div style="background:#0d1b2a; border:1px solid #2a3a50; border-radius:8px; padding:1.2rem 1.4rem; margin-bottom:1.5rem;">
+      <h3 style="color:#90caf9; margin:0 0 .8rem 0;">AI-Orchestrated Multimodel Water System</h3>
+      <p style="color:#ccc; line-height:1.8; margin-bottom:.8rem;">
+        Dit dashboard demonstreert een geïntegreerde AI-pipeline waarbij een <strong>landelijk waternetworkmodel</strong>
+        en een <strong>lokaal hydrologisch model</strong> (wflow SBM) samenwerken onder regie van een grote taalmodel (LLM).
+        De workflow is als volgt:
+      </p>
+      <ol style="color:#aaa; line-height:2; margin:0 0 .8rem 1.2rem; padding:0;">
+        <li><strong style="color:#90caf9;">Netwerk</strong> — <strong>Ribasim</strong> (Deltares, Julia-solver) simuleert de hydraulische waterstandsverdeling over vier knooppunten onder een droogtescenario.</li>
+        <li><strong style="color:#90caf9;">AI-detectie</strong> — De orchestrator (Qwen2.5-32B) identificeert automatisch het meest kritieke knooppunt op basis van waterdeficit.</li>
+        <li><strong style="color:#90caf9;">Detailmodel</strong> — wflow SBM draait een ensemble van vijf droogte-scenario's voor het geselecteerde stroomgebied.</li>
+        <li><strong style="color:#90caf9;">Interpretatie</strong> — De AI genereert een hydrologische beslissingsmotivatie voor de waterbeheerder.</li>
+      </ol>
+      <p style="color:#aaa; line-height:1.8; margin:0;">
+        Het systeem draait volledig lokaal op een <strong>NVIDIA Jetson AGX Orin</strong> (ARM edge hardware) —
+        zonder cloud, zonder externe API's. Zowel de wflow-simulaties als de LLM-inferentie worden on-device uitgevoerd.
+      </p>
+    </div>
+
+    <!-- Kaart-toelichting -->
+    <div style="background:#0d1b2a; border:1px solid #2a3a50; border-radius:8px; padding:1rem 1.4rem; margin-bottom:1rem;">
+      <h4 style="color:#90caf9; margin:0 0 .5rem 0;">Rijn/IJssel netwerkmodel — Ribasim hydraulische routing (referentie: zomer 2018)</h4>
+      <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem;">
+        De kaart visualiseert het gesimuleerde waternetwerk. De gekleurde cirkels tonen het <strong>waterdeficit per knooppunt</strong>:
+        het percentage waarmee de gemiddelde berekende waterstand onder de veiligheidsdremelwaarde blijft.
+        De <strong>kritieke knoop</strong> (hoogste deficit) heeft een zwarte rand en triggert automatisch de wflow-detailmodellering.
+      </p>
+      <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem;">
+        <strong>Waarom 2018 als referentie?</strong> De zomer van 2018 was de ernstigste droogte in Nederland sinds decennia.
+        De Lobith-afvoer daalde naar 500–700 m³/s (normaal ~2.000 m³/s in de zomer), waterstanden op de
+        Neder-Rijn, IJssel en Lek bereikten recordlaagtestanden, en de scheepvaart en zoetwaterinname kwamen
+        ernstig in gevaar. De Lobith-inflow wordt als synthetische randvoorwaarde (sinusvorm ~600 m³/s)
+        ingevoerd in het <strong>Ribasim</strong>-netwerkmodel, dat de hydraulische routing per tak berekent
+        via FlowBoundary → Basin → TRC knooppunten, opgelost door de Julia-solver.
+      </p>
+      <p style="color:#aaa; line-height:1.8; margin-bottom:.6rem; border-left:3px solid #1565c0; padding-left:.8rem;">
+        <strong>Koppeling:</strong> Stap 1 (Ribasim) gebruikt een synthetische Lobith-randvoorwaarde op basis van 2018-condities.
+        Het <strong>wflow-ensemble hieronder (Stap 3)</strong> gebruikt echte ERA5-Land forcing van
+        <strong>mei–augustus 2018</strong> — het werkelijke droogtejaar.
+        Neerslag én bovenstroomse afvoer (Westervoort) worden geschaald met multipliers ×0.10–×1.00
+        om droogte-ernstgraden te simuleren, waarbij ×1.00 de werkelijke 2018-condities representeert.
+      </p>
+      <div style="display:flex; gap:1rem; flex-wrap:wrap; font-size:12px; color:#888;">
+        <span>🟢 Deficit 0–20% — normaal</span>
+        <span>🟠 Deficit 20–50% — laag</span>
+        <span>🔴 Deficit &gt;50% — kritiek</span>
+        <span>⚫ rand = geselecteerde knoop</span>
+      </div>
+    </div>
+
+    <div id="multimodel-map"></div>
+    <div class="llm-block" style="border-left:4px solid #1565c0;">
+      <strong>AI Beslissing</strong>
+      <p id="mm-trigger-reason" style="font-weight:bold; color:#1565c0;"></p>
+      <p id="mm-llm-text"></p>
+    </div>
+    <h3>wflow Droogte-ensemble <small style="font-size:13px; color:#888; font-weight:normal;">— ERA5 mei–aug 2018 · ×0.10 (extreem droog) → ×1.00 (referentie 2018)</small></h3>
+    <div id="mm-ensemble-chart"></div>
+    <table class="ensemble-scenario-table">
+      <thead><tr><th>Scenario</th><th>Multiplier</th><th>Piek (m³/s)</th><th>Piekdatum</th><th>Dagen &gt; drempel</th></tr></thead>
+      <tbody id="mm-scenario-tbody"></tbody>
+    </table>
+
+    <!-- Uitleg voor hydrologen -->
+    <div style="margin-top:2rem; border-top:1px solid #2a3a50; padding-top:1.5rem;">
+      <h3 style="color:#90caf9; margin-bottom:1rem;">Wat u ziet — toelichting voor hydrologen</h3>
+
+      <h4 style="color:#ccc; margin-bottom:.5rem;">Landelijk netwerkmodel — Ribasim (kaart)</h4>
+      <p style="color:#aaa; line-height:1.7; margin-bottom:1rem;">
+        De kaart toont het Rijn/IJssel-netwerk met vier knooppunten: Pannerdensch Kanaal,
+        IJssel bij Kampen, Neder-Rijn en Lek. Het netwerkmodel is gebouwd met
+        <strong>Ribasim</strong> (Deltares open-source netwerkmodel), draaiend via de
+        <strong>Julia-solver</strong> op de Jetson ARM64. Per knoop wordt een
+        FlowBoundary→Basin→TabulatedRatingCurve keten gesimuleerd, met als bovenstroomse randvoorwaarde
+        een sinusvormige Lobith-afvoer van ~600 m³/s (droogtecondities zomer 2018).
+        Het waterdeficit per knoop is het percentage waarmee de gemiddelde berekende
+        afvoer onder de drempelwaarde blijft; knopen worden groen (0–20%), oranje (20–50%)
+        of rood (&gt;50%) weergegeven.
+      </p>
+
+      <h4 style="color:#ccc; margin-bottom:.5rem;">AI-beslissingslaag</h4>
+      <p style="color:#aaa; line-height:1.7; margin-bottom:1rem;">
+        De AI-orchestrator (Qwen2.5-32B, lokaal op de Jetson) leest de netwerktoestand en selecteert
+        automatisch de knoop met het hoogste waterdeficit. Op basis daarvan besluit het systeem welk
+        deelstroomgebied detailmodellering vereist en genereert het een motivatietekst. De beslissingslogica
+        is volledig deterministisch (hoogste deficit wint); de tekst is een LLM-samenvatting van die toestand.
+      </p>
+
+      <h4 style="color:#ccc; margin-bottom:.5rem;">wflow SBM droogte-ensemble</h4>
+      <p style="color:#aaa; line-height:1.7; margin-bottom:1rem;">
+        Voor het geselecteerde stroomgebied (IJssel) draait wflow SBM vijf droogte-scenario's met
+        multipliers van ×0.10 tot ×1.00, toegepast op zowel <strong>neerslag</strong> als
+        <strong>bovenstroomse afvoer</strong> (Westervoort-inflow). Het referentiescenario (×1.00)
+        reproduceert de werkelijke 2018-condities; lagere multipliers vertegenwoordigen
+        progressief ernstiger droogte.
+        De modelperiode is <strong>mei–augustus 2018</strong> (ERA5-Land, echte droogte-forcing).
+        De grafiek toont P10/gemiddelde/P90 over de vijf scenario's; de tabel geeft de
+        piekafvoer bij Kampen per scenario.
+      </p>
+
+      <div style="background:#1a0a0a; border:1px solid #5c2c2c; border-left:4px solid #d32f2f;
+                  border-radius:6px; padding:14px 16px; margin-top:1rem;">
+        <div style="font-size:10px; color:#ef9a9a; font-weight:700; text-transform:uppercase;
+                    letter-spacing:.8px; margin-bottom:8px;">⚠ Disclaimer</div>
+        <p style="color:#ccc; font-size:13px; line-height:1.7; margin:0;">
+          Dit is een <strong>prototype voor onderzoeks- en demonstratiedoeleinden</strong>.
+          Het netwerkmodel gebruikt <strong>Ribasim</strong> voor hydraulische routing, maar is
+          <em>niet</em> gekalibreerd of gevalideerd tegen historische meetreeksen — het
+          is een vereenvoudigd prototype met een synthetische Lobith-randvoorwaarde.
+          De bassinprofielen en rating curves zijn niet gebaseerd op opgemeten geometrie.
+          De AI-gegenereerde beslissingsmotivatie is indicatief en vervangt geen hydrologisch oordeel van een expert.
+          Gebruik de uitkomsten van dit systeem <strong>niet</strong> voor operationeel waterbeheer,
+          beleidsvorming of veiligheidsbeoordelingen. Een gevalideerde Ribasim-kalibratie
+          en gecalibreerde wflow-parameters zijn vereist voor professionele toepassingen.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=10"></script>
+<script src="/static/app.js?v=22"></script>
 </body>
 </html>

@@ -14,7 +14,7 @@ function Logging.handle_message(l::FlushLogger, args...; kwargs...)
 end
 global_logger(FlushLogger(ConsoleLogger(stderr, Logging.Info)))
 
-toml_path = joinpath(@__DIR__, "ijssel_config.toml")
+toml_path = length(ARGS) > 0 ? ARGS[1] : joinpath(@__DIR__, "ijssel_config.toml")
 
 if !isfile(toml_path)
     error("Config niet gevonden: $toml_path — voer eerst de Python scripts uit.")
