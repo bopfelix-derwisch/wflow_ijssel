@@ -171,7 +171,8 @@ def test_pi_client_get_filters(fews_client, monkeypatch):
 
     def fake_get(url, **kwargs):
         path = url.replace("http://testserver", "")
-        resp_data = fews_client.get(path)
+        qs_params = kwargs.get("params") or {}
+        resp_data = fews_client.get(path, params=qs_params)
         class FakeResp:
             status_code = resp_data.status_code
             def json(self): return resp_data.json()
@@ -191,7 +192,8 @@ def test_pi_client_get_timeseries(fews_client, monkeypatch):
 
     def fake_get(url, **kwargs):
         path = url.replace("http://testserver", "")
-        resp_data = fews_client.get(path)
+        qs_params = kwargs.get("params") or {}
+        resp_data = fews_client.get(path, params=qs_params)
         class FakeResp:
             status_code = resp_data.status_code
             def json(self): return resp_data.json()
