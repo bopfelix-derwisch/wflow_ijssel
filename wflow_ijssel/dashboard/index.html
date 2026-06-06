@@ -3014,76 +3014,126 @@
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <script src="/static/app.js?v=31"></script>
 <script>
-/* ── HIP-HOP BEAT ── */
+/* ── HIP-HOP BEAT v3 ── */
 (function() {
   var ctx, playing = false, step = 0, next = 0, timer = null;
-  var BPM = 90;
-  var K = [1,0,0,0,1,0,0,0,1,0,0,0,1,0,1,0];
-  var S = [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0];
-  var H = [1,0,1,1,0,1,1,0,1,0,1,1,0,1,1,0];
+  var BPM = 88, SWING = 0.055;
+
+  /* patterns: 1=hit, 0=rest, 0.5=ghost */
+  var K  = [1,0,0,0, 0,0,1,0, 1,0,0,0, 0,1,0,0]; /* kick — syncopated */
+  var S  = [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0]; /* snare — 2 en 4   */
+  var CH = [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0]; /* closed hat        */
+  var OH = [0,0,0,1, 0,0,0,1, 0,0,0,1, 0,0,0,1]; /* open hat — upbeat */
+  var B  = [1,0,0,0, 0,0,0,0, 0,1,0,0, 0,0,1,0]; /* 808 sub-bas       */
+
+  function noise(len) {
+    var b = ctx.createBuffer(1, len | 0, ctx.sampleRate);
+    var d = b.getChannelData(0);
+    for (var i = 0; i < (len | 0); i++) d[i] = Math.random() * 2 - 1;
+    return b;
+  }
 
   function kick(t) {
+    /* punch layer */
     var o = ctx.createOscillator(), g = ctx.createGain();
     o.connect(g); g.connect(ctx.destination);
-    o.frequency.setValueAtTime(150, t);
-    o.frequency.exponentialRampToValueAtTime(40, t + 0.2);
-    g.gain.setValueAtTime(3, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
-    o.start(t); o.stop(t + 0.4);
+    o.frequency.setValueAtTime(200, t);
+    o.frequency.exponentialRampToValueAtTime(35, t + 0.18);
+    g.gain.setValueAtTime(4, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+    o.start(t); o.stop(t + 0.45);
+    /* click transient */
+    var s = ctx.createBufferSource(), g2 = ctx.createGain();
+    s.buffer = noise(ctx.sampleRate * 0.008);
+    s.connect(g2); g2.connect(ctx.destination);
+    g2.gain.setValueAtTime(2.5, t);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.008);
+    s.start(t); s.stop(t + 0.01);
   }
 
   function snare(t) {
-    var n = ctx.sampleRate * 0.18 | 0;
-    var b = ctx.createBuffer(1, n, ctx.sampleRate);
-    var d = b.getChannelData(0);
-    for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    var s = ctx.createBufferSource(), g = ctx.createGain();
-    s.buffer = b; s.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(2, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
-    s.start(t); s.stop(t + 0.18);
+    /* body — bandpass noise */
+    var s1 = ctx.createBufferSource(), g1 = ctx.createGain(), f1 = ctx.createBiquadFilter();
+    s1.buffer = noise(ctx.sampleRate * 0.22);
+    f1.type = 'bandpass'; f1.frequency.value = 1800; f1.Q.value = 0.7;
+    s1.connect(f1); f1.connect(g1); g1.connect(ctx.destination);
+    g1.gain.setValueAtTime(2.5, t);
+    g1.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    s1.start(t); s1.stop(t + 0.22);
+    /* crack — highpass noise */
+    var s2 = ctx.createBufferSource(), g2 = ctx.createGain(), f2 = ctx.createBiquadFilter();
+    s2.buffer = noise(ctx.sampleRate * 0.06);
+    f2.type = 'highpass'; f2.frequency.value = 5000;
+    s2.connect(f2); f2.connect(g2); g2.connect(ctx.destination);
+    g2.gain.setValueAtTime(1.8, t);
+    g2.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    s2.start(t); s2.stop(t + 0.06);
+    /* tone */
+    var o = ctx.createOscillator(), g3 = ctx.createGain();
+    o.connect(g3); g3.connect(ctx.destination);
+    o.frequency.value = 180;
+    g3.gain.setValueAtTime(1.2, t);
+    g3.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    o.start(t); o.stop(t + 0.07);
   }
 
-  function hat(t) {
-    var n = ctx.sampleRate * 0.04 | 0;
-    var b = ctx.createBuffer(1, n, ctx.sampleRate);
-    var d = b.getChannelData(0);
-    for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  function closedHat(t, vel) {
     var s = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter();
-    f.type = 'highpass'; f.frequency.value = 7000;
-    s.buffer = b; s.connect(f); f.connect(g); g.connect(ctx.destination);
-    g.gain.setValueAtTime(0.8, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
-    s.start(t); s.stop(t + 0.05);
+    s.buffer = noise(ctx.sampleRate * 0.035);
+    f.type = 'highpass'; f.frequency.value = 9000;
+    s.connect(f); f.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime((vel || 0.7), t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+    s.start(t); s.stop(t + 0.04);
+  }
+
+  function openHat(t) {
+    var s = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    s.buffer = noise(ctx.sampleRate * 0.18);
+    f.type = 'highpass'; f.frequency.value = 7500;
+    s.connect(f); f.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.9, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    s.start(t); s.stop(t + 0.19);
+  }
+
+  function sub808(t) {
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.connect(g); g.connect(ctx.destination);
+    o.frequency.setValueAtTime(65, t);
+    o.frequency.setValueAtTime(55, t + 0.05);
+    g.gain.setValueAtTime(2.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+    o.start(t); o.stop(t + 0.55);
   }
 
   function tick() {
     var sl = 60 / BPM / 4;
-    while (next < ctx.currentTime + 0.3) {
-      var t = next;
-      if (K[step]) kick(t);
-      if (S[step]) snare(t);
-      if (H[step]) hat(t);
+    while (next < ctx.currentTime + 0.35) {
+      var swing = (step % 2 === 1) ? sl * SWING : 0;
+      var t = next + swing;
+      var vel = 0.5 + Math.random() * 0.3; /* lichte velocity-variatie */
+      if (K[step])  kick(t);
+      if (S[step])  snare(t);
+      if (CH[step]) closedHat(t, vel);
+      if (OH[step]) openHat(t);
+      if (B[step])  sub808(t);
       next += sl;
       step = (step + 1) % 16;
     }
-    timer = setTimeout(tick, 50);
+    timer = setTimeout(tick, 40);
   }
 
   window.toggleBeat = function() {
     if (playing) {
-      clearTimeout(timer);
-      playing = false;
+      clearTimeout(timer); playing = false;
       document.getElementById('beat-btn').textContent = '🎵';
       document.getElementById('beat-btn').classList.remove('playing');
       document.getElementById('eq-bars').classList.add('paused');
       return;
     }
-    /* nieuw AudioContext per klik — zeker binnen user gesture */
     ctx = new (window.AudioContext || window.webkitAudioContext)();
-    playing = true;
-    step = 0;
-    next = ctx.currentTime + 0.05;
+    playing = true; step = 0; next = ctx.currentTime + 0.05;
     document.getElementById('beat-btn').textContent = '⏹';
     document.getElementById('beat-btn').classList.add('playing');
     document.getElementById('eq-bars').classList.remove('paused');
