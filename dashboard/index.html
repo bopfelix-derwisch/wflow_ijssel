@@ -224,6 +224,39 @@
     #uitleg-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #uitleg-panel.visible { display: block; }
 
+    /* ── fews panel ── */
+    #fews-panel { overflow-y: auto; max-height: calc(100vh - 52px); }
+    #fews-panel:not(.visible) { display: none; }
+    #fews-panel.visible { display: block; }
+    .year-tab.active-fews { background: #004d40; border-color: #4db6ac; color: #fff; }
+    .fews-header { padding: 2rem 2rem 1rem; }
+    .fews-header h2 { color: #4db6ac; margin: .5rem 0; font-size: 1.3rem; }
+    .fews-header p  { color: #90a4ae; font-size: 13px; margin: 0; }
+    .fews-badge { display: inline-block; background: #003028; color: #4db6ac;
+      border: 1px solid #00695c; border-radius: 12px; padding: 2px 10px;
+      font-size: 11px; font-weight: 700; }
+    .fews-section { padding: 1rem 2rem; border-top: 1px solid #0d2035; }
+    .fews-section-title { color: #546e7a; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: .75rem; }
+    .fews-ep-btns { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; }
+    .fews-ep-btn { background: #001a15; border: 1px solid #00695c; color: #4db6ac;
+      border-radius: 4px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+      font-family: monospace; }
+    .fews-ep-btn:hover { background: #002820; }
+    .fews-ep-btn.active { background: #004d40; border-color: #4db6ac; }
+    .fews-pre { background: #020d0a; border: 1px solid #0d3028; border-radius: 4px;
+      padding: .75rem; font-size: 11px; color: #80cbc4; overflow-x: auto;
+      max-height: 180px; overflow-y: auto; white-space: pre-wrap; }
+    .fews-controls { display: flex; gap: 1rem; margin-bottom: .75rem; align-items: center; }
+    .fews-controls label { color: #90a4ae; font-size: 13px; }
+    .fews-controls select { background: #001a15; border: 1px solid #00695c;
+      color: #4db6ac; border-radius: 4px; padding: 3px 8px; font-size: 12px; }
+    .fews-hierarchy { display: flex; gap: .5rem; align-items: center;
+      font-size: 12px; color: #546e7a; flex-wrap: wrap; }
+    .fews-hier-node { background: #001a15; border: 1px solid #00695c;
+      border-radius: 4px; padding: 3px 10px; color: #4db6ac; font-family: monospace; }
+    .fews-hier-arrow { color: #263238; }
+
     /* ── arch panel ── */
     #arch-panel { overflow-y: auto; max-height: calc(100vh - 52px); }
     #arch-panel:not(.visible) { display: none; }
@@ -394,6 +427,7 @@
     <button class="year-tab" data-year="2018">Zomer 2018</button>
     <button class="year-tab" data-year="2021">Jul 2021</button>
     <button class="year-tab" data-year="arch">Platform Visie</button>
+    <button class="year-tab" data-year="fews">FEWS</button>
     <button class="year-tab" data-year="roadmap">Roadmap</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
   </div>
@@ -2679,9 +2713,73 @@
 
 </div><!-- /roadmap-panel -->
 
+    <!-- ── FEWS PI REST panel ── -->
+    <div id="fews-panel">
+      <div class="fews-header">
+        <span class="fews-badge">🔌 PI REST</span>
+        <h2>Waterlab als FEWS PI REST service</h2>
+        <p>Waterlab publiceert wflow SBM output en RWS Waterinfo data via een FEWS-compatibele
+           PI REST API. De vier standaard-endpoints zijn live op localhost beschikbaar.</p>
+      </div>
+
+      <!-- API Explorer -->
+      <div class="fews-section">
+        <div class="fews-section-title">API Explorer · /fews/rest/fewspiservice/v1/</div>
+        <div class="fews-ep-btns">
+          <button class="fews-ep-btn" id="fews-btn-filters"    onclick="fewsFetch('filters')">filters</button>
+          <button class="fews-ep-btn" id="fews-btn-locations"  onclick="fewsFetch('locations')">locations</button>
+          <button class="fews-ep-btn" id="fews-btn-parameters" onclick="fewsFetch('parameters')">parameters</button>
+          <button class="fews-ep-btn" id="fews-btn-timeseries" onclick="fewsFetch('timeseries')">timeseries</button>
+        </div>
+        <pre id="fews-json-out" class="fews-pre">← klik een endpoint om de ruwe PI JSON response te zien</pre>
+      </div>
+
+      <!-- Tijdreeks vergelijking -->
+      <div class="fews-section">
+        <div class="fews-section-title">Tijdreeksvergelijking — Q.sim (wflow) vs Q.meting (RWS live)</div>
+        <div class="fews-controls">
+          <label>Locatie:
+            <select id="fews-loc" onchange="loadFewsChart()">
+              <option value="KAMPEN">Kampen</option>
+              <option value="WESTERVOORT">Westervoort</option>
+            </select>
+          </label>
+          <label>Historische periode (Q.sim):
+            <select id="fews-period" onchange="loadFewsChart()">
+              <option value="1995">Jan 1995 — hoogwater</option>
+              <option value="2018">Zomer 2018 — droogte</option>
+              <option value="2021">Jul 2021 — hoogwater</option>
+            </select>
+          </label>
+        </div>
+        <div id="fews-chart" style="min-height:260px"></div>
+      </div>
+
+      <!-- PI REST hiërarchie -->
+      <div class="fews-section">
+        <div class="fews-section-title">PI REST hiërarchie</div>
+        <div class="fews-hierarchy">
+          <span class="fews-hier-node">Filter</span>
+          <span class="fews-hier-arrow">→</span>
+          <span class="fews-hier-node">Location</span>
+          <span class="fews-hier-arrow">→</span>
+          <span class="fews-hier-node">Parameter</span>
+          <span class="fews-hier-arrow">→</span>
+          <span class="fews-hier-node">TimeSeriesKey</span>
+          <span class="fews-hier-arrow">→</span>
+          <span class="fews-hier-node">TimeSeries { header, events[] }</span>
+        </div>
+        <p style="color:#546e7a; font-size:12px; margin-top:.75rem">
+          Waterlab implementeert versie 1.25 van de PI REST standaard (Deltares/RWS).
+          De parameter <code style="color:#4db6ac">period</code> is een niet-standaard extensie
+          om historische wflow simulaties op te vragen via dezelfde endpoint.
+        </p>
+      </div>
+    </div><!-- /fews-panel -->
+
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=29"></script>
+<script src="/static/app.js?v=30"></script>
 </body>
 </html>
