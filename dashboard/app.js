@@ -122,6 +122,8 @@ function switchYear(year) {
     introPnl.classList.remove("visible");
     const mmPnl = document.getElementById("multimodel-panel");
     if (mmPnl) mmPnl.classList.remove("visible");
+    const roadmapPnl = document.getElementById("roadmap-panel");
+    if (roadmapPnl) roadmapPnl.classList.remove("visible");
   }
 
   if (year === "intro") {
@@ -175,6 +177,16 @@ function switchYear(year) {
     document.getElementById("alert-badge").style.background = "#1565c0";
     document.body.className = "";
     loadMultimodel();
+    return;
+  }
+
+  if (year === "roadmap") {
+    hideAll();
+    document.getElementById("roadmap-panel").classList.add("visible");
+    banner.textContent = "Backlog & POC's  ·  FEWS · SOBEK · D-FLOW FM · EnKF · KNMI'23  ·  Deltares ecosysteem";
+    document.getElementById("alert-badge").textContent = "🔬 Roadmap";
+    document.getElementById("alert-badge").style.background = "#4a148c";
+    document.body.className = "";
     return;
   }
 

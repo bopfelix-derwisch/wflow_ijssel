@@ -215,6 +215,49 @@
     #uitleg-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #uitleg-panel.visible { display: block; }
 
+    /* ── roadmap panel ── */
+    #roadmap-panel { overflow-y: auto; max-height: calc(100vh - 52px); }
+    #roadmap-panel:not(.visible) { display: none; }
+    #roadmap-panel.visible { display: block; }
+    .year-tab.active-roadmap { background: #4a148c; border-color: #ce93d8; color: #fff; }
+    .poc-status-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 10px; font-weight: 600; letter-spacing: .4px; margin-bottom: .4rem;
+    }
+    .poc-stack {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; padding-top: .6rem;
+    }
+    .poc-stack span {
+      font-size: 9px; background: #0d1b2a; border: 1px solid #1e2f3f;
+      border-radius: 10px; padding: 2px 7px; color: #607d8b;
+    }
+    .poc-effort { display: flex; gap: 3px; margin-top: .5rem; align-items: center; }
+    .poc-effort::before { content: 'inspanning'; font-size: 9px; color: #37474f; margin-right: 5px; }
+    .poc-effort-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .roadmap-section { padding: 0 1.4rem 1.6rem; }
+    .roadmap-section-title {
+      font-size: 11px; font-weight: 700; color: #546e7a;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 0 0 1rem; padding-bottom: .5rem;
+      border-bottom: 1px solid #1e2a34;
+    }
+    .backlog-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+    }
+    .backlog-item {
+      background: #0a151f; border: 1px solid #1a2a3a; border-radius: 8px;
+      padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .4rem;
+    }
+    .backlog-item:hover { border-color: #2a3a50; }
+    .backlog-item-title { font-size: 13px; font-weight: 700; color: #b0bec5; }
+    .backlog-item-desc { font-size: 11px; color: #546e7a; line-height: 1.65; flex: 1; }
+    .backlog-item-stack { display: flex; flex-wrap: wrap; gap: 3px; }
+    .backlog-item-stack span {
+      font-size: 9px; background: #0d1b2a; border: 1px solid #1a2a3a;
+      border-radius: 10px; padding: 1px 6px; color: #455a64;
+    }
+
     /* ── forecast panel ── */
     #forecast-panel { display: none; overflow-y: auto; max-height: calc(100vh - 52px); }
     #forecast-panel.visible { display: block; }
@@ -300,6 +343,7 @@
     <button class="year-tab" data-year="1995">Jan 1995</button>
     <button class="year-tab" data-year="2018">Zomer 2018</button>
     <button class="year-tab" data-year="2021">Jul 2021</button>
+    <button class="year-tab" data-year="roadmap">Roadmap</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
   </div>
 </div>
@@ -1651,9 +1695,462 @@
   </div>
 </div>
 
+<!-- ── roadmap panel ─────────────────────────────────────────────────────── -->
+<div id="roadmap-panel">
+
+  <!-- Hero -->
+  <div class="intro-hero" style="background:linear-gradient(160deg,#0a0520 0%,#12082e 50%,#0a1428 100%)">
+    <div class="intro-badge" style="background:#1a0a2a; border-color:#7b1fa2; color:#ce93d8;">🔬 Onderzoeksrichting</div>
+    <h2>Backlog &amp; Mogelijke POC's</h2>
+    <p>
+      Verkenning van uitbreidingen voor Waterlab: koppeling met het operationele
+      <strong style="color:#e0f2fe;">Delft-FEWS</strong>-systeem van RWS,
+      hydraulische modellen (<strong style="color:#e0f2fe;">SOBEK</strong>, <strong style="color:#e0f2fe;">D-FLOW FM</strong>),
+      data-assimilatie via een Ensemble Kalman Filter, een live physics-based ensemble
+      en klimaatprojecties met KNMI'23-scenario's.
+      De zes uitgewerkte cases zijn concreet uitvoerbaar op de bestaande Jetson-hardware
+      en sluiten direct aan op wat al draait.
+    </p>
+    <div class="intro-stack" style="justify-content:flex-start">
+      <span>Delft-FEWS</span><span>SOBEK</span><span>D-FLOW FM</span><span>OpenDA</span>
+      <span>RTC-Tools</span><span>iMOD</span><span>KNMI'23</span><span>SFINCS</span>
+    </div>
+  </div>
+
+  <!-- ── 6 uitgewerkte POCs ──────────────────────────────────────────────── -->
+  <div class="roadmap-section">
+    <div class="roadmap-section-title">Uitgewerkte verkenningen — concreet uitvoerbaar</div>
+    <div class="intro-grid">
+
+      <!-- ── POC A: FEWS ── -->
+      <div class="intro-card">
+        <div class="intro-card-visual" style="background:linear-gradient(180deg,#001a18 0%,#002820 100%);">
+          <svg width="100%" viewBox="0 0 260 115" style="display:block">
+            <rect x="8" y="15" width="64" height="28" rx="4" fill="#002820" stroke="#4db6ac" stroke-width="1.2"/>
+            <text x="40" y="27" fill="#4db6ac" font-size="8" text-anchor="middle" font-weight="600">FEWS Server</text>
+            <text x="40" y="37" fill="#80cbc4" font-size="7" text-anchor="middle">RWS operationeel</text>
+            <line x1="72" y1="29" x2="92" y2="29" stroke="#4db6ac" stroke-width="1"/>
+            <polygon points="91,26 96,29 91,32" fill="#4db6ac"/>
+            <text x="82" y="24" fill="#546e7a" font-size="6" text-anchor="middle">REST</text>
+            <rect x="95" y="15" width="66" height="28" rx="4" fill="#002820" stroke="#4db6ac" stroke-width="1.2"/>
+            <text x="128" y="27" fill="#4db6ac" font-size="8" text-anchor="middle" font-weight="600">fewspy client</text>
+            <text x="128" y="37" fill="#80cbc4" font-size="7" text-anchor="middle">Python · JSON</text>
+            <line x1="161" y1="29" x2="181" y2="29" stroke="#4db6ac" stroke-width="1"/>
+            <polygon points="180,26 185,29 180,32" fill="#4db6ac"/>
+            <text x="171" y="24" fill="#546e7a" font-size="6" text-anchor="middle">ts</text>
+            <rect x="184" y="15" width="68" height="28" rx="4" fill="#002820" stroke="#4db6ac" stroke-width="1.2"/>
+            <text x="218" y="27" fill="#4db6ac" font-size="8" text-anchor="middle" font-weight="600">vergelijking</text>
+            <text x="218" y="37" fill="#80cbc4" font-size="7" text-anchor="middle">Plotly overlay</text>
+            <!-- vergelijkingsgrafiek -->
+            <line x1="12" y1="108" x2="252" y2="108" stroke="#263238" stroke-width="1"/>
+            <line x1="12" y1="55" x2="12" y2="108" stroke="#263238" stroke-width="1"/>
+            <text x="14" y="58" fill="#546e7a" font-size="6">Q</text>
+            <polyline points="12,102 55,90 95,80 140,72 185,67 252,70" fill="none" stroke="#4db6ac" stroke-width="1.5"/>
+            <polyline points="12,100 55,88 95,78 140,75 185,70 252,74" fill="none" stroke="#ff8a65" stroke-width="1.5" stroke-dasharray="5,3"/>
+            <circle cx="140" cy="72" r="2.5" fill="none" stroke="#4db6ac" stroke-width="1"/>
+            <text x="195" y="84" fill="#4db6ac" font-size="7">wflow</text>
+            <text x="195" y="93" fill="#ff8a65" font-size="7">FEWS RWS</text>
+          </svg>
+        </div>
+        <div class="intro-card-body">
+          <span class="poc-status-badge" style="background:#003028; color:#4db6ac; border:1px solid #00695c;">✓ Haalbaar</span>
+          <div class="intro-card-label" style="color:#4db6ac;">POC A · Operationele koppeling</div>
+          <div class="intro-card-title">Delft-FEWS Web Services</div>
+          <div class="intro-card-desc">
+            RWS draait een operationeel FEWS-systeem voor de grote rivieren dat tijdreeksen
+            publiceert via een REST API. Via <em>fewspy</em> halen we de officiële 2–10-daagse
+            Rijn/IJssel-prognose op en vergelijken die real-time met ons wflow-output —
+            directe validatie van het statistisch model.
+          </div>
+          <div class="poc-stack">
+            <span>fewspy</span><span>REST API</span><span>RWS FEWS</span><span>Plotly</span>
+          </div>
+          <div class="poc-effort">
+            <div class="poc-effort-dot" style="background:#4db6ac"></div>
+            <div class="poc-effort-dot" style="background:#4db6ac"></div>
+            <div class="poc-effort-dot" style="background:#263238"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── POC B: SOBEK dijkdoorbraak ── -->
+      <div class="intro-card">
+        <div class="intro-card-visual" style="background:linear-gradient(180deg,#1a0508 0%,#2a0810 100%);">
+          <svg width="100%" viewBox="0 0 260 115" style="display:block">
+            <!-- Poldervloer -->
+            <rect x="5" y="86" width="250" height="24" fill="#1a1a0a"/>
+            <!-- Rivierwater links -->
+            <polygon points="5,50 66,50 66,86 5,86" fill="#1a3a60" opacity="0.9"/>
+            <!-- Waterstandslijn (boven dijk) -->
+            <line x1="5" y1="44" x2="88" y2="44" stroke="#4fc3f7" stroke-width="1.2" stroke-dasharray="4,2"/>
+            <text x="8" y="41" fill="#4fc3f7" font-size="7">waterpeil</text>
+            <!-- Dijklichaam -->
+            <polygon points="66,86 77,43 101,43 112,86" fill="#3a4830"/>
+            <text x="89" y="38" fill="#a5d6a7" font-size="7" text-anchor="middle">dijk</text>
+            <!-- Doorbraakinkeping (rood) -->
+            <polygon points="86,43 90,53 94,43" fill="#ef5350"/>
+            <text x="90" y="62" fill="#ef5350" font-size="9" text-anchor="middle">✗</text>
+            <!-- Doorbraakstroom -->
+            <line x1="90" y1="53" x2="118" y2="68" stroke="#ef5350" stroke-width="1.5"/>
+            <polygon points="115,65 121,69 114,72" fill="#ef5350"/>
+            <!-- Inundatie polder -->
+            <polygon points="112,70 112,86 248,86 236,72" fill="#1a3a60" opacity="0.65"/>
+            <!-- Stroompijlen -->
+            <line x1="145" y1="79" x2="168" y2="79" stroke="#4fc3f7" stroke-width="1"/>
+            <polygon points="167,76 172,79 167,82" fill="#4fc3f7"/>
+            <line x1="193" y1="81" x2="214" y2="81" stroke="#4fc3f7" stroke-width="1" opacity="0.55"/>
+            <polygon points="213,78 218,81 213,84" fill="#4fc3f7" opacity="0.55"/>
+            <!-- Labels -->
+            <text x="33" y="72" fill="#90caf9" font-size="8" text-anchor="middle">rivier</text>
+            <text x="178" y="70" fill="#90caf9" font-size="8">polder</text>
+            <text x="7" y="12" fill="#ef9a9a" font-size="8" font-weight="600">SOBEK 1D routing</text>
+            <text x="7" y="110" fill="#37474f" font-size="6">Verheij–van der Knaap doorbraakformule</text>
+          </svg>
+        </div>
+        <div class="intro-card-body">
+          <span class="poc-status-badge" style="background:#2a0810; color:#ef9a9a; border:1px solid #c62828;">◎ POC Idee</span>
+          <div class="intro-card-label" style="color:#ef9a9a;">POC B · Hydraulische koppeling</div>
+          <div class="intro-card-title">SOBEK dijkdoorbraakrouting</div>
+          <div class="intro-card-desc">
+            wflow-debiet als bovenstrooms randvoorwaarde → SOBEK Rural 1D kanaalrouting →
+            Verheij–van der Knaap doorbraakformule op gekozen dijkvak (Deventer/Zwolle) →
+            inundatiediepte in polder als functie van tijd.
+            Output als GeoJSON vloedpolygoon op de bestaande MapLibre-kaart.
+          </div>
+          <div class="poc-stack">
+            <span>D-HYDRO SOBEK</span><span>doorbraakformule</span><span>1D routing</span><span>GeoJSON</span>
+          </div>
+          <div class="poc-effort">
+            <div class="poc-effort-dot" style="background:#ef9a9a"></div>
+            <div class="poc-effort-dot" style="background:#ef9a9a"></div>
+            <div class="poc-effort-dot" style="background:#ef9a9a"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── POC C: Live wflow ensemble ── -->
+      <div class="intro-card">
+        <div class="intro-card-visual" style="background:linear-gradient(180deg,#1a1000 0%,#2a1a00 100%);">
+          <svg width="100%" viewBox="0 0 260 115" style="display:block">
+            <line x1="20" y1="100" x2="252" y2="100" stroke="#37474f" stroke-width="1"/>
+            <line x1="20" y1="18" x2="20" y2="100" stroke="#37474f" stroke-width="1"/>
+            <text x="22" y="28" fill="#546e7a" font-size="7">Q</text>
+            <!-- "Nu" lijn -->
+            <line x1="88" y1="15" x2="88" y2="100" stroke="#ffcc80" stroke-width="1.2" stroke-dasharray="3,2"/>
+            <text x="91" y="23" fill="#ffcc80" font-size="8">nu</text>
+            <!-- Historische lijn (enkelvoudig) -->
+            <polyline points="20,88 42,82 62,74 75,67 88,62" fill="none" stroke="#4db6ac" stroke-width="2"/>
+            <!-- P10-P90 band -->
+            <polygon points="88,62 125,54 165,44 205,37 252,33 252,70 205,67 165,64 125,73 88,74"
+                     fill="#ffcc80" opacity="0.1"/>
+            <!-- 5 ensemble-lijnen -->
+            <polyline points="88,62 125,50 165,38 205,30 252,26" fill="none" stroke="#ffb300" stroke-width="1" opacity="0.55"/>
+            <polyline points="88,62 125,55 165,47 205,40 252,37" fill="none" stroke="#ffcc80" stroke-width="1" opacity="0.7"/>
+            <polyline points="88,62 125,60 165,55 205,51 252,48" fill="none" stroke="#fff8e1" stroke-width="1.8" opacity="0.85"/>
+            <polyline points="88,62 125,65 165,65 205,63 252,62" fill="none" stroke="#ffcc80" stroke-width="1" opacity="0.7"/>
+            <polyline points="88,62 125,72 165,74 205,73 252,76" fill="none" stroke="#ff8f00" stroke-width="1" opacity="0.55"/>
+            <!-- Labels -->
+            <text x="248" y="24" fill="#ffb300" font-size="7" text-anchor="end">nat</text>
+            <text x="248" y="79" fill="#ff8f00" font-size="7" text-anchor="end">droog</text>
+            <text x="53" y="112" fill="#37474f" font-size="6" text-anchor="middle">← ERA5T spinup</text>
+            <text x="175" y="112" fill="#ffcc80" font-size="6" opacity="0.65" text-anchor="middle">Open-Meteo ×5 →</text>
+          </svg>
+        </div>
+        <div class="intro-card-body">
+          <span class="poc-status-badge" style="background:#2a1800; color:#ffcc80; border:1px solid #e65100;">⟳ In Design</span>
+          <div class="intro-card-label" style="color:#ffcc80;">POC C · Live physics-based forecast</div>
+          <div class="intro-card-title">Live wflow Ensemble (14 d)</div>
+          <div class="intro-card-desc">
+            Dagelijkse cron: ERA5T near-realtime forcing → wflow spinup tot gisteren →
+            bodemtoestand als begintoestand → vijf Open-Meteo neerslagvarianten (×0.70–×1.30) →
+            P10/mean/P90 debiet Kampen.
+            Vervangt de statistische recessiecurve door een fysisch model met onzekerheidsbanden.
+          </div>
+          <div class="poc-stack">
+            <span>ERA5T</span><span>Open-Meteo grid</span><span>wflow state</span><span>cron</span>
+          </div>
+          <div class="poc-effort">
+            <div class="poc-effort-dot" style="background:#ffcc80"></div>
+            <div class="poc-effort-dot" style="background:#ffcc80"></div>
+            <div class="poc-effort-dot" style="background:#ffcc80"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── POC D: D-FLOW FM 2D ── -->
+      <div class="intro-card">
+        <div class="intro-card-visual" style="background:linear-gradient(180deg,#001428 0%,#001e3c 100%);">
+          <svg width="100%" viewBox="0 0 260 115" style="display:block">
+            <defs>
+              <linearGradient id="depthG" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#001428"/>
+                <stop offset="100%" stop2-color="#4fc3f7" stop-color="#4fc3f7"/>
+              </linearGradient>
+            </defs>
+            <!-- Rivierloop (S-bocht omtrek) -->
+            <path d="M 18,72 Q 55,28 98,50 Q 138,76 178,56 Q 218,32 248,52 L 248,78 Q 218,58 178,78 Q 138,100 98,76 Q 55,54 18,96 Z"
+                  fill="#0a2a4a" stroke="#1a4a7a" stroke-width="1"/>
+            <!-- Diep kanaalcentrum -->
+            <path d="M 28,80 Q 62,46 98,62 Q 138,82 178,65 Q 215,46 242,64 L 240,72 Q 214,56 178,73 Q 138,92 98,74 Q 62,56 32,88 Z"
+                  fill="#041428"/>
+            <!-- Mesh-driehoeken uiterwaard links -->
+            <polygon points="18,72 48,54 58,75" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <polygon points="48,54 78,42 88,62" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <polygon points="48,54 58,75 78,70" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <polygon points="18,72 18,96 46,84" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <polygon points="18,96 46,84 52,96" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <!-- Mesh-driehoeken uiterwaard rechts -->
+            <polygon points="162,56 192,40 205,60" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <polygon points="192,40 222,33 234,52" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <polygon points="192,40 205,60 222,54" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <polygon points="222,33 248,44 238,62" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <!-- Mesh onderkant -->
+            <polygon points="98,76 128,90 140,74" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <polygon points="128,90 158,98 152,74" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <polygon points="158,98 178,78 168,100" fill="none" stroke="#1a4a7a" stroke-width="0.8"/>
+            <!-- Stroompijlen in kanaal -->
+            <line x1="68" y1="59" x2="86" y2="63" stroke="#4fc3f7" stroke-width="1" opacity="0.7"/>
+            <polygon points="84,60 89,64 85,67" fill="#4fc3f7" opacity="0.7"/>
+            <line x1="138" y1="73" x2="156" y2="67" stroke="#4fc3f7" stroke-width="1" opacity="0.7"/>
+            <polygon points="154,64 160,68 155,71" fill="#4fc3f7" opacity="0.7"/>
+            <!-- Legenda diepte -->
+            <rect x="8" y="106" width="72" height="4" fill="#0a2a4a" rx="1"/>
+            <rect x="8" y="106" width="72" height="4" fill="url(#depthG)" rx="1"/>
+            <text x="8" y="104" fill="#37474f" font-size="6">diep</text>
+            <text x="80" y="104" fill="#4fc3f7" font-size="6">ondiep</text>
+            <text x="130" y="12" fill="#81d4fa" font-size="8" text-anchor="middle" font-weight="600">ongestructureerd rooster</text>
+          </svg>
+        </div>
+        <div class="intro-card-body">
+          <span class="poc-status-badge" style="background:#001428; color:#81d4fa; border:1px solid #01579b;">◎ POC Idee</span>
+          <div class="intro-card-label" style="color:#81d4fa;">POC D · 2D hydraulica</div>
+          <div class="intro-card-title">D-FLOW FM — uiterwaarden</div>
+          <div class="intro-card-desc">
+            Vervangt de riviercel-GeoJSON door een 2D hydrodynamische simulatie van de
+            uiterwaarden met Delft3D Flexible Mesh. Het ongestructureerde rooster past
+            zich aan de complexe geometrie aan en berekent waterdiepte en stroomsnelheid
+            per cel. Output: UGRID NetCDF → deck.gl GridLayer.
+          </div>
+          <div class="poc-stack">
+            <span>Delft3D-FM</span><span>UGRID NetCDF</span><span>flex mesh</span><span>deck.gl</span>
+          </div>
+          <div class="poc-effort">
+            <div class="poc-effort-dot" style="background:#81d4fa"></div>
+            <div class="poc-effort-dot" style="background:#81d4fa"></div>
+            <div class="poc-effort-dot" style="background:#81d4fa"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── POC E: Ensemble Kalman Filter ── -->
+      <div class="intro-card">
+        <div class="intro-card-visual" style="background:linear-gradient(180deg,#0d0520 0%,#150830 100%);">
+          <svg width="100%" viewBox="0 0 260 115" style="display:block">
+            <line x1="15" y1="100" x2="248" y2="100" stroke="#37474f" stroke-width="1"/>
+            <text x="246" y="98" fill="#546e7a" font-size="7" text-anchor="end">t</text>
+            <!-- Observatie-tijdstip -->
+            <line x1="128" y1="15" x2="128" y2="100" stroke="#ffd740" stroke-width="1" stroke-dasharray="3,3" opacity="0.75"/>
+            <text x="131" y="22" fill="#ffd740" font-size="7">obs</text>
+            <!-- Prior ensemble (breed, links) -->
+            <polyline points="15,78 55,74 95,70 128,67" fill="none" stroke="#ce93d8" stroke-width="1" opacity="0.45"/>
+            <polyline points="15,70 55,66 95,61 128,58" fill="none" stroke="#ce93d8" stroke-width="1" opacity="0.6"/>
+            <polyline points="15,62 55,58 95,53 128,51" fill="none" stroke="#ce93d8" stroke-width="1.6" opacity="0.85"/>
+            <polyline points="15,54 55,50 95,45 128,43" fill="none" stroke="#ce93d8" stroke-width="1" opacity="0.6"/>
+            <polyline points="15,46 55,42 95,37 128,35" fill="none" stroke="#ce93d8" stroke-width="1" opacity="0.45"/>
+            <!-- Prior breedte-aanduiding -->
+            <line x1="12" y1="38" x2="12" y2="80" stroke="#7b1fa2" stroke-width="1.5" opacity="0.4"/>
+            <line x1="9" y1="38" x2="15" y2="38" stroke="#7b1fa2" stroke-width="1.5" opacity="0.4"/>
+            <line x1="9" y1="80" x2="15" y2="80" stroke="#7b1fa2" stroke-width="1.5" opacity="0.4"/>
+            <text x="7" y="32" fill="#9c27b0" font-size="7">prior</text>
+            <!-- Observatie-punt -->
+            <circle cx="128" cy="46" r="5" fill="none" stroke="#ffd740" stroke-width="1.5"/>
+            <line x1="128" y1="41" x2="128" y2="51" stroke="#ffd740" stroke-width="1"/>
+            <line x1="123" y1="46" x2="133" y2="46" stroke="#ffd740" stroke-width="1"/>
+            <!-- Posterior ensemble (smal, rechts) -->
+            <polyline points="128,67 165,64 200,62 245,61" fill="none" stroke="#e040fb" stroke-width="1" opacity="0.38"/>
+            <polyline points="128,58 165,55 200,54 245,54" fill="none" stroke="#e040fb" stroke-width="1" opacity="0.6"/>
+            <polyline points="128,51 165,50 200,50 245,51" fill="none" stroke="#ce93d8" stroke-width="2" opacity="0.95"/>
+            <polyline points="128,43 165,44 200,46 245,47" fill="none" stroke="#e040fb" stroke-width="1" opacity="0.6"/>
+            <polyline points="128,35 165,37 200,41 245,43" fill="none" stroke="#e040fb" stroke-width="1" opacity="0.38"/>
+            <!-- Posterior breedte-aanduiding -->
+            <line x1="248" y1="44" x2="248" y2="60" stroke="#ce93d8" stroke-width="1.5" opacity="0.4"/>
+            <line x1="245" y1="44" x2="251" y2="44" stroke="#ce93d8" stroke-width="1.5" opacity="0.4"/>
+            <line x1="245" y1="60" x2="251" y2="60" stroke="#ce93d8" stroke-width="1.5" opacity="0.4"/>
+            <text x="240" y="32" fill="#ce93d8" font-size="7" text-anchor="end">posterior</text>
+            <!-- Labels -->
+            <text x="78" y="112" fill="#37474f" font-size="6" text-anchor="middle">breed (onzekerheid)</text>
+            <text x="192" y="112" fill="#ce93d8" font-size="6" text-anchor="middle">nauw (gecorrigeerd)</text>
+          </svg>
+        </div>
+        <div class="intro-card-body">
+          <span class="poc-status-badge" style="background:#150830; color:#ce93d8; border:1px solid #6a1b9a;">◎ POC Idee</span>
+          <div class="intro-card-label" style="color:#ce93d8;">POC E · Data-assimilatie</div>
+          <div class="intro-card-title">Ensemble Kalman Filter</div>
+          <div class="intro-card-desc">
+            Live RWS Waterinfo-metingen (debiet Kampen/Westervoort) corrigeren de wflow-bodemtoestand
+            via een Ensemble Kalman Filter. Na elke observatie krimpt het ensemblespread —
+            betere begintoestand voor de volgende 14-daagse voorspelling.
+            Bouwt direct voort op de bestaande ensemble-infrastructuur.
+          </div>
+          <div class="poc-stack">
+            <span>OpenDA</span><span>Python EnKF</span><span>wflow state</span><span>RWS live</span>
+          </div>
+          <div class="poc-effort">
+            <div class="poc-effort-dot" style="background:#ce93d8"></div>
+            <div class="poc-effort-dot" style="background:#ce93d8"></div>
+            <div class="poc-effort-dot" style="background:#ce93d8"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── POC F: KNMI'23 klimaat ── -->
+      <div class="intro-card">
+        <div class="intro-card-visual" style="background:linear-gradient(180deg,#071a08 0%,#0f2812 100%);">
+          <svg width="100%" viewBox="0 0 260 115" style="display:block">
+            <line x1="28" y1="100" x2="252" y2="100" stroke="#37474f" stroke-width="1"/>
+            <line x1="28" y1="15" x2="28" y2="100" stroke="#37474f" stroke-width="1"/>
+            <text x="140" y="113" fill="#546e7a" font-size="7" text-anchor="middle">piekdebiet Q (m³/s)</text>
+            <!-- 1995 referentielijn -->
+            <line x1="110" y1="15" x2="110" y2="100" stroke="#ef5350" stroke-width="1" stroke-dasharray="3,3" opacity="0.55"/>
+            <text x="113" y="22" fill="#ef5350" font-size="6">1995</text>
+            <!-- S-curves (overschrijdingskansen) -->
+            <!-- huidig (2024) -->
+            <path d="M 38,96 C 52,94 66,88 82,78 S 100,57 110,47 S 120,27 132,18 L 252,15"
+                  fill="none" stroke="#78909c" stroke-width="1.5"/>
+            <!-- W 2050 -->
+            <path d="M 58,96 C 72,94 86,88 102,78 S 120,57 130,47 S 140,27 152,18 L 252,15"
+                  fill="none" stroke="#66bb6a" stroke-width="1.5"/>
+            <!-- G 2050 -->
+            <path d="M 78,96 C 92,94 106,88 122,78 S 140,57 150,47 S 160,27 172,18 L 252,15"
+                  fill="none" stroke="#a5d6a7" stroke-width="1.5"/>
+            <!-- WH 2100 -->
+            <path d="M 100,96 C 114,94 128,88 144,78 S 162,57 172,47 S 182,27 194,18 L 252,15"
+                  fill="none" stroke="#c8e6c9" stroke-width="1.5"/>
+            <!-- Legenda -->
+            <line x1="165" y1="87" x2="178" y2="87" stroke="#78909c" stroke-width="1.5"/>
+            <text x="181" y="90" fill="#78909c" font-size="7">huidig</text>
+            <line x1="165" y1="95" x2="178" y2="95" stroke="#66bb6a" stroke-width="1.5"/>
+            <text x="181" y="98" fill="#66bb6a" font-size="7">W 2050</text>
+            <line x1="212" y1="87" x2="225" y2="87" stroke="#a5d6a7" stroke-width="1.5"/>
+            <text x="228" y="90" fill="#a5d6a7" font-size="7">G 2050</text>
+            <line x1="212" y1="95" x2="225" y2="95" stroke="#c8e6c9" stroke-width="1.5"/>
+            <text x="228" y="98" fill="#c8e6c9" font-size="7">WH 2100</text>
+            <!-- As-ticks -->
+            <text x="82" y="103" fill="#546e7a" font-size="6" text-anchor="middle">2000</text>
+            <text x="142" y="103" fill="#546e7a" font-size="6" text-anchor="middle">3000</text>
+            <text x="202" y="103" fill="#546e7a" font-size="6" text-anchor="middle">4000</text>
+            <text x="18" y="62" fill="#546e7a" font-size="6" transform="rotate(-90 18 62)">P(Q&gt;x)</text>
+          </svg>
+        </div>
+        <div class="intro-card-body">
+          <span class="poc-status-badge" style="background:#071a08; color:#a5d6a7; border:1px solid #2e7d32;">✓ Haalbaar</span>
+          <div class="intro-card-label" style="color:#a5d6a7;">POC F · Klimaatprojectie</div>
+          <div class="intro-card-title">KNMI'23 klimaatscenario's</div>
+          <div class="intro-card-desc">
+            De vier KNMI'23-scenario's (W, WH, G, GH) worden via delta-change toegepast
+            op de ERA5-forcing: temperatuur +Δ, neerslag ×factor, verdamping gecorrigeerd.
+            Vijf wflow-runs per scenario geven exceedance probability curves voor 2050 en 2100
+            ten opzichte van de 1995-referentiepiek (≈ 3500 m³/s Kampen).
+          </div>
+          <div class="poc-stack">
+            <span>KNMI'23 deltafactoren</span><span>xarray</span><span>wflow SBM</span><span>exceedance curves</span>
+          </div>
+          <div class="poc-effort">
+            <div class="poc-effort-dot" style="background:#a5d6a7"></div>
+            <div class="poc-effort-dot" style="background:#a5d6a7"></div>
+            <div class="poc-effort-dot" style="background:#263238"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /intro-grid -->
+  </div><!-- /roadmap-section uitgewerkt -->
+
+  <!-- ── Backlog ──────────────────────────────────────────────────────────── -->
+  <div class="roadmap-section">
+    <div class="roadmap-section-title">Backlog — verdere ideeën &amp; uitbreidingen</div>
+    <div class="backlog-grid">
+
+      <div class="backlog-item">
+        <div class="backlog-item-title">iMOD · Veluwe grondwater</div>
+        <div class="backlog-item-desc">
+          Koppeling IJssel-waterpeil ↔ Veluwe-grondwater via iMOD-python of MODFLOW 6.
+          Visualiseer kwelzone-omkering bij laagwater (&lt; 0.3 m+NAP): IJssel daalt →
+          kweldruk negatief → grondwateronttrekking Veluwe-natuur.
+        </div>
+        <div class="backlog-item-stack">
+          <span>iMOD-python</span><span>MODFLOW 6</span><span>kwelzone</span><span>grondwater</span>
+        </div>
+      </div>
+
+      <div class="backlog-item">
+        <div class="backlog-item-title">RTC-Tools · stuurbeheer</div>
+        <div class="backlog-item-desc">
+          Deltares RTC-Tools 2 (CasADi/IPOPT) bepaalt optimale stuwstanden (Driel, Amerongen,
+          Roggebotsluis) gegeven de wflow-verwachting. Sluit de regelloop:
+          waarnemen → voorspellen → besturen. Ribasim als plantmodel.
+        </div>
+        <div class="backlog-item-stack">
+          <span>RTC-Tools 2</span><span>CasADi</span><span>IPOPT</span><span>Ribasim plant</span>
+        </div>
+      </div>
+
+      <div class="backlog-item">
+        <div class="backlog-item-title">D-FLOW FM 3D · saliniteit</div>
+        <div class="backlog-item-desc">
+          Bij hoog IJsseldebiet dringt zoet water door in het zoute Ketelmeer/IJsselmeer.
+          D-FLOW FM 3D met zout-transport berekent de halocline en de impact op
+          drinkwaterwinning Vitens en de ecologie van de overgang.
+        </div>
+        <div class="backlog-item-stack">
+          <span>D-FLOW FM 3D</span><span>zout-transport</span><span>Ketelmeer</span><span>Vitens</span>
+        </div>
+      </div>
+
+      <div class="backlog-item">
+        <div class="backlog-item-title">HIS-SSM · schade-model</div>
+        <div class="backlog-item-desc">
+          Inundatiediepte uit SOBEK/D-FLOW FM gekoppeld aan HIS-SSM schadefuncties per
+          BGT-landgebruiksklasse. Economische schade per scenario in euro's —
+          input voor kosten-batenanalyse dijkverhoging.
+        </div>
+        <div class="backlog-item-stack">
+          <span>HIS-SSM</span><span>schadefuncties</span><span>BGT</span><span>KBA</span>
+        </div>
+      </div>
+
+      <div class="backlog-item">
+        <div class="backlog-item-title">SFINCS · urbane overstroming</div>
+        <div class="backlog-item-desc">
+          Super-Fast INundation of CoastS (Deltares) als snel 2D alternatief voor
+          stedelijke gebieden (Zwolle, Deventer): ordes sneller dan D-FLOW FM en
+          geschikt voor real-time inzet op de Jetson.
+        </div>
+        <div class="backlog-item-stack">
+          <span>SFINCS</span><span>2D snel</span><span>urban flood</span><span>real-time</span>
+        </div>
+      </div>
+
+      <div class="backlog-item">
+        <div class="backlog-item-title">HydroMT-update · nieuwe schematisatie</div>
+        <div class="backlog-item-desc">
+          Automatische heropbouw van de wflow SBM-schematisatie met een recenter DEM
+          (AHN4) en actueel landgebruik (BRP 2024). HydroMT genereert alle
+          statische kaarten zonder handmatige tussenstappen.
+        </div>
+        <div class="backlog-item-stack">
+          <span>HydroMT</span><span>AHN4</span><span>BRP 2024</span><span>automatisch</span>
+        </div>
+      </div>
+
+    </div><!-- /backlog-grid -->
+  </div><!-- /roadmap-section backlog -->
+
+</div><!-- /roadmap-panel -->
+
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=25"></script>
+<script src="/static/app.js?v=26"></script>
 </body>
 </html>
