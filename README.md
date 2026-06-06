@@ -1,104 +1,190 @@
 # IJssel Waterlab
 
-**Experimentele onderzoeksomgeving voor hydrologische modellering op de IJssel**
+**Experimentele onderzoeksomgeving voor hydrologische modellering en AI-integratie op de IJssel**
 
 🌐 **Live demo:** [waterlab.felixisfelix.com](https://waterlab.felixisfelix.com)
+
+> **Experimenteel.** Dit is een onderzoeks- en leerplatform, geen operationeel systeem.
+> Simulaties zijn indicatief en niet gekalibreerd voor operationele waterbeheerbeslissingen.
 
 ---
 
 ## Overzicht
 
-IJssel Waterlab is een interactief dashboard dat historische overstromingen, droogteperiodes en toekomstvoorspellingen simuleert voor het IJssel-stroomgebied. Het systeem combineert een gedistribueerd hydrologisch model, een hydraulisch netwerkmodel en een AI-orchestrator, en draait volledig op een NVIDIA Jetson AGX Orin (ARM64) aan de rand van het netwerk.
-
-Het project is nadrukkelijk **experimenteel**: het dient als testomgeving voor het koppelen van verschillende modeltypen en AI-systemen in een realistisch waterbeheersscenario.
+IJssel Waterlab draait volledig op een **NVIDIA Jetson AGX Orin** (ARM64 edge device) en
+combineert een gedistribueerd hydrologisch model, een hydraulisch netwerkmodel, twee LLM-integraties
+en live datafeeds in één interactief dashboard. Het project test hoe ver je kunt gaan met
+modelkoppelingen en AI-assistentie zonder cloud-infrastructuur voor de zware berekeningen.
 
 ---
 
-## Experimenten
+## Zes experimenten
 
-| Tab | Beschrijving |
-|-----|-------------|
-| **Jan 1995 – Hoogwater** | Extreme afvoerpiek op de IJssel, gesimuleerd met ERA5-Land forcing |
-| **Zomer 2018 – Droogte** | Langdurige laagwatersituatie, drempelwaarden per knooppunt |
-| **Jul 2021 – Overstroming** | Meuse-gelinkte piekaanvoer na extreme neerslag |
-| **14-daagse voorspelling** | Operationele run met recente ERA5 forcing |
-| **Ensemble AI** | Wflow ensemble ×5 met stochastische perturbaties, onzekerheidsbanden |
-| **Multimodel pipeline** | Ribasim → LLM-orchestrator → wflow ensemble → analyse |
+| Proef | Tab | Kern | AI-component |
+|-------|-----|------|-------------|
+| 1 | **Verwachting** | Statistisch debietmodel + RWS Waterinfo live + Open-Meteo 14d | Claude (Anthropic) — waterpeil-regime-afhankelijke interventie |
+| 2 | **Ensemble AI** | wflow SBM ×5 neerslag-scenario's (×0.70–×1.30) | Qwen2.5-32B lokaal — spread-interpretatie |
+| 3 | **Multimodel** | Ribasim netwerk → LLM-orchestrator → wflow ensemble | Qwen2.5-32B lokaal — kritieke-knoop-selectie |
+| 4 | **Jan 1995** | wflow SBM hoogwater, ERA5-Land forcing | — |
+| 5 | **Zomer 2018** | wflow SBM droogte, laagwaterperiode | — |
+| 6 | **Jul 2021** | wflow SBM hoogwater, gemeten vs. synthetische inflow | — |
 
 ---
 
 ## Architectuur
 
 ```
-ERA5-Land forcing
-       │
-       ▼
-  wflow SBM                 ← gedistribueerd neerslagoverschot-model (Julia)
-  (afvoer per cel)
-       │
-       ▼
-  Ribasim netwerk           ← hydraulisch routeringsmodel (Python + Julia)
-  (3 parallel takken:
-   IJssel / Neder-Rijn / Lek)
-       │
-       ▼
-  LLM orchestrator          ← Qwen2.5-32B, beslist ensemble-parameters
-       │
-       ▼
-  wflow ensemble ×5         ← parallelle runs met gestoorde parameters
-       │
-       ▼
-  Dashboard (FastAPI)       ← MapLibre GL · Plotly · deck.gl
+RWS Waterinfo (live)          Open-Meteo (live)
+      │                              │
+      └──────────────┬───────────────┘
+                     ▼
+             Statistisch recessiemodel
+             + neerslaginpulsrespons
+                     │
+                     ▼
+          Claude Haiku (Anthropic API)
+          Expert-hydroloog persona:
+          waterpeil-regime → interventie
+                     │
+                     ▼
+              Dashboard Verwachting
+                     
+─────────────────────────────────────────────────────
+
+ERA5-Land forcing (historisch)
+      │
+      ▼
+ wflow SBM ×1          ─── Proeven 4, 5, 6 (historische events)
+ (ARM64, Julia)
+      │
+      ▼
+ wflow SBM ×5          ─── Proef 2 (Ensemble AI)
+ neerslag-perturbaties         │
+                               ▼
+                        Qwen2.5-32B (lokaal)
+                        spread-interpretatie
+
+─────────────────────────────────────────────────────
+
+Ribasim netwerk
+(3 takken: IJssel / Neder-Rijn / Lek)
+  Python 3.13 bouwt model → Julia solver
+      │
+      ▼
+Qwen2.5-32B (lokaal)   ─── Proef 3 (Multimodel)
+  kritieke knoop selectie
+      │
+      ▼
+ wflow SBM ×5
+  deelstroomgebied
+      │
+      ▼
+FastAPI dashboard (poort 8000)
+  MapLibre GL · Plotly · deck.gl
+  Cloudflare Tunnel → waterlab.felixisfelix.com
 ```
+
+---
+
+## AI-interventie (Proef 1)
+
+De forecast-tab genereert een waterbeheer-interventie via de **Anthropic API** (Claude Haiku).
+De keuze voor de Anthropic API in plaats van de lokale LLM is bewust: de interventie is
+een advies met potentiële operationele impact, waarvoor hogere modelkwaliteit gewenst is.
+
+**Expert-persona:** de prompt modelleert een senior hydroloog bij RWS WNL met 25 jaar
+IJssel-ervaring. De systeemprompt bevat:
+
+- ASCII-gebiedsschematisatie (Lobith → Pannerdense Kop → Westervoort → Kampen → Ketelmeer)
+- Nautische drempelwaarden (BICS-codes, klasse IV/V ondiepgang-limieten bij Roggebotsluis)
+- Stakeholders (HHNK, Vitens, Waterschap Vallei en Veluwe, Waterschap Rijn en IJssel)
+- Ecologische minimumafvoer (50 m³/s KRW, Veluwe-kwelzone)
+- Historische referenties (droogte 2018: −0.45 m+NAP, droogte 2022: −0.38 m+NAP)
+
+**Regime-classificatie** stuurt het type interventie:
+
+| Regime | Peil Kampen | Interventie-focus |
+|--------|-------------|-------------------|
+| Extreem laag | < 0.0 m+NAP | ICPR-afstemming, laagwaterprotocol, scheepvaartstop klasse V |
+| Laag | 0.0–0.5 m+NAP | BICS-waarschuwing, Veluwemeer-inlaatbeheer |
+| Normaal | 1.2–3.0 m+NAP | Reguliere monitoring |
+| Waakzaam | 3.0–4.2 m+NAP | Dijkbewaking, waterstandsberichten |
+| Hoog | > 4.2 m+NAP | Crisisoverleg, evacuatieplannen |
 
 ---
 
 ## Tech stack
 
-| Laag | Technologie |
-|------|-------------|
-| Hydrologisch model | [wflow SBM](https://deltares.github.io/Wflow.jl/) (Julia) |
-| Hydraulisch netwerk | [Ribasim](https://deltares.github.io/Ribasim/) (Python 3.13 + Julia) |
-| Simulatie runtime | Julia 1.12.5 op ARM64 (JIT, geen binary release) |
-| Klimaatdata | ERA5-Land (0.1° grid, hourly, ~248 MB NetCDF) |
-| AI orchestrator | Qwen2.5-32B (lokaal via vLLM) |
-| API / server | FastAPI + uvicorn (poort 8000) |
-| Frontend | MapLibre GL, Plotly, deck.gl, vanilla JS |
-| Tunneling | Cloudflare Tunnel (IPv4, edge-ip-version: 4) |
-| Hardware | NVIDIA Jetson AGX Orin, ARM64, Ubuntu 22.04 |
-
----
-
-## Lokaal draaien
-
-```bash
-# Vereisten: Python 3.10, Julia 1.12.5, Python 3.13 venv voor Ribasim
-cd /home/bob/waterlab
-
-# Dashboard starten
-uvicorn wflow_ijssel.dashboard.main:app --host 0.0.0.0 --port 8000
-
-# Open http://localhost:8000
-```
-
-Het dashboard is ook publiek bereikbaar via **[https://waterlab.felixisfelix.com](https://waterlab.felixisfelix.com)**.
+| Laag | Component | Technologie |
+|------|-----------|-------------|
+| Hydrologisch model | wflow SBM 1.0.2 | Julia 1.12.5 · ARM64 (JIT ~2:20u cold start) |
+| Hydraulisch netwerk | Ribasim 2026.1.1 | Python 3.13 (build) + Julia (solver) |
+| Lokale LLM | Qwen2.5-32B-Instruct-Q4 | llama.cpp · localhost:8080 |
+| Cloud LLM | Claude Haiku | Anthropic API · `.env` voor API-key |
+| Live data | RWS Waterinfo + Open-Meteo | 15-min cache · graceful fallback |
+| API / server | FastAPI + uvicorn | Python 3.10 · poort 8000 |
+| Frontend | Dashboard | MapLibre GL · Plotly · deck.gl · vanilla JS |
+| Tunneling | Cloudflare Tunnel | IPv4 (`edge-ip-version: 4`) — IPv6 uitgezet wegens adresrotatie |
+| Hardware | NVIDIA Jetson AGX Orin | aarch64 · 64 GB · Ubuntu 22.04 |
 
 ---
 
 ## Ribasim op ARM64
 
-De officiële Ribasim Linux binary is x86-64 en werkt niet op aarch64. De oplossing:
+De officiële Ribasim Linux binary is x86-64 en werkt niet op aarch64. Werkende aanpak:
 
-1. **Model bouwen** — Python 3.13 venv (`/home/bob/waterlab/.venv313/`) met `ribasim` package
-2. **Simulatie draaien** — Julia met het `Ribasim` Julia-package: `Ribasim.run(toml_path)`
+```bash
+# 1. Python 3.13 venv voor model bouwen
+python3.13 -m venv .venv313 && .venv313/bin/pip install ribasim
 
-Eerste Julia-run duurt ~32 seconden door JIT-compilatie; daarna aanzienlijk sneller.
+# 2. Julia Ribasim package (solver)
+julia -e 'using Pkg; Pkg.add(url="https://github.com/Deltares/Ribasim", subdir="core")'
+# Precompilatie ~295s (eenmalig)
+
+# 3. Pipeline
+python3 multimodel/build_ribasim_model.py <tmp_dir> <settings_json>
+julia -e 'using Ribasim; Ribasim.run("<tmp_dir>/ribasim.toml")'
+```
+
+Eerste run duurt ~32 s door Julia JIT-compilatie.
 
 ---
 
-## Status
+## Cloudflare Tunnel
 
-> **Experimenteel.** Dit project is een onderzoeks- en leerplatform, geen operationeel systeem. Simulaties zijn indicatief en niet gekalibreerd voor operationele waterbeheerbeslissingen.
+Één tunnel serveert twee domeinen:
+
+```yaml
+# ~/.cloudflared/config.yml
+protocol: http2
+edge-ip-version: "4"   # IPv6 uitgezet: adresrotatie elke ~24u veroorzaakte reconnects
+ingress:
+  - hostname: waterlab.felixisfelix.com
+    service: http://localhost:8000
+  - hostname: geluid.felixisfelix.com
+    service: http://localhost:8792
+  - service: http_status:404
+```
+
+---
+
+## Draaien
+
+```bash
+# Vereisten: Python 3.10, Python 3.13, Julia 1.12.5
+cd /home/bob/waterlab/wflow_ijssel
+
+# Dashboard (inclusief live forecast + AI-interventie)
+python -m uvicorn dashboard.server:app --host 0.0.0.0 --port 8000
+
+# Ensemble AI (éénmalig uitvoeren voor Proef 2)
+cd /home/bob/waterlab && python run_ensemble.py
+
+# Multimodel pipeline (éénmalig uitvoeren voor Proef 3)
+cd /home/bob/waterlab && python run_multimodel.py
+```
+
+Publiek bereikbaar: **[https://waterlab.felixisfelix.com](https://waterlab.felixisfelix.com)**
 
 ---
 
