@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>IJssel Hoogwater Dashboard</title>
+  <title>Waterlab — micro-innovatielab</title>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -145,8 +145,17 @@
       border-bottom: 1px solid #1a3a5c;
       padding: 2rem 2.5rem 1.8rem;
     }
-    .intro-hero h2 { font-size: 22px; font-weight: 700; color: #e0f2fe; margin-bottom: .6rem; letter-spacing: -.3px; }
-    .intro-hero p  { color: #90a4ae; line-height: 1.8; max-width: 700px; }
+    .intro-hero h2 { font-size: 24px; font-weight: 700; color: #e0f2fe; margin-bottom: .5rem; letter-spacing: -.5px; }
+    .intro-hero p  { color: #90a4ae; line-height: 1.8; max-width: 720px; }
+    .intro-lead { font-size: 14px; color: #b0bec5; line-height: 1.7; margin-bottom: 1rem; max-width: 680px; }
+    .intro-goal-row { display: flex; gap: .7rem; flex-wrap: wrap; margin: .9rem 0; }
+    .intro-goal {
+      flex: 1; min-width: 190px; background: #091523; border: 1px solid #162433;
+      border-radius: 6px; padding: .7rem .9rem;
+    }
+    .intro-goal-num { font-size: 9px; color: #2a3f50; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: .3rem; }
+    .intro-goal-title { font-size: 12px; font-weight: 700; color: #cfd8dc; margin-bottom: .3rem; }
+    .intro-goal-desc { font-size: 11px; color: #455a64; line-height: 1.6; }
     .intro-badge {
       display: inline-block; background: #263238; border: 1px solid #546e7a;
       color: #b0bec5; font-size: 10px; font-weight: 700; letter-spacing: 1px;
@@ -391,7 +400,7 @@
 </div>
 
 <div id="event-banner">
-  IJssel Waterlab &nbsp;·&nbsp; experimentele onderzoeksomgeving &nbsp;·&nbsp; NVIDIA Jetson AGX Orin
+  Waterlab &nbsp;·&nbsp; micro-innovatielab &nbsp;·&nbsp; hydrologische modellering + AI &nbsp;·&nbsp; NVIDIA Jetson AGX Orin
 </div>
 
 <!-- ── simulatie-view ── -->
@@ -908,8 +917,7 @@
   <!-- 4. Overzicht zes experimenten -->
   <div class="info-section">
     <h2>4 · Zes experimenten</h2>
-    <p>Het waterlab bestaat uit zes opeenvolgende proeven, elk gericht op een ander aspect
-    van hydrologische modellering en AI-integratie:</p>
+    <p>Waterlab omvat zes proeven, elk gericht op een ander aspect van hydrologische modellering en AI-integratie:</p>
     <table class="ll-table" style="margin:12px 0">
       <tr><th>Proef</th><th>Naam</th><th>Kern</th><th>AI?</th></tr>
       <tr>
@@ -1395,16 +1403,34 @@
 <div id="intro-panel" class="visible">
   <!-- Hero -->
   <div class="intro-hero">
-    <div class="intro-badge">⚗ Experimentele omgeving</div>
-    <h2>IJssel Waterlab</h2>
-    <p>
-      Experimentele onderzoeksomgeving op een <strong style="color:#e0f2fe;">NVIDIA Jetson AGX Orin</strong> (ARM64 edge computer).
-      Zes proeven combineren hydrologische modellering, live datafeeds en AI-integratie:
-      <strong style="color:#e0f2fe;">drie historische simulaties</strong> (1995, 2018, 2021) met ERA5-Land forcing,
-      een <strong style="color:#e0f2fe;">live verwachting</strong> met regime-gebaseerde interventie via <strong style="color:#e0f2fe;">Claude (Anthropic)</strong>,
-      een <strong style="color:#e0f2fe;">ensemble</strong> van vijf wflow-runs geïnterpreteerd door een lokale LLM,
-      en een <strong style="color:#e0f2fe;">multimodel pipeline</strong> waarbij Ribasim, wflow SBM en Qwen2.5-32B samenwerken.
-      De resultaten zijn indicatief — niet voor operationeel waterbeheer.
+    <div class="intro-badge">⚗ Micro-innovatielab &nbsp;·&nbsp; 1 persoon &nbsp;·&nbsp; experimenteel</div>
+    <h2>Waterlab</h2>
+    <p class="intro-lead">
+      Persoonlijk leer- en experimenteerplatform voor hydrologische modellering en AI-integratie in waterbeheer.
+      Één persoon, één edge computer (<strong style="color:#cfd8dc;">NVIDIA Jetson AGX Orin</strong>), open data en open-source modellen —
+      om te begrijpen wat er mogelijk is.
+    </p>
+    <div class="intro-goal-row">
+      <div class="intro-goal">
+        <div class="intro-goal-num">Doel 1 · Modellen</div>
+        <div class="intro-goal-title">Leren van modellen</div>
+        <div class="intro-goal-desc">wflow SBM, Ribasim, ensemble-methoden, data-assimilatie — hoe werken ze, wat geven ze, waar zitten de grenzen?</div>
+      </div>
+      <div class="intro-goal">
+        <div class="intro-goal-num">Doel 2 · Vakgebied</div>
+        <div class="intro-goal-title">Vakgebied verkennen</div>
+        <div class="intro-goal-desc">RWS-processen, waterschappen, het Deltares-ecosysteem en FEWS — hoe ziet het huidige kennisinstrumentarium eruit?</div>
+      </div>
+      <div class="intro-goal">
+        <div class="intro-goal-num">Doel 3 · AI</div>
+        <div class="intro-goal-title">AI-innovaties testen</div>
+        <div class="intro-goal-desc">LLM-orkestratie, expert-agents, tool use en real-time integratie — wat voegt AI concreet toe aan hydrologische analyse?</div>
+      </div>
+    </div>
+    <p style="font-size:12px; color:#2a3f52; margin-top:.2rem; max-width:700px; line-height:1.7">
+      Achterliggende vraag: hoe zou een modern <strong style="color:#37546a">kennisinstrumentarium</strong> voor waterbeheer eruitzien
+      als je het vandaag opnieuw ontwerpt — API-first, AI-ondersteund, zonder legacy GUI-afhankelijkheden?
+      De uitkomsten zijn indicatief. Dit is geen operationeel systeem.
     </p>
     <div class="intro-stack">
       <span>wflow SBM</span><span>Ribasim</span><span>Julia</span><span>ERA5-Land</span>
@@ -2620,6 +2646,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=27"></script>
+<script src="/static/app.js?v=28"></script>
 </body>
 </html>

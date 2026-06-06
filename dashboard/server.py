@@ -31,7 +31,7 @@ OUTPUT_DIRS = {
 
 ENSEMBLE_DIR = Path("/home/bob/waterlab/ensemble_data/outputs")
 
-app = FastAPI(title="IJssel Hoogwater Dashboard API")
+app = FastAPI(title="Waterlab API")
 
 if os.path.isdir(str(STATIC_DIR)):
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")

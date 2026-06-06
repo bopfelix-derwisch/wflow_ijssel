@@ -131,7 +131,7 @@ function switchYear(year) {
   if (year === "intro") {
     hideAll();
     introPnl.classList.add("visible");
-    banner.textContent = "IJssel Waterlab · experimentele onderzoeksomgeving · NVIDIA Jetson AGX Orin";
+    banner.textContent = "Waterlab · micro-innovatielab · hydrologische modellering + AI · NVIDIA Jetson AGX Orin";
     document.getElementById("alert-badge").textContent = "⚗ Waterlab";
     document.getElementById("alert-badge").style.background = "#37474f";
     document.body.className = "";
