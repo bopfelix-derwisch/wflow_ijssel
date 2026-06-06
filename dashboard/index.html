@@ -382,7 +382,7 @@
 <body>
 
 <div id="header">
-  <h1>🌊 IJssel Hoogwater Dashboard</h1>
+  <h1>🌊 Waterlab</h1>
   <span class="badge" id="alert-badge" style="background:#37474f">⚗ Waterlab</span>
   <div id="year-tabs">
     <button class="year-tab active-intro" data-year="intro">Waterlab</button>
@@ -787,8 +787,44 @@
   <!-- ══ VOOR IEDEREEN ══════════════════════════════════════════ -->
   <div class="audience-header voor-iedereen">
     <span class="aud-icon">🌊</span>
-    <span class="aud-title">Rijn &amp; IJssel — alle experimenten</span>
-    <span class="aud-sub">Gebiedsbeschrijving · zes proeven · technische achtergrond</span>
+    <span class="aud-title">Waterlab — Rijn &amp; IJssel</span>
+    <span class="aud-sub">Leerplatform · gebiedsbeschrijving · zes proeven · technische achtergrond</span>
+  </div>
+
+  <!-- 0. Leerplatform framing -->
+  <div class="info-section" style="border-left-color:#00695c; background:#050f18">
+    <h2 style="color:#4db6ac">0 · Leerplatform — wat dit laat zien</h2>
+    <p>
+      Waterlab is een persoonlijk leerplatform, geen operationeel systeem.
+      De zes proeven zijn opgezet om drie concrete dingen te leren —
+      en elke keuze (model, dataset, AI-aanpak) is gemaakt om iets te begrijpen, niet om een product te bouwen.
+    </p>
+    <div class="intro-goal-row">
+      <div class="intro-goal">
+        <div class="intro-goal-num">Doel 1 · Modellen</div>
+        <div class="intro-goal-title">Hoe werken wflow SBM en Ribasim?</div>
+        <div class="intro-goal-desc">
+          Proeven 4–6: wat doet ERA5-forcing, waar slaat calibratie aan?
+          Proeven 2–3: hoe groot is ensemble-spread, hoe werkt netwerk­routing op ARM64?
+        </div>
+      </div>
+      <div class="intro-goal">
+        <div class="intro-goal-num">Doel 2 · Vakgebied</div>
+        <div class="intro-goal-title">Hoe werkt het Rijn–IJssel systeem?</div>
+        <div class="intro-goal-desc">
+          Pannerdense Kop-verdeling, waterpeil-regimes, dijkbewaking, stakeholders (RWS, HHNK, Vitens) —
+          domeinkennis die de kwaliteit van AI-interventies bepaalt.
+        </div>
+      </div>
+      <div class="intro-goal">
+        <div class="intro-goal-num">Doel 3 · AI</div>
+        <div class="intro-goal-title">Wat doet AI concreet?</div>
+        <div class="intro-goal-desc">
+          Proef 1: expert-agent (Claude) op waterpeil-regime, niet op debiet.
+          Proeven 2–3: Qwen2.5-32B lokaal voor ensemble-interpretatie en model-orkestratie.
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 1. IJssel systeem -->
@@ -2646,6 +2682,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=28"></script>
+<script src="/static/app.js?v=29"></script>
 </body>
 </html>
