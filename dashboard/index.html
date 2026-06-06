@@ -692,8 +692,8 @@
   <!-- ══ VOOR IEDEREEN ══════════════════════════════════════════ -->
   <div class="audience-header voor-iedereen">
     <span class="aud-icon">🌊</span>
-    <span class="aud-title">Voor iedereen</span>
-    <span class="aud-sub">Geen technische kennis vereist</span>
+    <span class="aud-title">Rijn &amp; IJssel — alle experimenten</span>
+    <span class="aud-sub">Gebiedsbeschrijving · zes proeven · technische achtergrond</span>
   </div>
 
   <!-- 1. IJssel systeem -->
@@ -819,62 +819,272 @@
     </p>
   </div>
 
-  <!-- 4. Simulatie uitleg -->
+  <!-- 4. Overzicht zes experimenten -->
   <div class="info-section">
-    <h2>4 · Wat doet een simulatie?</h2>
+    <h2>4 · Zes experimenten</h2>
+    <p>Het waterlab bestaat uit zes opeenvolgende proeven, elk gericht op een ander aspect
+    van hydrologische modellering en AI-integratie:</p>
+    <table class="ll-table" style="margin:12px 0">
+      <tr><th>Proef</th><th>Naam</th><th>Kern</th><th>AI?</th></tr>
+      <tr>
+        <td><strong style="color:#4db6ac">1</strong></td>
+        <td>14-daagse verwachting</td>
+        <td>Statistisch debietmodel + RWS Waterinfo live</td>
+        <td><span class="highlight">Claude (Anthropic) — interventie</span></td>
+      </tr>
+      <tr>
+        <td><strong style="color:#ffcc80">2</strong></td>
+        <td>Ensemble AI</td>
+        <td>wflow SBM ×5 neerslag-scenario's parallel</td>
+        <td><span class="highlight">Qwen2.5-32B lokaal — interpretatie</span></td>
+      </tr>
+      <tr>
+        <td><strong style="color:#90caf9">3</strong></td>
+        <td>Multimodel pipeline</td>
+        <td>Ribasim netwerk → LLM-orchestrator → wflow ensemble</td>
+        <td><span class="highlight">Qwen2.5-32B lokaal — orkestratie</span></td>
+      </tr>
+      <tr>
+        <td><strong style="color:#4fc3f7">4</strong></td>
+        <td>Hoogwater jan 1995</td>
+        <td>wflow SBM, ERA5-Land forcing, 90 dagen</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#ffc107">5</strong></td>
+        <td>Droogte zomer 2018</td>
+        <td>wflow SBM, laagwaterperiode mei–aug 2018</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#ce93d8">6</strong></td>
+        <td>Hoogwater jul 2021</td>
+        <td>wflow SBM, gemeten RWS-inflow vs. synthetisch</td>
+        <td>—</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 5. Proef 1 — Verwachting + AI interventie -->
+  <div class="info-section">
+    <h2>5 · Proef 1 · 14-daagse verwachting &amp; AI-interventie</h2>
     <p>
-      Een hydrologisch model berekent hoe neerslag door een stroomgebied beweegt —
-      dag voor dag, cel voor cel. Vergelijk het met een weersverwachting: maar dan voor water.
+      De <span class="highlight">verwachting-tab</span> is de enige proef die real-time data gebruikt.
+      Elke 15 minuten wordt een nieuwe voorspelling opgebouwd uit drie databronnen:
     </p>
     <div class="sim-steps">
-      <div class="sim-step">
-        <span class="ss-icon">🌧</span>
-        <div class="ss-label">Neerslag</div>
-        <div class="ss-sub">ERA5 historische weerdata van ECMWF</div>
+      <div class="sim-step"><span class="ss-icon">📡</span>
+        <div class="ss-label">RWS Waterinfo</div>
+        <div class="ss-sub">Gemeten debiet Westervoort + waterpeil Kampen</div>
       </div>
       <div class="sim-sep">→</div>
-      <div class="sim-step">
-        <span class="ss-icon">🌱</span>
-        <div class="ss-label">Bodem</div>
-        <div class="ss-sub">Infiltratie, grondwater, verdamping</div>
+      <div class="sim-step"><span class="ss-icon">🌦</span>
+        <div class="ss-label">Open-Meteo</div>
+        <div class="ss-sub">14-daagse neerslag­prognose IFS/ERA5</div>
       </div>
       <div class="sim-sep">→</div>
-      <div class="sim-step">
-        <span class="ss-icon">💧</span>
-        <div class="ss-label">Afstroming</div>
-        <div class="ss-sub">Via beken naar de rivier</div>
+      <div class="sim-step"><span class="ss-icon">📉</span>
+        <div class="ss-label">Recessiemodel</div>
+        <div class="ss-sub">Statistisch Q₀·e<sup>-t/τ</sup> + neerslaginpulsrespons</div>
       </div>
       <div class="sim-sep">→</div>
-      <div class="sim-step">
-        <span class="ss-icon">📊</span>
-        <div class="ss-label">Debiet</div>
-        <div class="ss-sub">m³/s per cel en bij Kampen</div>
+      <div class="sim-step"><span class="ss-icon">🤖</span>
+        <div class="ss-label">Claude API</div>
+        <div class="ss-sub">Interventie­aanbeveling op basis van waterpeil-regime</div>
       </div>
     </div>
     <p>
-      De <span class="highlight">ERA5-weerdata</span> is historische, gereconstrueerde atmosfeerdata
-      van het Europees Centrum voor Weersverwachtingen (ECMWF) — nauwkeurig gereconstrueerd
-      aan de hand van satellieten en grondwaarnemingen, terug tot 1950. Geen voorspelling,
-      maar een zo goed mogelijk beeld van wat er werkelijk gevallen is.
+      Het <span class="highlight">debietmodel</span> is bewust eenvoudig: recessiecurve voor het basisniveau,
+      aangevuld met een unit-hydrograph respons op verwachte neerslag (15-punts kernel, piekrespons dag 3–5).
+      Onzekerheidsband loopt van ±18% op dag 1 op naar ±70% op dag 14.
     </p>
     <p>
-      Bovenop de lokale neerslag voeren we het dagelijkse <span class="highlight">debiet van de Rijn</span>
-      in bij Westervoort (het punt waar de IJssel begint). Voor 2021 is dit de werkelijk gemeten
-      reeks van Rijkswaterstaat. Het model combineert beide tot een dagelijkse schatting van
-      de waterafvoer langs de volledige IJssel.
+      De <span class="highlight">AI-interventie</span> maakt gebruik van de Anthropic API (Claude Haiku).
+      Het model speelt de rol van een senior hydroloog bij RWS WNL met 25 jaar IJssel-ervaring.
+      De prompt bevat de volledige gebiedsschematisatie (Lobith → Pannerdense Kop → Kampen → Ketelmeer),
+      nautische drempelwaarden (BICS-codes), ecologische minimumafvoer (50 m³/s KRW),
+      en droogtereferenties (2018: −0.45 m+NAP, 2022: −0.38 m+NAP). Het model oordeelt
+      uitsluitend op het actuele <span class="highlight">waterpeil-regime</span>:
+    </p>
+    <table class="ll-table" style="margin:12px 0">
+      <tr><th>Regime</th><th>Peil Kampen</th><th>Interventie-focus</th></tr>
+      <tr><td class="red">Extreem laag</td><td>&lt; 0.0 m+NAP</td><td>Laagwaterprotocol, ICPR-afstemming, scheepvaartstop klasse V, Vitens noodpompen</td></tr>
+      <tr><td class="warn">Laag</td><td>0.0–0.5 m+NAP</td><td>BICS-waarschuwing, inlaatbeheer Veluwemeer, ondiepgang-limiet 2.0 m</td></tr>
+      <tr><td style="color:#aaa">Normaal</td><td>1.2–3.0 m+NAP</td><td>Reguliere monitoring, geen bijzondere acties</td></tr>
+      <tr><td class="warn">Waakzaam</td><td>3.0–4.2 m+NAP</td><td>Eerste dijkbewaking, waterstandsberichten</td></tr>
+      <tr><td class="red">Verhoogd / Hoog</td><td>&gt; 4.2 m+NAP</td><td>Dijkbewaking 24/7, crisisoverleg gemeenten, evacuatieplannen</td></tr>
+    </table>
+  </div>
+
+  <!-- 6. Proef 2 — Ensemble AI -->
+  <div class="info-section">
+    <h2>6 · Proef 2 · Ensemble AI — neerlag scenario's</h2>
+    <p>
+      Vijf parallelle wflow SBM-runs met neerslag-perturbaties simuleren het zomer 2018
+      droogtescenario onder verschillende klimaatcondities:
+    </p>
+    <table class="ll-table" style="margin:12px 0">
+      <tr><th>Scenario</th><th>Multiplier</th><th>Hydrologische betekenis</th></tr>
+      <tr><td>extreem_droog</td><td>×0.70</td><td>−30% neerslag: droogste 10% historisch</td></tr>
+      <tr><td>ernstig_droog</td><td>×0.85</td><td>−15%: extreme droogte zoals 2018</td></tr>
+      <tr><td>referentie</td><td>×1.00</td><td>ERA5-Land 2018 ongewijzigd</td></tr>
+      <tr><td>nat</td><td>×1.15</td><td>+15%: bovengemiddeld neerslagnaar</td></tr>
+      <tr><td>zeer_nat</td><td>×1.30</td><td>+30%: grens droogte–normaal</td></tr>
+    </table>
+    <p>
+      Na de simulaties interpreteert <span class="highlight">Qwen2.5-32B</span> (lokaal op de Jetson via llama.cpp)
+      de ensemble-spread en genereert een hydrologisch advies. De lokale LLM is bewust gekozen voor
+      de ensemble-tab: de interpretatie is ruwe tekstgeneratie zonder kritische beslissingen,
+      waarvoor een lokaal model met lage latentie volstaat.
+    </p>
+    <p>
+      De <span class="highlight">onzekerheidsband</span> (P10–P90) kwantificeert hoe gevoelig
+      de droogteprognose is voor neerslagvariatie. Een brede band wijst op een systeem
+      dat sterk gestuurd wordt door lokale neerslag; een smalle band op dominantie van de
+      bovenstrooms randconditie (Rijn-afvoer bij Westervoort).
+    </p>
+  </div>
+
+  <!-- 7. Proef 3 — Multimodel pipeline -->
+  <div class="info-section">
+    <h2>7 · Proef 3 · Multimodel pipeline — Ribasim + LLM + wflow</h2>
+    <p>
+      De meest complexe proef koppelt drie modeltypen in één pipeline:
+    </p>
+    <div class="sim-steps" style="flex-wrap:wrap">
+      <div class="sim-step"><span class="ss-icon">🌊</span>
+        <div class="ss-label">Ribasim</div>
+        <div class="ss-sub">Hydraulisch netwerk Rijn/IJssel · 3 parallelle takken · Julia-solver</div>
+      </div>
+      <div class="sim-sep">→</div>
+      <div class="sim-step"><span class="ss-icon">🤖</span>
+        <div class="ss-label">LLM orchestrator</div>
+        <div class="ss-sub">Qwen2.5-32B identificeert kritieke knoop op basis van waterdeficit</div>
+      </div>
+      <div class="sim-sep">→</div>
+      <div class="sim-step"><span class="ss-icon">⚙</span>
+        <div class="ss-label">wflow ×5</div>
+        <div class="ss-sub">Detailsimulatie voor het geïdentificeerde deelstroomgebied</div>
+      </div>
+      <div class="sim-sep">→</div>
+      <div class="sim-step"><span class="ss-icon">📊</span>
+        <div class="ss-label">Analyse</div>
+        <div class="ss-sub">Kwantitatieve vergelijking scenario's · waterbalans</div>
+      </div>
+    </div>
+    <p>
+      <span class="highlight">Ribasim</span> (Deltares) is een hydraulisch netwerk­routeringsmodel.
+      De officiële Linux-binary is x86-64 only; op de ARM64 Jetson draait het via de
+      Julia-package source: Python 3.13 bouwt het model (<code>.gpkg</code> database),
+      Julia voert de solver uit (<code>Ribasim.run(toml_path)</code>).
+      Eerste run duurt ~32 s door JIT-compilatie.
+    </p>
+    <p>
+      De LLM-orchestrator analyseert de drie knooppunten (IJssel-Kampen, Neder-Rijn, Lek)
+      op waterdeficit ten opzichte van drempelstanden en selecteert het meest kritieke.
+      Dit triggert vijf wflow-droogte-scenario's voor het bijbehorende deelstroomgebied.
+      Het systeem draait volledig <span class="highlight">on-device op ARM64</span> — geen cloud, geen API-kosten
+      voor de simulaties.
+    </p>
+  </div>
+
+  <!-- 8. Proeven 4–6 — Historische simulaties -->
+  <div class="info-section">
+    <h2>8 · Proeven 4–6 · Historische simulaties met wflow SBM</h2>
+    <p>
+      Drie historische events zijn gesimuleerd met het gedistribueerde hydrologische model wflow SBM.
+      De events vormen bewust een spectrum: extreme hoogwater (1995), extreme droogte (2018) en
+      een middelgroot hoogwater-event met meetvalidatie (2021).
+    </p>
+    <div class="info-grid" style="margin:12px 0">
+      <div class="info-card">
+        <div class="ic-label" style="color:#4fc3f7">Proef 4 · Jan 1995</div>
+        <div class="ic-value" style="color:#f44336;font-size:15px">+6.52 m+NAP</div>
+        <div class="ic-sub">Piek Kampen · ERA5 +182% boven norm</div>
+        <div class="ic-sub" style="margin-top:4px">250.000 evacuaties · dijken hielden ternauwernood</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label" style="color:#ffc107">Proef 5 · Zomer 2018</div>
+        <div class="ic-value" style="color:#ffc107;font-size:15px">−0.45 m+NAP</div>
+        <div class="ic-sub">Diepste peil Kampen aug 2018 · BICS-code 5</div>
+        <div class="ic-sub" style="margin-top:4px">Vitens noodpompen · grondwater Veluwe daalde</div>
+      </div>
+      <div class="info-card">
+        <div class="ic-label" style="color:#ce93d8">Proef 6 · Jul 2021</div>
+        <div class="ic-value" style="color:#ce93d8;font-size:15px">+4.87 m+NAP</div>
+        <div class="ic-sub">Ahr-ramp Duitsland · piek Lobith 6.687 m³/s</div>
+        <div class="ic-sub" style="margin-top:4px">Nederland: waakzaamheid, geen evacuaties</div>
+      </div>
+    </div>
+    <p>
+      De <span class="highlight">wflow-simulaties</span> lopen van ERA5-Land forcing (neerslag, temperatuur,
+      potentiële verdamping) en een RWS-debiet als bovenstrooms randconditie bij Westervoort.
+      Proef 6 bevat een expliciete validatie: de run met <em>gemeten</em> RWS-inflow
+      (piek 899 m³/s bij Westervoort) vergeleken met een <em>synthetische</em> inflow
+      gebaseerd op het langjarig Pannerdense Kop-aandeel (25% → 1.672 m³/s, factor ×2.45 te hoog).
+      Het verschil bewijst dat standaard-verdeelsleutels bij extreme afvoer sterk afwijken
+      van de werkelijkheid: RWS stuurt actief meer water naar de Waal.
     </p>
   </div>
 
   <!-- ══ TECHNIEK & HYDROLOGIE ════════════════════════════════ -->
   <div class="audience-header voor-techneut">
     <span class="aud-icon">⚙</span>
-    <span class="aud-title">Techniek &amp; Hydrologie</span>
-    <span class="aud-sub">Voor de geïnteresseerde</span>
+    <span class="aud-title">Techniek &amp; Architectuur</span>
+    <span class="aud-sub">Modelkeuzes · implementatie · beperkingen</span>
   </div>
 
-  <!-- 5. Wflow SBM -->
+  <!-- 9. Systeemarchitectuur -->
   <div class="info-section">
-    <h2>5 · Wflow SBM modelarchitectuur</h2>
+    <h2>9 · Systeemarchitectuur</h2>
+    <table class="ll-table" style="margin:12px 0">
+      <tr><th>Laag</th><th>Component</th><th>Technologie</th><th>Opmerking</th></tr>
+      <tr>
+        <td>Hydrologisch model</td><td>wflow SBM 1.0.2</td>
+        <td>Julia 1.12.5 · ARM64</td>
+        <td>Eerste run JIT ~2:20u; daarna ~31s (1995)</td>
+      </tr>
+      <tr>
+        <td>Hydraulisch netwerk</td><td>Ribasim 2026.1.1</td>
+        <td>Python 3.13 (build) + Julia (solver)</td>
+        <td>x86-64 binary werkt niet op aarch64; Julia source vereist</td>
+      </tr>
+      <tr>
+        <td>Lokale LLM</td><td>Qwen2.5-32B-Instruct-Q4</td>
+        <td>llama.cpp · http://localhost:8080</td>
+        <td>Ensemble-interpretatie &amp; multimodel-orkestratie</td>
+      </tr>
+      <tr>
+        <td>Cloud LLM</td><td>Claude Haiku (Anthropic API)</td>
+        <td>anthropic Python SDK</td>
+        <td>Forecast-interventie · expert hydroloog-persona</td>
+      </tr>
+      <tr>
+        <td>Live data</td><td>RWS Waterinfo + Open-Meteo</td>
+        <td>rws_waterinfo · requests</td>
+        <td>15-min cache; graceful fallback bij uitval</td>
+      </tr>
+      <tr>
+        <td>API &amp; dashboard</td><td>FastAPI + uvicorn</td>
+        <td>Python 3.10 · poort 8000</td>
+        <td>MapLibre GL · Plotly · deck.gl</td>
+      </tr>
+      <tr>
+        <td>Tunneling</td><td>Cloudflare Tunnel</td>
+        <td>cloudflared · IPv4 (edge-ip-version: 4)</td>
+        <td>IPv6 uitgezet: adresrotatie veroorzaakte reconnects</td>
+      </tr>
+      <tr>
+        <td>Hardware</td><td>NVIDIA Jetson AGX Orin</td>
+        <td>aarch64 · 64 GB · Ubuntu 22.04</td>
+        <td>Geen cloud, volledig edge-computing</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 10. Wflow SBM -->
+  <div class="info-section">
+    <h2>10 · Wflow SBM modelarchitectuur</h2>
     <p>
       <span class="highlight">Wflow SBM</span> (Simple Bucket Model) is een gedistribueerd hydrologisch
       rastermodel van Deltares, gebouwd in Julia en open-source beschikbaar.
@@ -883,7 +1093,7 @@
     <ul>
       <li><strong>Onverzadigde zone</strong> (wortelzone): verdamping via Penman-Monteith, interceptie, capillaire opstijging</li>
       <li><strong>Diepere bodemlagen</strong> (2–3): percolatie naar verzadigde zone</li>
-      <li><strong>Laterale afstroming</strong>: kinematische golfvergelijking langs de D8-afstroomrichting (afgeleid uit MERIT Hydro DEM)</li>
+      <li><strong>Laterale afstroming</strong>: kinematische golfvergelijking langs D8-afstroomrichting (MERIT Hydro DEM)</li>
     </ul>
     <div class="info-grid" style="margin-top:12px">
       <div class="info-card">
@@ -908,73 +1118,24 @@
       </div>
     </div>
     <p style="margin-top:12px">
-      De <span class="highlight">kinematische golfvergelijking</span> is een vereenvoudiging van de
-      volledige Saint-Venant vergelijkingen die de versnellingstermen verwaarloost.
-      Dit werkt goed voor sub-kritieke stroming in rivierbeddingen maar mist retentie-effecten
-      in uiterwaarden en is niet geschikt voor inundatiemodellering.
+      De <span class="highlight">kinematische golfvergelijking</span> verwaarloost versnellingstermen
+      (vereenvoudiging Saint-Venant). Geschikt voor sub-kritieke stroming in rivieren;
+      niet voor inundatiemodellering of retentie in uiterwaarden.
     </p>
   </div>
 
-  <!-- 6. Invoerdata -->
+  <!-- 11. Pannerdense Kop -->
   <div class="info-section">
-    <h2>6 · Invoerdata en randcondities</h2>
-    <p>Het model heeft drie soorten invoer:</p>
-    <table class="ll-table" style="margin:12px 0">
-      <tr><th>Type</th><th>Bron</th><th>Resolutie</th><th>Verwerking</th></tr>
-      <tr>
-        <td><strong>Statische kaarten</strong></td>
-        <td>MERIT Hydro DEM · SOILGRIDS · Copernicus Land Cover</td>
-        <td>~90 m → 800 m</td>
-        <td>HydroMT model builder (eenmalig)</td>
-      </tr>
-      <tr>
-        <td><strong>Forcingdata</strong></td>
-        <td>ERA5-Land via Copernicus Climate Data Store</td>
-        <td>~9 km → 800 m</td>
-        <td>Bilineaire interpolatie · P, T, PET dagelijks</td>
-      </tr>
-      <tr>
-        <td><strong>Randconditie (inflow)</strong></td>
-        <td>RWS Waterinfo · station <code>westervoort.ijsselkop</code></td>
-        <td>Daggemiddeld Q (m³/s)</td>
-        <td>Puntbron in forcing NetCDF op IJssel-begincel</td>
-      </tr>
-    </table>
-    <p>
-      De <span class="highlight">randconditie bij Westervoort</span> is de dominante stuurvariabele:
-      hier "begint" het model. Fouten in deze waarde propageren direct door het hele stroomgebied —
-      zoals gedemonstreerd door de vergelijking van de synthetische (×2,45 te hoog) en de
-      gemeten run van 2021. Zie de <em>Info &amp; Analyse</em>-tab voor de kwantitatieve analyse.
-    </p>
-    <p>
-      <span class="highlight">Cold start:</span> de begintoestand van bodemvochtigheid en grondwater
-      is niet geïnitialiseerd vanuit een voorgaande simulatieperiode. Operationele modellen
-      draaien typisch 1–3 jaar spin-up vooraf om stabiele initiële condities te bereiken.
-    </p>
-  </div>
-
-  <!-- 7. Pannerdense Kop -->
-  <div class="info-section">
-    <h2>7 · De Pannerdense Kop: geen vaste verdeling</h2>
+    <h2>11 · De Pannerdense Kop: geen vaste verdeling</h2>
     <p>
       De verdeling van het Rijnwater is wettelijk vastgelegd in het
-      <span class="highlight">Tractaat van 1709</span>, maar in de praktijk stuurt Rijkswaterstaat
-      actief bij via stuwen bij de Pannerdense Kop en Driel:
+      <span class="highlight">Tractaat van 1709</span>, maar Rijkswaterstaat stuurt actief bij
+      via stuwen bij de Pannerdense Kop en Driel:
     </p>
     <table class="ll-table" style="margin:12px 0">
       <tr><th>Tak</th><th>Tractaat 1709</th><th>Praktijk gemiddeld</th><th>Juli 2021 gemeten</th></tr>
-      <tr>
-        <td>Waal</td>
-        <td>6/9 ≈ 66,7%</td>
-        <td>~65%</td>
-        <td class="warn">~86,6%</td>
-      </tr>
-      <tr>
-        <td>Neder-Rijn / Lek</td>
-        <td>2/9 ≈ 22,2%</td>
-        <td>~18–22%</td>
-        <td class="ok">—</td>
-      </tr>
+      <tr><td>Waal</td><td>6/9 ≈ 66,7%</td><td>~65%</td><td class="warn">~86,6%</td></tr>
+      <tr><td>Neder-Rijn / Lek</td><td>2/9 ≈ 22,2%</td><td>~18–22%</td><td class="ok">—</td></tr>
       <tr>
         <td><strong>IJssel</strong></td>
         <td><strong>1/9 ≈ 11,1%</strong></td>
@@ -983,50 +1144,24 @@
       </tr>
     </table>
     <p>
-      Bij de synthetische run werd <span class="warn">25%</span> aangenomen — een fout gebaseerd op
-      een langjarig gemiddelde dat bij extreme afvoer niet geldt. Bij hoogwater stuurt RWS
-      actief meer water naar de Waal om IJssel en Lek te ontlasten. De IJssel-inflow was
-      daardoor een factor <span class="red">2,45</span> overschat, wat doorwerkte in een gesimuleerde
-      piek van 3.090 m³/s in plaats van 1.767 m³/s.
-    </p>
-    <p>
-      <span class="ok">Leerpunt:</span> gebruik altijd gemeten debieten van RWS Waterinfo als
-      randconditie — met name bij hoog water, wanneer de verdeling het meest afwijkt van gemiddelden.
+      Bij de synthetische run 2021 werd <span class="warn">25%</span> aangenomen —
+      een factor <span class="red">×2,45</span> te hoog, wat een gesimuleerde piek van
+      3.090 m³/s gaf in plaats van de werkelijke 1.767 m³/s.
+      Gebruik altijd gemeten debieten als randconditie, met name bij hoog water.
     </p>
   </div>
 
-  <!-- 8. Beperkingen -->
+  <!-- 12. Beperkingen -->
   <div class="info-section">
-    <h2>8 · Beperkingen en validiteit</h2>
+    <h2>12 · Beperkingen en geldigheid</h2>
     <ul>
-      <li>
-        <span class="warn">Geen kalibratie</span> — standaard Wflow-parameters, niet afgesteld op de IJssel.
-        Uitkomsten zijn kwalitatief betrouwbaar (reactie op neerslag, piek-timing) maar
-        kwantitatief indicatief. Afwijkingen van 20–50% ten opzichte van een gekalibreerd model zijn realistisch.
-      </li>
-      <li>
-        <span class="warn">Dagelijkse tijdstap</span> — sub-dagelijkse variatie wordt gemist. Geschikt voor
-        seizoens- en maandelijkse analyses, minder nauwkeurig voor korte, intense pieken.
-      </li>
-      <li>
-        <span class="warn">800 m resolutie</span> — kleine zijbeken, stedelijk gebied en polders
-        zijn niet gerepresenteerd. Neerslagrouting via uiterwaarden is sterk vereenvoudigd.
-      </li>
-      <li>
-        <span class="warn">Geen inundatiemodellering</span> — zodra water buiten de oever treedt,
-        houdt de kinematische golf op geldig te zijn. Het model kent geen 2D overstroomde vlakten;
-        overstromingsschade is niet afleidbaar.
-      </li>
-      <li>
-        <span class="warn">Cold start</span> — de begintoestand (bodemvochtigheid, grondwaterniveau)
-        is niet geïnitialiseerd vanuit een voorgaande run. Typisch is 1–3 jaar spin-up nodig
-        voor stabiele resultaten; de eerste weken van elke simulatie zijn daardoor minder betrouwbaar.
-      </li>
-      <li>
-        <span class="ok">Wél geschikt voor:</span> vergelijking tussen events (1995 vs 2021),
-        gevoeligheidsanalyse op inflow-aannames, aantonen van de impact van grensconditie-keuzes,
-        educatieve demonstraties, en als proof-of-concept voor ARM edge-computing.
-      </li>
+      <li><span class="warn">Geen kalibratie</span> — standaard Wflow-parameters, kwantitatieve afwijkingen 20–50% realistisch.</li>
+      <li><span class="warn">Dagelijkse tijdstap</span> — sub-dagelijkse pieken worden gemist.</li>
+      <li><span class="warn">800 m resolutie</span> — kleine beken, stedelijk gebied en polders niet gerepresenteerd.</li>
+      <li><span class="warn">Geen inundatie</span> — kinematische golf geldig tot dijkoverschrijding; geen 2D overstroomde vlakten.</li>
+      <li><span class="warn">Cold start</span> — geen spin-up; eerste weken elke simulatie minder betrouwbaar.</li>
+      <li><span class="warn">Statistisch forecast</span> — recessiemodel + impulsrespons; geen fysisch gekalibreerd voorspelmodel.</li>
+      <li><span class="ok">Wél geschikt voor:</span> event-vergelijking, gevoeligheidsanalyse, proof-of-concept ARM edge-computing, educatieve demonstraties, LLM-integratie onderzoek.</li>
     </ul>
   </div>
 
@@ -1518,6 +1653,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=23"></script>
+<script src="/static/app.js?v=24"></script>
 </body>
 </html>
