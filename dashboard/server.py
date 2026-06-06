@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from dashboard.forecast import build_forecast
 from fews_poc.router import router as _fews_router
+from fews_poc.data_adapter import get_wflow_timeseries, get_waterinfo_timeseries
 
 # Laad .env als ANTHROPIC_API_KEY nog niet in omgeving staat
 _env_file = Path(__file__).parent.parent.parent / ".env"
@@ -347,9 +348,8 @@ def get_multimodel():
 
 @app.get("/api/fews/data")
 def get_fews_data(location: str = "KAMPEN", period: str = "1995"):
-    from fews_poc.data_adapter import get_wflow_timeseries, get_waterinfo_timeseries
     sim_raw = get_wflow_timeseries(location, "Q.sim", period)
-    obs_raw = get_waterinfo_timeseries(location, "Q.meting")
+    obs_raw = get_waterinfo_timeseries("WESTERVOORT", "Q.meting")
     return {
         "location": location,
         "period":   period,
