@@ -1312,16 +1312,17 @@
     <div class="intro-badge">⚗ Experimentele omgeving</div>
     <h2>IJssel Waterlab</h2>
     <p>
-      Dit is een experimentele onderzoeksomgeving op een <strong style="color:#e0f2fe;">NVIDIA Jetson AGX Orin</strong> (ARM64 edge computer),
-      volledig offline draaiend zonder cloud of externe API's. Hier worden drie typen proeven gecombineerd:
-      <strong style="color:#e0f2fe;">historische simulaties</strong> (1995, 2018, 2021),
-      een <strong style="color:#e0f2fe;">live verwachting</strong> gebaseerd op open data,
-      en een <strong style="color:#e0f2fe;">AI-gestuurde multimodel pipeline</strong> waarbij Ribasim, wflow SBM en een lokale LLM samenwerken.
-      De resultaten zijn indicatief en geschikt voor demonstratie en onderzoek — niet voor operationeel waterbeheer.
+      Experimentele onderzoeksomgeving op een <strong style="color:#e0f2fe;">NVIDIA Jetson AGX Orin</strong> (ARM64 edge computer).
+      Zes proeven combineren hydrologische modellering, live datafeeds en AI-integratie:
+      <strong style="color:#e0f2fe;">drie historische simulaties</strong> (1995, 2018, 2021) met ERA5-Land forcing,
+      een <strong style="color:#e0f2fe;">live verwachting</strong> met regime-gebaseerde interventie via <strong style="color:#e0f2fe;">Claude (Anthropic)</strong>,
+      een <strong style="color:#e0f2fe;">ensemble</strong> van vijf wflow-runs geïnterpreteerd door een lokale LLM,
+      en een <strong style="color:#e0f2fe;">multimodel pipeline</strong> waarbij Ribasim, wflow SBM en Qwen2.5-32B samenwerken.
+      De resultaten zijn indicatief — niet voor operationeel waterbeheer.
     </p>
     <div class="intro-stack">
       <span>wflow SBM</span><span>Ribasim</span><span>Julia</span><span>ERA5-Land</span>
-      <span>Qwen2.5-32B</span><span>FastAPI</span><span>MapLibre GL</span><span>ARM64 Jetson</span>
+      <span>Claude API</span><span>Qwen2.5-32B</span><span>FastAPI</span><span>MapLibre GL</span><span>ARM64 Jetson</span>
     </div>
   </div>
 
@@ -1653,6 +1654,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=24"></script>
+<script src="/static/app.js?v=25"></script>
 </body>
 </html>
