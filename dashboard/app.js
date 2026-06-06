@@ -233,6 +233,8 @@ function switchYear(year) {
   ensemblePnl.classList.remove("visible");
   const mmPnlSim = document.getElementById("multimodel-panel");
   if (mmPnlSim) mmPnlSim.classList.remove("visible");
+  const fewsPnlSim = document.getElementById("fews-panel");
+  if (fewsPnlSim) fewsPnlSim.classList.remove("visible");
 
   const cfg = YEAR_CONFIG[year];
   document.body.className = cfg.themeClass;
@@ -983,7 +985,10 @@ async function fewsFetch(type) {
     } else {
       url += "?filterId=Waterlab-IJssel";
     }
-    const data = await fetch(url).then(r => r.json());
+    const data = await fetch(url).then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    });
     pre.textContent = JSON.stringify(data, null, 2);
   } catch (err) {
     pre.textContent = `Fout: ${err}`;
@@ -1028,7 +1033,7 @@ function renderFewsChart(data) {
       line: { color: "#ff8a65", width: 1.5, dash: "dot" },
     });
   }
-  Plotly.newPlot("fews-chart", traces, {
+  Plotly.react("fews-chart", traces, {
     margin: { t: 10, b: 40, l: 55, r: 10 },
     yaxis:  { title: "Afvoer (m³/s)", color: "#90a4ae" },
     xaxis:  { color: "#90a4ae" },
