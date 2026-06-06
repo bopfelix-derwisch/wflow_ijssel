@@ -122,12 +122,18 @@ function switchYear(year) {
     introPnl.classList.remove("visible");
     const mmPnl = document.getElementById("multimodel-panel");
     if (mmPnl) mmPnl.classList.remove("visible");
+    const roadmapPnl = document.getElementById("roadmap-panel");
+    if (roadmapPnl) roadmapPnl.classList.remove("visible");
+    const archPnl = document.getElementById("arch-panel");
+    if (archPnl) archPnl.classList.remove("visible");
+    const fewsPnl = document.getElementById("fews-panel");
+    if (fewsPnl) fewsPnl.classList.remove("visible");
   }
 
   if (year === "intro") {
     hideAll();
     introPnl.classList.add("visible");
-    banner.textContent = "IJssel Waterlab · experimentele onderzoeksomgeving · NVIDIA Jetson AGX Orin";
+    banner.textContent = "Waterlab · micro-innovatielab · hydrologische modellering + AI · NVIDIA Jetson AGX Orin";
     document.getElementById("alert-badge").textContent = "⚗ Waterlab";
     document.getElementById("alert-badge").style.background = "#37474f";
     document.body.className = "";
@@ -178,6 +184,37 @@ function switchYear(year) {
     return;
   }
 
+  if (year === "fews") {
+    hideAll();
+    document.getElementById("fews-panel").classList.add("visible");
+    banner.textContent = "FEWS PI REST · Waterlab als FEWS-service · fewspiservice/v1 · vier endpoints · PI JSON";
+    document.getElementById("alert-badge").textContent = "🔌 FEWS";
+    document.getElementById("alert-badge").style.background = "#004d40";
+    document.body.className = "";
+    loadFewsChart();
+    return;
+  }
+
+  if (year === "arch") {
+    hideAll();
+    document.getElementById("arch-panel").classList.add("visible");
+    banner.textContent = "Platform Visie  ·  API-first · AI-orchestrated · Domain-agnostic  ·  van Waterlab naar platform";
+    document.getElementById("alert-badge").textContent = "🏗 Platform";
+    document.getElementById("alert-badge").style.background = "#004d40";
+    document.body.className = "";
+    return;
+  }
+
+  if (year === "roadmap") {
+    hideAll();
+    document.getElementById("roadmap-panel").classList.add("visible");
+    banner.textContent = "Backlog & POC's  ·  FEWS · SOBEK · D-FLOW FM · EnKF · KNMI'23  ·  Deltares ecosysteem";
+    document.getElementById("alert-badge").textContent = "🔬 Roadmap";
+    document.getElementById("alert-badge").style.background = "#4a148c";
+    document.body.className = "";
+    return;
+  }
+
   if (year === "uitleg") {
     hideAll();
     uitlegPnl.classList.add("visible");
@@ -196,6 +233,8 @@ function switchYear(year) {
   ensemblePnl.classList.remove("visible");
   const mmPnlSim = document.getElementById("multimodel-panel");
   if (mmPnlSim) mmPnlSim.classList.remove("visible");
+  const fewsPnlSim = document.getElementById("fews-panel");
+  if (fewsPnlSim) fewsPnlSim.classList.remove("visible");
 
   const cfg = YEAR_CONFIG[year];
   document.body.className = cfg.themeClass;
@@ -922,5 +961,85 @@ function renderMultimodelScenarios(d) {
     tr.innerHTML = `<td>${s.name}</td><td>×${s.multiplier.toFixed(2)}</td>` +
       `<td>${s.peak_q}</td><td>${s.peak_date}</td><td>${s.days_above}</td>`;
     tbody.appendChild(tr);
+  });
+}
+
+// ── FEWS PI REST tab ──────────────────────────────────────────────────────────
+
+const FEWS_BASE = "/fews/rest/fewspiservice/v1";
+
+async function fewsFetch(type) {
+  document.querySelectorAll(".fews-ep-btn").forEach(b => b.classList.remove("active"));
+  const btn = document.getElementById(`fews-btn-${type}`);
+  if (btn) btn.classList.add("active");
+
+  const pre = document.getElementById("fews-json-out");
+  pre.textContent = "laden...";
+
+  try {
+    let url = `${FEWS_BASE}/${type}`;
+    if (type === "timeseries") {
+      const loc    = document.getElementById("fews-loc")?.value    || "KAMPEN";
+      const period = document.getElementById("fews-period")?.value || "1995";
+      url += `?filterId=Waterlab-IJssel&locationIds=${loc}&parameterIds=Q.sim&period=${period}`;
+    } else {
+      url += "?filterId=Waterlab-IJssel";
+    }
+    const data = await fetch(url).then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    });
+    pre.textContent = JSON.stringify(data, null, 2);
+  } catch (err) {
+    pre.textContent = `Fout: ${err}`;
+  }
+}
+
+async function loadFewsChart() {
+  const loc    = document.getElementById("fews-loc")?.value    || "KAMPEN";
+  const period = document.getElementById("fews-period")?.value || "1995";
+
+  try {
+    const data = await fetch(`/api/fews/data?location=${loc}&period=${period}`).then(r => r.json());
+    renderFewsChart(data);
+  } catch (err) {
+    console.warn("fews chart load failed:", err);
+  }
+}
+
+function renderFewsChart(data) {
+  const periodLabels = {
+    "1995": "Jan 1995 (hoogwater)",
+    "2018": "Zomer 2018 (droogte)",
+    "2021": "Jul 2021 (hoogwater)",
+  };
+  const traces = [
+    {
+      x: data.sim.dates,
+      y: data.sim.values,
+      name: `Q.sim wflow (${periodLabels[data.period] || data.period})`,
+      type: "scatter",
+      mode: "lines",
+      line: { color: "#4db6ac", width: 2 },
+    },
+  ];
+  if (data.obs.dates.length > 0) {
+    traces.push({
+      x: data.obs.dates,
+      y: data.obs.values,
+      name: "Q.meting RWS live (laatste 30 d)",
+      type: "scatter",
+      mode: "lines",
+      line: { color: "#ff8a65", width: 1.5, dash: "dot" },
+    });
+  }
+  Plotly.react("fews-chart", traces, {
+    margin: { t: 10, b: 40, l: 55, r: 10 },
+    yaxis:  { title: "Afvoer (m³/s)", color: "#90a4ae" },
+    xaxis:  { color: "#90a4ae" },
+    legend: { orientation: "h", font: { color: "#90a4ae" } },
+    paper_bgcolor: "transparent",
+    plot_bgcolor:  "transparent",
+    font: { color: "#90a4ae" },
   });
 }

@@ -5,3 +5,4 @@ data/
 wflow_build/
 *.bak
 ../multimodel_data/
+../.env
