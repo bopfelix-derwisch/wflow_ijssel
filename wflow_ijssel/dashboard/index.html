@@ -990,247 +990,333 @@
 </div><!-- /#uitleg-panel -->
 
 <div id="pocs-panel">
+<style>
+  .poc-doc { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .poc-doc-title { font-size: 1.5rem; font-weight: 700; color: #e0e0e0; margin: 0 0 .25rem; }
+  .poc-doc-sub   { color: #546e7a; font-size: 13px; margin: 0 0 2rem; }
+  .poc-card {
+    background: #07111c;
+    border: 1px solid #1a2e3f;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .poc-card-header {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1.1rem 1.4rem;
+    border-bottom: 1px solid #1a2e3f;
+  }
+  .poc-num {
+    font-size: 1.6rem; font-weight: 800; min-width: 2rem; text-align: center;
+  }
+  .poc-card-header h3 { margin: 0; font-size: 1.05rem; font-weight: 700; color: #e0e0e0; }
+  .poc-card-header .poc-tag {
+    margin-left: auto; font-size: 10px; font-weight: 700; letter-spacing: .06em;
+    padding: 2px 9px; border-radius: 10px; white-space: nowrap;
+  }
+  .poc-body { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+  .poc-col {
+    padding: 1.1rem 1.4rem;
+    border-right: 1px solid #0e1e2a;
+  }
+  .poc-col:last-child { border-right: none; }
+  .poc-col-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; margin-bottom: .6rem;
+  }
+  .poc-col p { font-size: 12px; color: #78909c; line-height: 1.7; margin: 0 0 .5rem; }
+  .poc-col p:last-child { margin-bottom: 0; }
+  .poc-col strong { color: #90a4ae; }
+  .poc-col code { color: #4db6ac; background: #001a13; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+  .poc-col ul { margin: 0; padding: 0 0 0 1.1rem; font-size: 12px; color: #78909c; line-height: 1.7; }
+  .poc-col li { margin-bottom: .2rem; }
+  .poc-goto {
+    display: inline-block; margin-top: .75rem; padding: 4px 12px;
+    border: 1px solid; border-radius: 10px; cursor: pointer;
+    background: transparent; font-size: 11px; font-weight: 600;
+    transition: all .15s;
+  }
+  .poc-goto:hover { opacity: .8; }
+  .poc-divider {
+    height: 1px; background: #0e1e2a; margin: .75rem 0;
+  }
+  @media (max-width: 700px) {
+    .poc-body { grid-template-columns: 1fr; }
+    .poc-col { border-right: none; border-bottom: 1px solid #0e1e2a; }
+  }
+</style>
 
-  <div class="audience-header voor-iedereen">
-    <span class="aud-icon">🧪</span>
-    <span class="aud-title">Waterlab — zeven proeven</span>
-    <span class="aud-sub">POC's · hydrologische modellering · AI-integratie · FEWS-koppeling</span>
-  </div>
+<div class="poc-doc">
+  <p class="poc-doc-title">🧪 Waterlab — zeven proeven</p>
+  <p class="poc-doc-sub">Elke proef is een afgebakend experiment met één concrete leervraag. Hieronder per POC: wat het functioneel doet, hoe het technisch werkt, en wat een logische opvolging zou zijn.</p>
 
-  <div class="info-section" style="border-left-color:#00695c; background:#050f18">
-    <p style="color:#90a4ae; font-size:13px; margin:0;">
-      Elke proef is opgezet om één concrete vraag te beantwoorden — over een model, een AI-aanpak
-      of een integratiepatroon. Dit is geen product; het is een leerplatform waarbij elke keuze
-      bewust is gemaakt om iets te begrijpen.
-    </p>
-  </div>
-
-  <!-- Overzichtstabel -->
-  <div class="info-section">
-    <h2>Overzicht — zeven proeven</h2>
-    <table class="ll-table" style="margin:12px 0">
-      <tr><th>Proef</th><th>Naam</th><th>Technologie</th><th>AI-rol</th><th>Status</th></tr>
-      <tr>
-        <td><strong style="color:#4db6ac">1</strong></td>
-        <td>14-daagse verwachting</td>
-        <td>wflow SBM + RWS Waterinfo live</td>
-        <td><span class="highlight">Claude — expert-interventie</span></td>
-        <td style="color:#4db6ac">✓ live</td>
-      </tr>
-      <tr>
-        <td><strong style="color:#ffcc80">2</strong></td>
-        <td>Ensemble AI</td>
-        <td>wflow SBM ×5 neerslag-scenario's</td>
-        <td><span class="highlight">Qwen2.5-32B — interpretatie</span></td>
-        <td style="color:#4db6ac">✓ live</td>
-      </tr>
-      <tr>
-        <td><strong style="color:#90caf9">3</strong></td>
-        <td>Multimodel pipeline</td>
-        <td>Ribasim + LLM-orchestrator + wflow</td>
-        <td><span class="highlight">Qwen2.5-32B — orkestratie</span></td>
-        <td style="color:#4db6ac">✓ live</td>
-      </tr>
-      <tr>
-        <td><strong style="color:#4fc3f7">4</strong></td>
-        <td>Hoogwater jan 1995</td>
-        <td>wflow SBM, ERA5-Land, 90 dagen</td>
-        <td>—</td>
-        <td style="color:#4db6ac">✓ live</td>
-      </tr>
-      <tr>
-        <td><strong style="color:#ffc107">5</strong></td>
-        <td>Droogte zomer 2018</td>
-        <td>wflow SBM, ERA5-Land mei–aug</td>
-        <td>—</td>
-        <td style="color:#4db6ac">✓ live</td>
-      </tr>
-      <tr>
-        <td><strong style="color:#ce93d8">6</strong></td>
-        <td>Hoogwater jul 2021</td>
-        <td>wflow SBM, ERA5 + RWS inflow</td>
-        <td>—</td>
-        <td style="color:#4db6ac">✓ live</td>
-      </tr>
-      <tr>
-        <td><strong style="color:#80cbc4">7</strong></td>
-        <td>FEWS PI REST</td>
-        <td>FastAPI + PI JSON v1.25</td>
-        <td>—</td>
-        <td style="color:#4db6ac">✓ live</td>
-      </tr>
-    </table>
-  </div>
-
-  <!-- Proef 1 -->
-  <div class="info-section">
-    <h2>Proef 1 · 14-daagse verwachting &amp; AI-interventie</h2>
-    <p>
-      Een statistisch debietmodel combineert de actuele RWS Waterinfo-meting bij Lobith
-      met een 14-daagse ECMWF-verwachting. Het model vertaalt neerslagprognoses naar
-      verwacht debiet bij Kampen via een lineaire regressie op ERA5-historiek.
-    </p>
-    <p>
-      <span class="highlight">Claude (Anthropic API)</span> interpreteert de verwachting als
-      expert-hydroloog: niet op debiet maar op <em>waterpeil-regime</em>. De agent weet welke
-      stakeholders (RWS, HHNK, Vitens) bij welk peil acties moeten nemen en formuleert
-      een gestructureerd advies.
-    </p>
-    <p style="color:#546e7a; font-size:12px;">
-      <strong style="color:#90a4ae;">Wat leerde dit:</strong> een LLM met domeinkennis over het watersysteem geeft
-      kwalitatief betere interventies dan een generiek model — de gebiedsschematisatie
-      (Pannerdense Kop, verdeling, stakeholders) is essentieel context.
-    </p>
-    <button class="uitleg-goto-btn" style="color:#4db6ac; border-color:#00695c; margin-top:8px;" onclick="switchYear('forecast')">Bekijk verwachting →</button>
-  </div>
-
-  <!-- Proef 2 -->
-  <div class="info-section">
-    <h2>Proef 2 · Ensemble AI — neerslag scenario's</h2>
-    <p>
-      Vijf parallelle wflow SBM-runs met neerslag-perturbaties simuleren het zomer 2018
-      droogtescenario onder verschillende klimaatcondities:
-    </p>
-    <table class="ll-table" style="margin:12px 0">
-      <tr><th>Scenario</th><th>Multiplier</th><th>Hydrologische betekenis</th></tr>
-      <tr><td>extreem_droog</td><td>×0.70</td><td>−30% neerslag: droogste 10% historisch</td></tr>
-      <tr><td>ernstig_droog</td><td>×0.85</td><td>−15%: extreme droogte zoals 2018</td></tr>
-      <tr><td>referentie</td><td>×1.00</td><td>ERA5-Land 2018 ongewijzigd</td></tr>
-      <tr><td>nat</td><td>×1.15</td><td>+15%: bovengemiddeld neerslag</td></tr>
-      <tr><td>zeer_nat</td><td>×1.30</td><td>+30%: grens droogte–normaal</td></tr>
-    </table>
-    <p>
-      Na de simulaties interpreteert <span class="highlight">Qwen2.5-32B</span> (lokaal op de Jetson via llama.cpp)
-      de ensemble-spread en genereert een hydrologisch advies. De <span class="highlight">onzekerheidsband</span>
-      (P10–P90) kwantificeert hoe gevoelig de droogteprognose is voor neerslagvariatie.
-    </p>
-    <p style="color:#546e7a; font-size:12px;">
-      <strong style="color:#90a4ae;">Wat leerde dit:</strong> een lokaal 32B-model volstaat voor ensemble-interpretatie —
-      lage latentie weegt zwaarder dan modelgrootte voor ruwe tekstgeneratie zonder kritische beslissingen.
-    </p>
-    <button class="uitleg-goto-btn" style="color:#ffcc80; border-color:#e65100; margin-top:8px;" onclick="switchYear('ensemble')">Bekijk ensemble →</button>
-  </div>
-
-  <!-- Proef 3 -->
-  <div class="info-section">
-    <h2>Proef 3 · Multimodel pipeline — Ribasim + LLM + wflow</h2>
-    <p>
-      De meest complexe proef koppelt drie modeltypen in één pipeline:
-    </p>
-    <div class="sim-steps" style="flex-wrap:wrap">
-      <div class="sim-step"><span class="ss-icon">🌊</span>
-        <div class="ss-label">Ribasim</div>
-        <div class="ss-sub">Hydraulisch netwerk Rijn/IJssel · 3 parallelle takken · Julia-solver</div>
+  <!-- POC 1 -->
+  <div class="poc-card">
+    <div class="poc-card-header" style="border-left: 4px solid #00695c;">
+      <span class="poc-num" style="color:#4db6ac;">1</span>
+      <div>
+        <h3>14-daagse verwachting &amp; AI-interventie</h3>
+        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 1 · Verwachting + Claude expert-agent</div>
       </div>
-      <div class="sim-sep">→</div>
-      <div class="sim-step"><span class="ss-icon">🤖</span>
-        <div class="ss-label">LLM orchestrator</div>
-        <div class="ss-sub">Qwen2.5-32B identificeert kritieke knoop op basis van waterdeficit</div>
-      </div>
-      <div class="sim-sep">→</div>
-      <div class="sim-step"><span class="ss-icon">⚙</span>
-        <div class="ss-label">wflow ×5</div>
-        <div class="ss-sub">Detailsimulatie voor het geïdentificeerde deelstroomgebied</div>
-      </div>
+      <span class="poc-tag" style="background:#00251a; color:#4db6ac; border:1px solid #00695c;">✓ live</span>
     </div>
-    <p>
-      <span class="highlight">Ribasim</span> (Deltares) draait op ARM64 via de Julia-package source
-      (de officiële Linux-binary is x86-64 only). Python 3.13 bouwt het model; Julia voert de solver uit.
-    </p>
-    <p style="color:#546e7a; font-size:12px;">
-      <strong style="color:#90a4ae;">Wat leerde dit:</strong> LLM-orkestratie van hydrologische modellen werkt op ARM64 —
-      de architectuur-barrière (geen x86 binary) is oplosbaar via Julia-source; het knelpunt
-      is niet de AI maar de model-integratie.
-    </p>
-    <button class="uitleg-goto-btn" style="color:#90caf9; border-color:#1565c0; margin-top:8px;" onclick="switchYear('multimodel')">Bekijk pipeline →</button>
-  </div>
-
-  <!-- Proeven 4-6 -->
-  <div class="info-section">
-    <h2>Proeven 4–6 · Historische simulaties</h2>
-    <p>
-      Drie ERA5-Land gedreven wflow SBM-simulaties van extremen in het Rijn/IJssel-bekken:
-    </p>
-    <table class="ll-table" style="margin:12px 0">
-      <tr><th>Proef</th><th>Periode</th><th>Forcing</th><th>Wat het laat zien</th></tr>
-      <tr>
-        <td><strong style="color:#4fc3f7">4</strong></td>
-        <td>Jan–feb 1995</td>
-        <td>ERA5-Land, 90 dagen</td>
-        <td>Zwaarste Rijnvloed in decennia · 6.687 m³/s Lobith · 250.000 evacuaties</td>
-      </tr>
-      <tr>
-        <td><strong style="color:#ffc107">5</strong></td>
-        <td>Mei–aug 2018</td>
-        <td>ERA5-Land, 4 maanden</td>
-        <td>Ernstigste droogte in decennia · Lobith ~600 m³/s (70% onder normaal)</td>
-      </tr>
-      <tr>
-        <td><strong style="color:#ce93d8">6</strong></td>
-        <td>Jun–aug 2021</td>
-        <td>ERA5 + RWS gemeten inflow</td>
-        <td>Extreme Eifel/Ardennen buien · validatie met RWS-meetreeks</td>
-      </tr>
-    </table>
-    <p style="color:#546e7a; font-size:12px;">
-      <strong style="color:#90a4ae;">Wat leerde dit:</strong> wflow SBM reproduceert grootteorde en timing van extremen op ERA5;
-      Proef 6 toont de meerwaarde van gemeten inflow (RWS) boven ERA5-randconditie voor validatie.
-    </p>
-    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-      <button class="uitleg-goto-btn" style="color:#4fc3f7; border-color:#1565c0;" onclick="switchYear('1995')">Jan 1995 →</button>
-      <button class="uitleg-goto-btn" style="color:#ffc107; border-color:#e65100;" onclick="switchYear('2018')">Zomer 2018 →</button>
-      <button class="uitleg-goto-btn" style="color:#ce93d8; border-color:#7b1fa2;" onclick="switchYear('2021')">Jul 2021 →</button>
+    <div class="poc-body">
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#4db6ac;">Functioneel</div>
+        <p>Het dashboard toont een <strong>14-daagse debietverwachting</strong> bij Kampen op basis van de actuele RWS Waterinfo-meting bij Lobith en de ECMWF-verwachting.</p>
+        <p>Een Claude-agent (Anthropic API) legt de verwachting uit als <strong>expert-hydroloog</strong>: niet "het debiet wordt X m³/s" maar "het peil nadert de waakdrempel — RWS en HHNK starten dan doorgaans Y protocol".</p>
+        <p>De meerwaarde: domeinkennis over stakeholders, peilregimes en de Pannerdense Kop-verdeling zit in de systeemprompt, niet in de modeloutput.</p>
+        <button class="poc-goto" style="color:#4db6ac; border-color:#00695c;" onclick="switchYear('forecast')">Bekijk verwachting →</button>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#4db6ac;">Technisch</div>
+        <p><strong>Model:</strong> lineaire regressie op ERA5-historiek (recessiecoëfficiënt + impulsrespons). Geen fysisch gekalibreerd model — bewust simpel om de AI-interventie centraal te stellen.</p>
+        <p><strong>Data:</strong> RWS Waterinfo live via REST (debiet Lobith), ECMWF open API (14-daagse neerslag), ERA5-Land (trainingsdata).</p>
+        <p><strong>AI:</strong> <code>claude-sonnet</code> via Anthropic API. Systeemprompt bevat gebiedsschematisatie: Pannerdense Kop-verdeling (~13% IJssel), peilregimes (waak/alarm), stakeholders (RWS-dist. Oost-Nederland, HHNK, Vitens Oost).</p>
+        <p><strong>Stack:</strong> Python/FastAPI backend, Plotly.js chart, server-sent events voor live update.</p>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#4db6ac;">Opvolging</div>
+        <ul>
+          <li>Vervang het statistische model door een <strong>wflow SBM nowcast</strong> met assimilatie van actuele RWS-metingen (Ensemble Kalman Filter).</li>
+          <li>Breid de AI-interventie uit met een <strong>tool-use patroon</strong>: de agent roept zelf de Waterinfo API aan om live peilmetingen op te vragen.</li>
+          <li>Koppel de verwachting aan de <strong>FEWS PI REST API</strong> (Proef 7) zodat het als externe databron in operationele systemen zichtbaar wordt.</li>
+          <li>Test met een <strong>kleiner lokaal model</strong> (bijv. Qwen2.5-7B) om te meten hoeveel domeinkennis verloren gaat bij downsizing.</li>
+        </ul>
+      </div>
     </div>
   </div>
 
-  <!-- Proef 7 — FEWS PI REST -->
-  <div class="info-section" style="border-left-color:#004d40;">
-    <h2 style="color:#4db6ac;">Proef 7 · FEWS PI REST — Waterlab als service</h2>
-    <p>
-      Waterlab publiceert wflow SBM-output en RWS Waterinfo-data via een
-      <span class="highlight">FEWS-compatibele PI REST API</span>. De implementatie volgt
-      Deltares spec v1.25 — dezelfde standaard die operationele FEWS-installaties bij RWS
-      en waterschappen gebruiken.
-    </p>
-    <div class="sim-steps" style="flex-wrap:wrap">
-      <div class="sim-step"><span class="ss-icon">🔌</span>
-        <div class="ss-label">filters</div>
-        <div class="ss-sub">/fewspiservice/v1/filters — beschikbare datafilters</div>
+  <!-- POC 2 -->
+  <div class="poc-card">
+    <div class="poc-card-header" style="border-left: 4px solid #e65100;">
+      <span class="poc-num" style="color:#ffcc80;">2</span>
+      <div>
+        <h3>Ensemble AI — neerslag scenario's</h3>
+        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 2 · wflow ×5 + Qwen2.5-32B interpretatie</div>
       </div>
-      <div class="sim-sep">·</div>
-      <div class="sim-step"><span class="ss-icon">📍</span>
-        <div class="ss-label">locations</div>
-        <div class="ss-sub">Kampen, Westervoort — meetpunten met coördinaten</div>
+      <span class="poc-tag" style="background:#1a0a00; color:#ffcc80; border:1px solid #e65100;">✓ live</span>
+    </div>
+    <div class="poc-body">
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#ffcc80;">Functioneel</div>
+        <p>Vijf parallelle wflow SBM-runs simuleren het <strong>droogtescenario zomer 2018</strong> met neerslagmultiplicatoren van ×0.70 tot ×1.30. De spread tussen de runs visualiseert <strong>hydrologische onzekerheid</strong>.</p>
+        <p>Een lokaal LLM interpreteert de ensemble-output: "De P10–P90 band is smal — de droogte wordt gedomineerd door de bovenstrooms Rijn-afvoer, niet door lokale neerslag."</p>
+        <p>Leervraag: kan een lokaal 32B-model bruikbare hydrologische interpretaties geven op edge hardware?</p>
+        <button class="poc-goto" style="color:#ffcc80; border-color:#e65100;" onclick="switchYear('ensemble')">Bekijk ensemble →</button>
       </div>
-      <div class="sim-sep">·</div>
-      <div class="sim-step"><span class="ss-icon">📐</span>
-        <div class="ss-label">parameters</div>
-        <div class="ss-sub">Q.sim (wflow), Q.meting (RWS), H.meting</div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#ffcc80;">Technisch</div>
+        <p><strong>Model:</strong> wflow SBM (Julia) met ERA5-Land forcing mei–aug 2018. Vijf runs met neerslags­caling: 0.70 / 0.85 / 1.00 / 1.15 / 1.30. Elke run: ~800×800m rastercellen, IJssel-bekken (~8.000 km²).</p>
+        <p><strong>AI:</strong> <code>Qwen2.5-32B</code> lokaal via llama.cpp op Jetson AGX Orin (60W TDP). Geen cloud-latentie, maar ~45 s per interpretatie.</p>
+        <p><strong>Output:</strong> P10, P25, P50, P75, P90 percentielband als tijdreeks. Plotly.js band-chart met shade-fill tussen P10 en P90.</p>
+        <p><strong>Stack:</strong> Python orchestrator start Julia-subprocessen, verzamelt NetCDF-output, berekent percentielen.</p>
       </div>
-      <div class="sim-sep">·</div>
-      <div class="sim-step"><span class="ss-icon">📈</span>
-        <div class="ss-label">timeseries</div>
-        <div class="ss-sub">PI JSON met header + events[] — dagelijkse tijdstappen</div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#ffcc80;">Opvolging</div>
+        <ul>
+          <li>Vervang vaste neerslagmultiplicatoren door <strong>ECMWF ensemble members</strong> (51 runs): echte meteorologische onzekerheid i.p.v. synthetische perturbaties.</li>
+          <li>Voeg een <strong>Ensemble Kalman Filter</strong> toe die de debietmeting bij Westervoort assimileert om de ensemble-spread te verkleinen.</li>
+          <li>Test of <strong>Qwen2.5-7B</strong> voldoende is voor de interpretatiestap: sneller, lager energieverbruik, meetbaar kwaliteitsverschil.</li>
+          <li>Publiceer de ensemble-output als <strong>PI REST timeseries</strong> (Proef 7) met statistiek als parameternaam (<code>Q.sim.P50</code>, <code>Q.sim.P90</code>).</li>
+        </ul>
       </div>
     </div>
-    <p>
-      De <code style="color:#4db6ac">period</code>-parameter is een niet-standaard extensie
-      om historische wflow-simulaties (1995, 2018, 2021) op te vragen via dezelfde endpoint.
-    </p>
-    <div style="background:#001a13; border:1px solid #004d40; border-radius:6px; padding:.75rem 1rem; margin:12px 0; font-size:12px;">
-      <div style="color:#4db6ac; font-weight:600; margin-bottom:.4rem;">Wat werkt (v1)</div>
-      <div style="color:#78909c;">Read-only PI JSON · vier standaard-endpoints · wflow tijdreeksen per locatie/parameter/periode · RWS Waterinfo live-integratie</div>
-      <div style="color:#4db6ac; font-weight:600; margin:.6rem 0 .4rem;">Wat nog ontbreekt</div>
-      <div style="color:#78909c;">Authenticatie · schrijf-endpoints · webhooks · push-notificaties</div>
-    </div>
-    <p style="color:#546e7a; font-size:12px;">
-      <strong style="color:#90a4ae;">Wat leerde dit:</strong> een FastAPI-implementatie van PI REST v1.25 is compact
-      (5 bestanden, ~200 regels) en volstaat voor het essentiële leesprotocol. De grootste hindernis
-      is de spec-interpretatie, niet de implementatie.
-    </p>
-    <button class="uitleg-goto-btn" style="color:#4db6ac; border-color:#004d40; margin-top:8px;" onclick="switchYear('fews')">Bekijk FEWS POC →</button>
   </div>
 
+  <!-- POC 3 -->
+  <div class="poc-card">
+    <div class="poc-card-header" style="border-left: 4px solid #1565c0;">
+      <span class="poc-num" style="color:#90caf9;">3</span>
+      <div>
+        <h3>Multimodel pipeline — Ribasim + LLM + wflow</h3>
+        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 3 · AI-gestuurde modelketen op ARM64</div>
+      </div>
+      <span class="poc-tag" style="background:#0a1020; color:#90caf9; border:1px solid #1565c0;">✓ live</span>
+    </div>
+    <div class="poc-body">
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#90caf9;">Functioneel</div>
+        <p>Een <strong>drietrapspipeline</strong> koppelt hydraulische netwerk­routering, LLM-orkestratie en hydrologische detailsimulatie in één run:</p>
+        <p><strong>Stap 1 — Ribasim:</strong> simuleert het Rijn/IJssel-netwerk (Pannerdense Kop, drie aftakkingen) en berekent waterdeficiet per tak.</p>
+        <p><strong>Stap 2 — LLM:</strong> de orchestrator analyseert de Ribasim-output en identificeert de <em>kritieke knoop</em> (grootste waterdeficiet).</p>
+        <p><strong>Stap 3 — wflow ×5:</strong> voert vijf droogte­scenario's uit voor het geïdentificeerde deelbekken.</p>
+        <button class="poc-goto" style="color:#90caf9; border-color:#1565c0;" onclick="switchYear('multimodel')">Bekijk pipeline →</button>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#90caf9;">Technisch</div>
+        <p><strong>Ribasim:</strong> de officiële Linux-binary is x86-64 only. Op ARM64 Jetson: Python 3.13 bouwt het model (<code>.gpkg</code> + <code>toml</code>), Julia-solver draait de simulatie via het Ribasim.jl package. Geen binary nodig.</p>
+        <p><strong>LLM orchestrator:</strong> <code>Qwen2.5-32B</code> via llama.cpp. Input: Ribasim waterbalans als JSON. Output: knoop-ID + motivatie. Geen function-calling — plain text parsing met regex fallback.</p>
+        <p><strong>wflow:</strong> zelfde setup als Proef 2, maar alleen voor het geselecteerde deelbekken. Vijf perturbatie­scenario's parallel als Julia-subprocessen.</p>
+        <p><strong>Data:</strong> <code>wflow_moselle</code> dient als referentie-run voor de Moselle-tak (Roer/Maas systeem).</p>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#90caf9;">Opvolging</div>
+        <ul>
+          <li>Vervang plain text parsing door <strong>structured output / function calling</strong>: betrouwbaardere knoop-identificatie zonder regex-kwetsbaarheid.</li>
+          <li>Voeg een <strong>tweede LLM-stap</strong> toe die de wflow-resultaten samenvat en een beleidsadvies formuleert (twee-agent patroon).</li>
+          <li>Draai Ribasim met <strong>actuele RWS-verdeling</strong> (dagelijkse Pannerdense Kop-setting) i.p.v. climatologisch gemiddelde.</li>
+          <li>Publiceer de pipeline als <strong>REST-endpoint</strong>: POST trigger → async job → PI REST output. Koppelbaar aan FEWS als externe model-as-a-service.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- POC 4 -->
+  <div class="poc-card">
+    <div class="poc-card-header" style="border-left: 4px solid #1565c0;">
+      <span class="poc-num" style="color:#4fc3f7;">4</span>
+      <div>
+        <h3>Hoogwater — januari 1995</h3>
+        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 4 · Historische simulatie · 6.687 m³/s Lobith</div>
+      </div>
+      <span class="poc-tag" style="background:#0a1020; color:#4fc3f7; border:1px solid #1565c0;">✓ live</span>
+    </div>
+    <div class="poc-body">
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#4fc3f7;">Functioneel</div>
+        <p>Simulatie van de <strong>zwaarste Rijnvloed in decennia</strong>: januari 1995 bereikte Lobith 12.600 m³/s; 250.000 mensen werden preventief geëvacueerd. Het model simuleert 90 dagen (nov 1994–feb 1995).</p>
+        <p>De 3D-kaart toont dag voor dag hoe de hoogwater­golf door het IJssel-bekken trekt: instroom Westervoort → piekafvoer Kampen → uitzakken. De tijdreeks vergelijkt gesimuleerd debiet met de drempelwaarden voor waak en alarm.</p>
+        <p>Leervraag: reproduceert wflow SBM de grootteorde en timing van een extreme hoogwatergolf op ERA5-forcing zonder kalibratie?</p>
+        <button class="poc-goto" style="color:#4fc3f7; border-color:#1565c0;" onclick="switchYear('1995')">Bekijk simulatie →</button>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#4fc3f7;">Technisch</div>
+        <p><strong>Model:</strong> wflow SBM (kinematische golfrouting), ~800×800m raster, IJssel-bekken ~8.000 km². Cold start — geen spin-up voorafgaand aan de event­periode.</p>
+        <p><strong>Forcing:</strong> ERA5-Land reanalyse (neerslag, temperatuur, verdamping). Tijdstap: 1 dag. Dekking: nov 1994 t/m feb 1995 (90 tijdstappen).</p>
+        <p><strong>Instroom:</strong> bovenstrooms randconditie bij Westervoort uit ERA5 (geen gemeten RWS-data voor 1995 in dit experiment). Dit is de voornaamste foutbron.</p>
+        <p><strong>Output:</strong> NetCDF → GeoJSON per dag (riviercellen + debiet). MapLibre GL JS rendert de 3D-extrusie met Plotly.js tijdreeks naast de kaart.</p>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#4fc3f7;">Opvolging</div>
+        <ul>
+          <li>Voeg <strong>RWS historische metingen</strong> toe als bovenstrooms randconditie (Lobith-debiet 1994–1995 is beschikbaar via Waterinfo-archief). Verwachting: betere piekamplitude.</li>
+          <li>Vergelijk met <strong>SOBEK 1D-simulatie</strong> van dezelfde periode om de beperking van kinematische golf­routing zichtbaar te maken (geen inundatiemodellering).</li>
+          <li>Voeg een <strong>AI-narratief</strong> toe (zoals Proef 1): wat betekent deze golf voor evacuatie­beslissingen, dijkbewaking, scheepvaartblokkade?</li>
+          <li>Kalibreer de <strong>Manning-ruwheid</strong> op de 1995-meting en gebruik die parameters voor Proef 5 en 6.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- POC 5 -->
+  <div class="poc-card">
+    <div class="poc-card-header" style="border-left: 4px solid #e65100;">
+      <span class="poc-num" style="color:#ffc107;">5</span>
+      <div>
+        <h3>Droogte — zomer 2018</h3>
+        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 5 · Historische simulatie · ~600 m³/s Lobith</div>
+      </div>
+      <span class="poc-tag" style="background:#1a0a00; color:#ffc107; border:1px solid #e65100;">✓ live</span>
+    </div>
+    <div class="poc-body">
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#ffc107;">Functioneel</div>
+        <p>De ernstigste droogte in Nederland in decennia: zomer 2018 zakte de Rijn bij Lobith naar ~600 m³/s — 70% onder het langjarig gemiddelde. De 3D-kaart toont de IJssel in extreme laagte­stand.</p>
+        <p>Het model simuleert <strong>4 maanden</strong> (mei–aug 2018). De tijdreeks toont het sluipende karakter van de droogte: geen dramatische piek maar een langzame daling, wekenlang onder de grens voor scheepvaartbeperkingen (~700 m³/s Lobith).</p>
+        <p>Leervraag: hoe snel signaleert wflow SBM een droogte-aanvang, en waar in het bekken worden de eerste effecten zichtbaar?</p>
+        <button class="poc-goto" style="color:#ffc107; border-color:#e65100;" onclick="switchYear('2018')">Bekijk simulatie →</button>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#ffc107;">Technisch</div>
+        <p><strong>Model:</strong> zelfde setup als Proef 4 (wflow SBM, ~800m raster). Periode: 1 mei–31 aug 2018 (123 tijdstappen).</p>
+        <p><strong>Forcing:</strong> ERA5-Land reanalyse mei–aug 2018. Droogte-signaal zit in de neerslagdeficieten: ERA5 reproduceert de periode nauwkeurig (RMSE neerslag &lt;1 mm/dag t.o.v. KNMI-stations).</p>
+        <p><strong>Beperking:</strong> wflow SBM is een regen-afvoermodel. Grondwater­onttrekkingen (landbouw, Vitens) en laagwater-regulering via stuwen zitten niet in het model — daardoor overschatting van het debiet bij extreme droogte.</p>
+        <p><strong>Ensemble-link:</strong> Proef 2 gebruikt dezelfde forcingperiode voor de ensemble-varianten (×0.70–×1.30).</p>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#ffc107;">Opvolging</div>
+        <ul>
+          <li>Voeg <strong>grondwateronttrekking</strong> toe als negatieve flux in het wflow SBM-schema (Vitens pompcapaciteit Oost-Nederland is publiek beschikbaar).</li>
+          <li>Gebruik de 2018-droogte als <strong>testcase voor het KNMI'23 klimaatscenario</strong>: wat verwachten we voor een vergelijkbare periode in 2050 onder WH-scenario?</li>
+          <li>Koppel aan een <strong>scheepvaartmodel</strong>: welke drempeldiepte bij welke locatie, en hoeveel dagen per jaar onder die drempel bij toekomstige klimaatscenario's?</li>
+          <li>Vergelijk de ERA5-forcing met <strong>KNMI gridded daily</strong> om de betrouwbaarheid van ERA5 voor droogte-signalering te kwantificeren.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- POC 6 -->
+  <div class="poc-card">
+    <div class="poc-card-header" style="border-left: 4px solid #7b1fa2;">
+      <span class="poc-num" style="color:#ce93d8;">6</span>
+      <div>
+        <h3>Hoogwater — juli 2021</h3>
+        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 6 · Validatie met RWS meetreeks · Eifel/Ardennen</div>
+      </div>
+      <span class="poc-tag" style="background:#120820; color:#ce93d8; border:1px solid #7b1fa2;">✓ live</span>
+    </div>
+    <div class="poc-body">
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#ce93d8;">Functioneel</div>
+        <p>Extreme buien boven Eifel en Ardennen veroorzaakten in 48 uur catastrofale overstromingen langs Ahr, Roer en Maas. Nederland was minder zwaar getroffen dan Duitsland, maar de IJssel steeg snel.</p>
+        <p>Dit is de enige proef met een <strong>expliciete validatie</strong>: de bovenstrooms randconditie bij Westervoort is de <em>gemeten</em> RWS-inflow (niet ERA5). De gesimuleerde en gemeten afvoer bij Kampen zijn daardoor vergelijkbaar.</p>
+        <p>Leervraag: wat is het verschil in piekafvoer en timing tussen ERA5-gedreven en meting-gedreven simulatie bij een snel-opkomend hoogwater?</p>
+        <button class="poc-goto" style="color:#ce93d8; border-color:#7b1fa2;" onclick="switchYear('2021')">Bekijk simulatie →</button>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#ce93d8;">Technisch</div>
+        <p><strong>Model:</strong> wflow SBM, periode jun–aug 2021 (92 tijdstappen). Twee runs: (a) ERA5-forcing, (b) gemeten RWS-inflow bij Westervoort als bovenstrooms randconditie.</p>
+        <p><strong>Validatie:</strong> RWS Waterinfo-debiet bij Kampen (daggemiddelde). Nash-Sutcliffe coëfficiënt voor run (b) is merkbaar hoger dan voor run (a) — de Eifel-piek wordt door ERA5 onderschat (te brede, te lage regenband).</p>
+        <p><strong>Opmerking:</strong> de Maas-overstroming en Ahr-vallei catastrofe zijn buiten het IJssel-model. Wflow beslaat alleen het IJssel-bekken; de Roer-bijdrage loopt via de Maas, niet via de IJssel.</p>
+        <p><strong>Data:</strong> RWS Waterinfo REST API voor zowel Lobith als Kampen (debiet + waterpeil).</p>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#ce93d8;">Opvolging</div>
+        <ul>
+          <li>Breid de validatie uit met een <strong>Nash-Sutcliffe score-visualisatie</strong> in het dashboard: hoeveel beter is gemeten inflow t.o.v. ERA5 per event?</li>
+          <li>Combineer Proef 6 met Proef 1: gebruik de <strong>AI-expert</strong> om het verschil tussen ERA5-run en meetreeks-run te duiden (wanneer is ERA5 betrouwbaar genoeg voor operationeel gebruik?).</li>
+          <li>Modelleer ook het <strong>Maas-bekken</strong> (wflow_moselle is al aanwezig als referentie) en koppel de twee bekkens via Ribasim-netwerknodes.</li>
+          <li>Voeg een <strong>dijkdoorbraakmodule</strong> toe (SOBEK of D-FLOW FM 2D) voor het scenario "wat als de Ijsseldijk het niet houdt?".</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- POC 7 -->
+  <div class="poc-card">
+    <div class="poc-card-header" style="border-left: 4px solid #004d40;">
+      <span class="poc-num" style="color:#80cbc4;">7</span>
+      <div>
+        <h3>FEWS PI REST — Waterlab als service</h3>
+        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 7 · FastAPI · Deltares PI JSON v1.25 · vier endpoints</div>
+      </div>
+      <span class="poc-tag" style="background:#001a13; color:#4db6ac; border:1px solid #004d40;">✓ live</span>
+    </div>
+    <div class="poc-body">
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#4db6ac;">Functioneel</div>
+        <p>Waterlab publiceert wflow-tijdreeksen en RWS Waterinfo-metingen via een <strong>FEWS-compatibele PI REST API</strong>. Elke FEWS-instantie bij RWS of een waterschap kan Waterlab als externe databron aanroepen — zonder aanpassing aan FEWS.</p>
+        <p>De vier standaard-endpoints zijn live op <code>localhost:8000/fews/rest/fewspiservice/v1/</code>:</p>
+        <ul>
+          <li><code>filters</code> — beschikbare datafilters</li>
+          <li><code>locations</code> — Kampen en Westervoort (coördinaten, metadata)</li>
+          <li><code>parameters</code> — Q.sim, Q.meting, H.meting</li>
+          <li><code>timeseries</code> — PI JSON met header + events[] per dag</li>
+        </ul>
+        <button class="poc-goto" style="color:#4db6ac; border-color:#004d40;" onclick="switchYear('fews')">Bekijk POC →</button>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#4db6ac;">Technisch</div>
+        <p><strong>Implementatie:</strong> 5 Python-bestanden (~200 regels), FastAPI router gemount op het hoofd-dashboard. Conform Deltares PI REST spec v1.25 (publiek beschikbaar).</p>
+        <p><strong>Niet-standaard extensie:</strong> de <code>period</code>-parameter selecteert een historische wflow-simulatie (1995 / 2018 / 2021). Standaard PI REST heeft geen historisch-event-concept — dit is bewust toegevoegd als leerfunctie.</p>
+        <p><strong>Data-adapter:</strong> <code>pi_client.py</code> haalt live RWS Waterinfo-data op en vertaalt die naar PI JSON-formaat. <code>data_adapter.py</code> leest wflow NetCDF-output en converteert naar PI timeseries.</p>
+        <p><strong>Beperking:</strong> read-only, geen authenticatie, geen schrijf-operaties. Geen WebSocket push — polling per request.</p>
+      </div>
+      <div class="poc-col">
+        <div class="poc-col-label" style="color:#4db6ac;">Opvolging</div>
+        <ul>
+          <li>Voeg <strong>OAuth2 authenticatie</strong> toe conform de FEWS PI REST beveiligings-extensie, zodat de service ook buiten localhost bruikbaar is.</li>
+          <li>Implementeer de <strong>POST /timeseries</strong> endpoint voor het wegschrijven van modelresultaten naar een FEWS-database (bi-directionele koppeling).</li>
+          <li>Voeg <strong>WebSocket push-notificaties</strong> toe: FEWS abonneert zich op nieuwe wflow-runs en krijgt een melding zodra verse tijdreeksen beschikbaar zijn.</li>
+          <li>Publiceer de service via <strong>Cloudflare Tunnel</strong> (zonder port-forwarding) zodat externe FEWS-testen in het netwerk van RWS of een waterschap mogelijk worden.</li>
+          <li>Genereer een <strong>OpenAPI-spec</strong> die exact overlapt met de Deltares PI REST YAML — zodat Swagger-clients automatisch kunnen verbinden.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
 </div><!-- /#pocs-panel -->
 
 <!-- ── ensemble-view ── -->
