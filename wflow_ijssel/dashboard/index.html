@@ -3026,64 +3026,82 @@
   function initCtx() {
     if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  function mg() { var g=ctx.createGain(); g.gain.value=0.7; g.connect(ctx.destination); return g; }
-
+  function out() {
+    var g = ctx.createGain(); g.gain.value = 1.0; g.connect(ctx.destination); return g;
+  }
   function playKick(t) {
-    var o=ctx.createOscillator(), g=ctx.createGain();
-    o.connect(g); g.connect(mg());
-    o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(40,t+0.12);
-    g.gain.setValueAtTime(1,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.35);
-    o.start(t); o.stop(t+0.35);
+    var o = ctx.createOscillator(), g = ctx.createGain(), master = out();
+    o.connect(g); g.connect(master);
+    o.frequency.setValueAtTime(180, t);
+    o.frequency.exponentialRampToValueAtTime(40, t + 0.15);
+    g.gain.setValueAtTime(1.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    o.start(t); o.stop(t + 0.4);
   }
   function playSnare(t) {
-    var buf=ctx.createBuffer(1,ctx.sampleRate*0.15,ctx.sampleRate), d=buf.getChannelData(0);
-    for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-    var src=ctx.createBufferSource(), g=ctx.createGain(), f=ctx.createBiquadFilter();
-    f.type='bandpass'; f.frequency.value=2800; f.Q.value=0.8;
-    src.buffer=buf; src.connect(f); f.connect(g); g.connect(mg());
-    g.gain.setValueAtTime(0.55,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.18);
-    src.start(t); src.stop(t+0.18);
-    var o=ctx.createOscillator(), g2=ctx.createGain();
-    o.connect(g2); g2.connect(mg()); o.frequency.value=200;
-    g2.gain.setValueAtTime(0.3,t); g2.gain.exponentialRampToValueAtTime(0.001,t+0.08);
-    o.start(t); o.stop(t+0.08);
+    var len = Math.floor(ctx.sampleRate * 0.2);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var src = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    f.type = 'bandpass'; f.frequency.value = 3000; f.Q.value = 0.5;
+    src.buffer = buf; src.connect(f); f.connect(g); g.connect(out());
+    g.gain.setValueAtTime(1.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    src.start(t); src.stop(t + 0.2);
   }
   function playHat(t) {
-    var buf=ctx.createBuffer(1,ctx.sampleRate*0.05,ctx.sampleRate), d=buf.getChannelData(0);
-    for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-    var src=ctx.createBufferSource(), g=ctx.createGain(), f=ctx.createBiquadFilter();
-    f.type='highpass'; f.frequency.value=9000;
-    src.buffer=buf; src.connect(f); f.connect(g); g.connect(mg());
-    g.gain.setValueAtTime(0.18,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
-    src.start(t); src.stop(t+0.06);
+    var len = Math.floor(ctx.sampleRate * 0.06);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var src = ctx.createBufferSource(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    f.type = 'highpass'; f.frequency.value = 8000;
+    src.buffer = buf; src.connect(f); f.connect(g); g.connect(out());
+    g.gain.setValueAtTime(0.5, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+    src.start(t); src.stop(t + 0.07);
   }
   function playPerc(t) {
-    var o=ctx.createOscillator(), g=ctx.createGain(); o.type='triangle';
-    o.connect(g); g.connect(mg());
-    o.frequency.setValueAtTime(320,t); o.frequency.exponentialRampToValueAtTime(180,t+0.06);
-    g.gain.setValueAtTime(0.3,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1);
-    o.start(t); o.stop(t+0.1);
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'triangle'; o.connect(g); g.connect(out());
+    o.frequency.setValueAtTime(400, t);
+    o.frequency.exponentialRampToValueAtTime(150, t + 0.08);
+    g.gain.setValueAtTime(0.6, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    o.start(t); o.stop(t + 0.12);
   }
   function schedule() {
-    var stepLen=(60/BPM)/4;
-    while(nextBeat < ctx.currentTime+0.15) {
-      var t=nextBeat+(beatStep%2===1 ? SWING*stepLen : 0);
-      if(kick[beatStep])  playKick(t);
-      if(snare[beatStep]) playSnare(t);
-      if(hat[beatStep])   playHat(t);
-      if(perc[beatStep])  playPerc(t);
-      nextBeat+=stepLen; beatStep=(beatStep+1)%16;
+    var stepLen = (60 / BPM) / 4;
+    while (nextBeat < ctx.currentTime + 0.25) {
+      var swing = (beatStep % 2 === 1) ? SWING * stepLen : 0;
+      var t = nextBeat + swing;
+      if (kick[beatStep])  playKick(t);
+      if (snare[beatStep]) playSnare(t);
+      if (hat[beatStep])   playHat(t);
+      if (perc[beatStep])  playPerc(t);
+      nextBeat += stepLen;
+      beatStep = (beatStep + 1) % 16;
     }
-    schedId=setTimeout(schedule,50);
+    schedId = setTimeout(schedule, 50);
   }
   function startBeat() {
     try { initCtx(); } catch(e) { return; }
-    beatPlaying=true;
-    var btn=document.getElementById('beat-btn');
-    btn.textContent='⏹'; btn.classList.add('playing');
+    beatPlaying = true;
+    var btn = document.getElementById('beat-btn');
+    btn.textContent = '⏹'; btn.classList.add('playing');
     document.getElementById('eq-bars').classList.remove('paused');
-    var p=ctx.state==='suspended' ? ctx.resume() : Promise.resolve();
-    p.then(function(){ nextBeat=ctx.currentTime+0.05; beatStep=0; schedule(); });
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(function() {
+        nextBeat = ctx.currentTime + 0.1;
+        beatStep = 0;
+        schedule();
+      });
+    } else {
+      nextBeat = ctx.currentTime + 0.1;
+      beatStep = 0;
+      schedule();
+    }
   }
   function stopBeat() {
     clearTimeout(schedId); beatPlaying=false;
