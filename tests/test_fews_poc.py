@@ -162,3 +162,51 @@ def test_timeseries_empty_for_unknown_combo(fews_client):
     assert resp.status_code == 200
     data = resp.json()
     assert data["timeSeries"][0]["events"] == []
+
+
+def test_pi_client_get_filters(fews_client, monkeypatch):
+    """pi_client verbindt met test-server en parset filters correct."""
+    import requests
+    from fews_poc.pi_client import PiRestClient
+
+    def fake_get(url, **kwargs):
+        path = url.replace("http://testserver", "")
+        resp_data = fews_client.get(path)
+        class FakeResp:
+            status_code = resp_data.status_code
+            def json(self): return resp_data.json()
+            def raise_for_status(self): pass
+        return FakeResp()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    client = PiRestClient("http://testserver")
+    filters = client.get_filters()
+    assert any(f["id"] == "Waterlab-IJssel" for f in filters)
+
+
+def test_pi_client_get_timeseries(fews_client, monkeypatch):
+    import requests
+    from fews_poc.pi_client import PiRestClient
+
+    def fake_get(url, **kwargs):
+        path = url.replace("http://testserver", "")
+        resp_data = fews_client.get(path)
+        class FakeResp:
+            status_code = resp_data.status_code
+            def json(self): return resp_data.json()
+            def raise_for_status(self): pass
+        return FakeResp()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    client = PiRestClient("http://testserver")
+    ts = client.get_timeseries(
+        filter_id="Waterlab-IJssel",
+        location_ids=["KAMPEN"],
+        parameter_ids=["Q.sim"],
+        period="1995",
+    )
+    assert len(ts) == 1
+    assert ts[0]["header"]["locationId"] == "KAMPEN"
+    assert len(ts[0]["events"]) > 0
