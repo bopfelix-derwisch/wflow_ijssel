@@ -1,6 +1,8 @@
 import json
 import pytest
 from pathlib import Path
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from fews_poc.pi_types import (
     PiFilter, PiLocation, PiParameter,
     PiEvent, PiTimeSeriesHeader, PiTimeSeries,
@@ -91,3 +93,72 @@ def test_get_waterinfo_timeseries_returns_empty_on_api_error(monkeypatch):
 
     events = da.get_waterinfo_timeseries("KAMPEN", "H.meting")
     assert events == []
+
+
+@pytest.fixture
+def fews_client(monkeypatch):
+    fake_events = [
+        {"date": "1995-01-01", "time": "12:00:00", "value": "850.000", "flag": "0"},
+        {"date": "1995-01-31", "time": "12:00:00", "value": "3200.000", "flag": "0"},
+    ]
+    monkeypatch.setattr("fews_poc.router.get_wflow_timeseries",
+                        lambda *a, **kw: fake_events)
+    monkeypatch.setattr("fews_poc.router.get_waterinfo_timeseries",
+                        lambda *a, **kw: [])
+
+    from fews_poc.router import router
+    app = FastAPI()
+    app.include_router(router)
+    return TestClient(app)
+
+
+def test_filters_response(fews_client):
+    resp = fews_client.get("/fews/rest/fewspiservice/v1/filters")
+    assert resp.status_code == 200
+    data = resp.json()
+    ids = [f["id"] for f in data["filters"]]
+    assert "Waterlab-IJssel" in ids
+
+
+def test_locations_response(fews_client):
+    resp = fews_client.get("/fews/rest/fewspiservice/v1/locations?filterId=Waterlab-IJssel")
+    assert resp.status_code == 200
+    ids = [l["locationId"] for l in resp.json()["locations"]]
+    assert "KAMPEN" in ids
+    assert "WESTERVOORT" in ids
+    assert "LOBITH" in ids
+
+
+def test_parameters_response(fews_client):
+    resp = fews_client.get("/fews/rest/fewspiservice/v1/parameters?filterId=Waterlab-IJssel")
+    assert resp.status_code == 200
+    ids = [p["id"] for p in resp.json()["parameters"]]
+    assert "H.meting" in ids
+    assert "Q.meting" in ids
+    assert "Q.sim" in ids
+
+
+def test_timeseries_pi_format(fews_client):
+    resp = fews_client.get(
+        "/fews/rest/fewspiservice/v1/timeseries"
+        "?filterId=Waterlab-IJssel&locationIds=KAMPEN&parameterIds=Q.sim&period=1995"
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["version"] == "1.25"
+    assert data["timeZone"] == "1.0"
+    assert len(data["timeSeries"]) == 1
+    ts = data["timeSeries"][0]
+    assert ts["header"]["locationId"] == "KAMPEN"
+    assert ts["header"]["parameterId"] == "Q.sim"
+    assert ts["events"][0]["value"] == "850.000"
+
+
+def test_timeseries_empty_for_unknown_combo(fews_client):
+    resp = fews_client.get(
+        "/fews/rest/fewspiservice/v1/timeseries"
+        "?filterId=Waterlab-IJssel&locationIds=LOBITH&parameterIds=H.meting"
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["timeSeries"][0]["events"] == []
