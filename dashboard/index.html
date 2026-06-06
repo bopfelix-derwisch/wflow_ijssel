@@ -215,6 +215,47 @@
     #uitleg-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #uitleg-panel.visible { display: block; }
 
+    /* ── arch panel ── */
+    #arch-panel { overflow-y: auto; max-height: calc(100vh - 52px); }
+    #arch-panel:not(.visible) { display: none; }
+    #arch-panel.visible { display: block; }
+    .year-tab.active-arch { background: #004d40; border-color: #00bfa5; color: #fff; }
+    .arch-diagram-wrap {
+      background: #030c18; border: 1px solid #0d2035; border-radius: 8px;
+      padding: .8rem; overflow: hidden; margin-bottom: 1.4rem;
+    }
+    .arch-two-col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; margin-bottom: 1.4rem;
+    }
+    .arch-col { display: flex; flex-direction: column; gap: .6rem; }
+    .arch-col-title {
+      font-size: 11px; font-weight: 700; color: #546e7a;
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: .3rem;
+    }
+    .arch-col-desc { font-size: 12px; color: #607d8b; line-height: 1.65; }
+    .arch-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .arch-table th {
+      background: #0a1828; color: #4fc3f7; font-size: 10px;
+      text-transform: uppercase; letter-spacing: .8px;
+      padding: 7px 12px; text-align: left; border-bottom: 1px solid #1a3050;
+    }
+    .arch-table td { padding: 7px 12px; border-bottom: 1px solid #0a1420; color: #90a4ae; vertical-align: top; line-height: 1.5; }
+    .arch-table td:first-child { color: #cfd8dc; font-weight: 600; width: 160px; }
+    .arch-table tr:hover td { background: #081018; }
+    .arch-tag {
+      display: inline-block; padding: 1px 7px; border-radius: 9px;
+      font-size: 10px; margin: 1px 2px;
+    }
+    .arch-steps { display: flex; flex-direction: column; gap: .7rem; }
+    .arch-step { display: flex; gap: .9rem; align-items: flex-start; }
+    .arch-step-num {
+      width: 22px; height: 22px; border-radius: 50%; background: #004d40;
+      border: 1px solid #00bfa5; color: #80cbc4; font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+    }
+    .arch-step-title { font-size: 13px; font-weight: 700; color: #e0e0e0; }
+    .arch-step-desc { font-size: 12px; color: #546e7a; margin-top: 2px; line-height: 1.55; }
+
     /* ── roadmap panel ── */
     #roadmap-panel { overflow-y: auto; max-height: calc(100vh - 52px); }
     #roadmap-panel:not(.visible) { display: none; }
@@ -343,6 +384,7 @@
     <button class="year-tab" data-year="1995">Jan 1995</button>
     <button class="year-tab" data-year="2018">Zomer 2018</button>
     <button class="year-tab" data-year="2021">Jul 2021</button>
+    <button class="year-tab" data-year="arch">Platform Visie</button>
     <button class="year-tab" data-year="roadmap">Roadmap</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
   </div>
@@ -1695,6 +1737,433 @@
   </div>
 </div>
 
+<!-- ── platform visie panel ─────────────────────────────────────────────── -->
+<div id="arch-panel">
+
+  <div class="intro-hero" style="background:linear-gradient(160deg,#00100c 0%,#001a14 50%,#020e1c 100%)">
+    <div class="intro-badge" style="background:#00251a; border-color:#00695c; color:#80cbc4;">🏗 Platform Visie</div>
+    <h2>AI-first Waterplatform</h2>
+    <p>
+      Herontwerp van het complete waterinstrumentarium als een <strong style="color:#e0f2fe;">API-first platform zonder GUI-afhankelijkheden</strong>.
+      Een generieke basislaag verzorgt data-ingestie, model-executie en AI-orkestratie;
+      domeinmodules voegen gebiedsspecifieke schematisaties, drempelwaarden en expertkennis toe als configuratie —
+      niet als code. Elke consumer (dashboard, FEWS, app, webhook) is een verwisselbare API-client.
+      Het resultaat is een significante vermindering van koppelingen en een platform dat zonder aanpassingen
+      een nieuw stroomgebied ondersteunt zodra de domein-config beschikbaar is.
+    </p>
+    <div class="intro-stack" style="justify-content:flex-start">
+      <span>API-first</span><span>Event-driven</span><span>AI-orchestrated</span><span>Domain-agnostic</span>
+      <span>Tool Use / MCP</span><span>Container API</span><span>OpenAPI 3.1</span><span>FEWS-compatible</span>
+    </div>
+  </div>
+
+  <!-- ── Hoofddiagram ───────────────────────────────────────────────────── -->
+  <div class="roadmap-section">
+    <div class="roadmap-section-title">Platform architectuur — gelaagd overzicht</div>
+    <div class="arch-diagram-wrap">
+      <svg width="100%" viewBox="0 0 740 268" style="display:block; font-family:ui-monospace,monospace">
+        <defs>
+          <filter id="aiGlow" x="-6%" y="-25%" width="112%" height="150%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blur"/>
+            <feFlood flood-color="#1565c0" flood-opacity="0.45" result="color"/>
+            <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+            <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- ─ Layer labels (left margin) ─ -->
+        <text x="0" y="25" fill="#263238" font-size="8" transform="rotate(-90 0 25)" text-anchor="end">Consumers</text>
+
+        <!-- ─ Consumer boxes ─ -->
+        <rect x="5"   y="5" width="137" height="32" rx="4" fill="#111f2e" stroke="#37474f" stroke-width="1"/>
+        <text x="73"  y="17" fill="#90a4ae" font-size="8" text-anchor="middle" font-weight="600">Dashboard / PWA</text>
+        <text x="73"  y="29" fill="#455a64" font-size="7" text-anchor="middle">MapLibre · Plotly</text>
+
+        <rect x="147" y="5" width="137" height="32" rx="4" fill="#111f2e" stroke="#37474f" stroke-width="1"/>
+        <text x="215" y="17" fill="#90a4ae" font-size="8" text-anchor="middle" font-weight="600">FEWS Operationeel</text>
+        <text x="215" y="29" fill="#455a64" font-size="7" text-anchor="middle">Deltares FEWS client</text>
+
+        <rect x="289" y="5" width="130" height="32" rx="4" fill="#111f2e" stroke="#37474f" stroke-width="1"/>
+        <text x="354" y="17" fill="#90a4ae" font-size="8" text-anchor="middle" font-weight="600">Mobile / PWA</text>
+        <text x="354" y="29" fill="#455a64" font-size="7" text-anchor="middle">React Native · Flutter</text>
+
+        <rect x="424" y="5" width="130" height="32" rx="4" fill="#111f2e" stroke="#37474f" stroke-width="1"/>
+        <text x="489" y="17" fill="#90a4ae" font-size="8" text-anchor="middle" font-weight="600">Alert Systeem</text>
+        <text x="489" y="29" fill="#455a64" font-size="7" text-anchor="middle">email · SMS · webhook</text>
+
+        <rect x="559" y="5" width="176" height="32" rx="4" fill="#111f2e" stroke="#37474f" stroke-width="1"/>
+        <text x="647" y="17" fill="#90a4ae" font-size="8" text-anchor="middle" font-weight="600">Custom API Clients</text>
+        <text x="647" y="29" fill="#455a64" font-size="7" text-anchor="middle">scripts · notebooks · RTC</text>
+
+        <!-- ─ Consumer → API GW connectors ─ -->
+        <line x1="73"  y1="37" x2="73"  y2="48" stroke="#263238" stroke-width="1"/>
+        <line x1="215" y1="37" x2="215" y2="48" stroke="#263238" stroke-width="1"/>
+        <line x1="354" y1="37" x2="354" y2="48" stroke="#263238" stroke-width="1"/>
+        <line x1="489" y1="37" x2="489" y2="48" stroke="#263238" stroke-width="1"/>
+        <line x1="647" y1="37" x2="647" y2="48" stroke="#263238" stroke-width="1"/>
+
+        <!-- ─ API Gateway ─ -->
+        <rect x="5" y="48" width="730" height="24" rx="4" fill="#06202e" stroke="#00acc1" stroke-width="1.2"/>
+        <text x="370" y="58" fill="#00acc1" font-size="9" text-anchor="middle" font-weight="700">API Gateway</text>
+        <text x="370" y="68" fill="#00838f" font-size="7" text-anchor="middle">OpenAPI 3.1 · JWT Auth · Rate Limiting · Versioning · gRPC/REST</text>
+
+        <!-- ─ API GW → AI connector ─ -->
+        <line x1="370" y1="72" x2="370" y2="82" stroke="#1565c0" stroke-width="1.5"/>
+        <polygon points="367,80 370,85 373,80" fill="#1565c0"/>
+
+        <!-- ─ AI Orchestrator (highlighted) ─ -->
+        <rect x="5" y="85" width="730" height="52" rx="5" fill="#030e20" stroke="#1565c0" stroke-width="1.8" filter="url(#aiGlow)"/>
+        <text x="12" y="97" fill="#4fc3f7" font-size="9" font-weight="700">AI Orchestrator</text>
+        <text x="12" y="108" fill="#1e5080" font-size="7">Claude / LLM — modelkeuze · scenario-generatie · interpretatie · interventie · tool use</text>
+        <!-- Sub-boxes inside AI layer -->
+        <rect x="12"  y="111" width="170" height="20" rx="3" fill="#061628" stroke="#1565c0" stroke-width="0.8"/>
+        <text x="97"  y="124" fill="#4fc3f7" font-size="7" text-anchor="middle">Agent Pool (Claude)</text>
+        <rect x="188" y="111" width="170" height="20" rx="3" fill="#061628" stroke="#1565c0" stroke-width="0.8"/>
+        <text x="273" y="124" fill="#4fc3f7" font-size="7" text-anchor="middle">Tool Registry / MCP</text>
+        <rect x="364" y="111" width="170" height="20" rx="3" fill="#061628" stroke="#1565c0" stroke-width="0.8"/>
+        <text x="449" y="124" fill="#4fc3f7" font-size="7" text-anchor="middle">Domain Context</text>
+        <rect x="540" y="111" width="190" height="20" rx="3" fill="#061628" stroke="#1565c0" stroke-width="0.8"/>
+        <text x="635" y="124" fill="#4fc3f7" font-size="7" text-anchor="middle">Memory / RAG</text>
+
+        <!-- ─ AI → Services connectors (with label) ─ -->
+        <line x1="91"  y1="137" x2="91"  y2="147" stroke="#1e7e34" stroke-width="1"/>
+        <polygon points="88,145 91,150 94,145" fill="#1e7e34"/>
+        <line x1="272" y1="137" x2="272" y2="147" stroke="#1565c0" stroke-width="1"/>
+        <polygon points="269,145 272,150 275,145" fill="#1565c0"/>
+        <line x1="451" y1="137" x2="451" y2="147" stroke="#6a1b9a" stroke-width="1"/>
+        <polygon points="448,145 451,150 454,145" fill="#6a1b9a"/>
+        <line x1="635" y1="137" x2="635" y2="147" stroke="#bf360c" stroke-width="1"/>
+        <polygon points="632,145 635,150 638,145" fill="#bf360c"/>
+        <!-- Event Bus also sends UP to AI (event-driven trigger) -->
+        <line x1="720" y1="147" x2="720" y2="137" stroke="#bf360c" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+        <polygon points="717,139 720,134 723,139" fill="#bf360c" opacity="0.6"/>
+        <text x="722" y="143" fill="#bf360c" font-size="6" opacity="0.7">trigger</text>
+
+        <!-- ─ Core Services ─ -->
+        <rect x="5"   y="150" width="174" height="40" rx="4" fill="#071408" stroke="#1b5e20" stroke-width="1.2"/>
+        <text x="92"  y="163" fill="#66bb6a" font-size="8" text-anchor="middle" font-weight="700">Model Execution</text>
+        <text x="92"  y="174" fill="#2e7d32" font-size="7" text-anchor="middle">containerized runners</text>
+        <text x="92"  y="183" fill="#1b5e20" font-size="6.5" text-anchor="middle">wflow · SOBEK · D-FLOW · Ribasim</text>
+
+        <rect x="184" y="150" width="174" height="40" rx="4" fill="#040e1e" stroke="#01579b" stroke-width="1.2"/>
+        <text x="271" y="163" fill="#4fc3f7" font-size="8" text-anchor="middle" font-weight="700">Data Hub</text>
+        <text x="271" y="174" fill="#0277bd" font-size="7" text-anchor="middle">normalized connectors</text>
+        <text x="271" y="183" fill="#01579b" font-size="6.5" text-anchor="middle">ERA5T · Open-Meteo · RWS WI · FEWS</text>
+
+        <rect x="363" y="150" width="174" height="40" rx="4" fill="#0e0618" stroke="#4a148c" stroke-width="1.2"/>
+        <text x="450" y="163" fill="#ce93d8" font-size="8" text-anchor="middle" font-weight="700">Analysis Engine</text>
+        <text x="450" y="174" fill="#6a1b9a" font-size="7" text-anchor="middle">uncertainty · ensemble</text>
+        <text x="450" y="183" fill="#4a148c" font-size="6.5" text-anchor="middle">ensemble stats · EnKF · anomaly detection</text>
+
+        <rect x="542" y="150" width="193" height="40" rx="4" fill="#1a0604" stroke="#bf360c" stroke-width="1.2"/>
+        <text x="638" y="163" fill="#ff8a65" font-size="8" text-anchor="middle" font-weight="700">Event Bus</text>
+        <text x="638" y="174" fill="#bf360c" font-size="7" text-anchor="middle">async triggers</text>
+        <text x="638" y="183" fill="#7f1200" font-size="6.5" text-anchor="middle">observations · thresholds · webhooks · SSE</text>
+
+        <!-- ─ Separator line ─ -->
+        <line x1="5" y1="200" x2="735" y2="200" stroke="#0d1f2a" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="8" y="212" fill="#1a2e3a" font-size="8">domain extensions</text>
+
+        <!-- ─ Domain Extensions ─ -->
+        <rect x="5"   y="218" width="138" height="34" rx="4" fill="#001e14" stroke="#00695c" stroke-width="1"/>
+        <text x="74"  y="231" fill="#4db6ac" font-size="8" text-anchor="middle" font-weight="700">IJssel</text>
+        <text x="74"  y="243" fill="#00695c" font-size="7" text-anchor="middle">wflow config · SOBEK</text>
+        <text x="74"  y="252" fill="#004d40" font-size="6.5" text-anchor="middle">Kampen thresholds · LLM context</text>
+
+        <rect x="149" y="218" width="138" height="34" rx="4" fill="#001228" stroke="#01579b" stroke-width="1"/>
+        <text x="218" y="231" fill="#4fc3f7" font-size="8" text-anchor="middle" font-weight="700">Rijn-delta</text>
+        <text x="218" y="243" fill="#0277bd" font-size="7" text-anchor="middle">D-FLOW FM · Ribasim</text>
+        <text x="218" y="252" fill="#01579b" font-size="6.5" text-anchor="middle">Lobith · Pannerdense Kop</text>
+
+        <rect x="293" y="218" width="138" height="34" rx="4" fill="#0e1800" stroke="#558b2f" stroke-width="1"/>
+        <text x="362" y="231" fill="#aed581" font-size="8" text-anchor="middle" font-weight="700">Maas</text>
+        <text x="362" y="243" fill="#558b2f" font-size="7" text-anchor="middle">wflow · SOBEK 1D</text>
+        <text x="362" y="252" fill="#33691e" font-size="6.5" text-anchor="middle">Borgharen · Venlo · Mook</text>
+
+        <rect x="437" y="218" width="138" height="34" rx="4" fill="#160020" stroke="#6a1b9a" stroke-width="1"/>
+        <text x="506" y="231" fill="#ce93d8" font-size="8" text-anchor="middle" font-weight="700">Kust / Estuarium</text>
+        <text x="506" y="243" fill="#6a1b9a" font-size="7" text-anchor="middle">D-FLOW FM 3D · saliniteit</text>
+        <text x="506" y="252" fill="#4a148c" font-size="6.5" text-anchor="middle">Haringvliet · Nieuwe Waterweg</text>
+
+        <rect x="581" y="218" width="154" height="34" rx="4" fill="#0d1318" stroke="#37474f" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="658" y="231" fill="#78909c" font-size="8" text-anchor="middle" font-weight="700">+ Nieuw domein</text>
+        <text x="658" y="243" fill="#37474f" font-size="7" text-anchor="middle">config.yaml + model adapter</text>
+        <text x="658" y="252" fill="#263238" font-size="6.5" text-anchor="middle">plug-in zonder code-wijziging</text>
+      </svg>
+    </div>
+
+    <!-- Legenda -->
+    <div style="display:flex; flex-wrap:wrap; gap:.8rem; font-size:11px; color:#546e7a; padding:0 .2rem .8rem">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#06202e;border:1px solid #00acc1;margin-right:4px;vertical-align:middle"></span>API Gateway</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#030e20;border:1px solid #1565c0;margin-right:4px;vertical-align:middle"></span>AI Orchestrator (centraal)</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#071408;border:1px solid #1b5e20;margin-right:4px;vertical-align:middle"></span>Model Execution</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#040e1e;border:1px solid #01579b;margin-right:4px;vertical-align:middle"></span>Data Hub</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#0e0618;border:1px solid #4a148c;margin-right:4px;vertical-align:middle"></span>Analysis Engine</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1a0604;border:1px solid #bf360c;margin-right:4px;vertical-align:middle"></span>Event Bus</span>
+      <span style="border-left:1px solid #1a2a3a; padding-left:.8rem">Gestippelde pijl = event-driven trigger (omhoog naar AI)</span>
+    </div>
+  </div>
+
+  <!-- ── Twee kolommen: Domain model + Agent flow ─────────────────────── -->
+  <div class="roadmap-section">
+    <div class="arch-two-col">
+
+      <!-- Domain Service Model -->
+      <div class="arch-col">
+        <div class="arch-col-title">Domain Service Model</div>
+        <div class="arch-diagram-wrap">
+          <svg width="100%" viewBox="0 0 340 220" style="display:block">
+            <!-- Core Platform box -->
+            <rect x="5" y="5" width="330" height="100" rx="6" fill="#030e20" stroke="#00acc1" stroke-width="1.5"/>
+            <text x="170" y="20" fill="#00acc1" font-size="9" text-anchor="middle" font-weight="700">Core Platform (generiek)</text>
+            <!-- Core service chips -->
+            <rect x="14" y="27" width="74" height="18" rx="3" fill="#061828" stroke="#00838f" stroke-width="0.8"/>
+            <text x="51" y="39" fill="#4dd0e1" font-size="7" text-anchor="middle">Obs Broker</text>
+            <rect x="93" y="27" width="74" height="18" rx="3" fill="#061828" stroke="#1b5e20" stroke-width="0.8"/>
+            <text x="130" y="39" fill="#66bb6a" font-size="7" text-anchor="middle">Model Runner</text>
+            <rect x="172" y="27" width="74" height="18" rx="3" fill="#061828" stroke="#1565c0" stroke-width="0.8"/>
+            <text x="209" y="39" fill="#4fc3f7" font-size="7" text-anchor="middle">AI Orchestrator</text>
+            <rect x="251" y="27" width="74" height="18" rx="3" fill="#061828" stroke="#bf360c" stroke-width="0.8"/>
+            <text x="288" y="39" fill="#ff8a65" font-size="7" text-anchor="middle">Event Bus</text>
+            <!-- Domain config injection point -->
+            <text x="170" y="60" fill="#546e7a" font-size="8" text-anchor="middle">+ Domain Config (YAML)</text>
+            <rect x="14" y="66" width="80" height="14" rx="2" fill="#0a1828" stroke="#37474f" stroke-width="0.7"/>
+            <text x="54" y="76" fill="#607d8b" font-size="6.5" text-anchor="middle">schematisatie</text>
+            <rect x="100" y="66" width="80" height="14" rx="2" fill="#0a1828" stroke="#37474f" stroke-width="0.7"/>
+            <text x="140" y="76" fill="#607d8b" font-size="6.5" text-anchor="middle">drempelwaarden</text>
+            <rect x="186" y="66" width="70" height="14" rx="2" fill="#0a1828" stroke="#37474f" stroke-width="0.7"/>
+            <text x="221" y="76" fill="#607d8b" font-size="6.5" text-anchor="middle">LLM context</text>
+            <rect x="262" y="66" width="68" height="14" rx="2" fill="#0a1828" stroke="#37474f" stroke-width="0.7"/>
+            <text x="296" y="76" fill="#607d8b" font-size="6.5" text-anchor="middle">stakeholders</text>
+            <!-- Extends line -->
+            <text x="170" y="95" fill="#263238" font-size="7" text-anchor="middle">Platform instantieert domein via config — geen code-aanpassing</text>
+
+            <!-- Extension arrows -->
+            <line x1="82"  y1="105" x2="82"  y2="128" stroke="#00695c" stroke-width="1.2"/>
+            <polygon points="79,126 82,131 85,126" fill="#00695c"/>
+            <line x1="170" y1="105" x2="170" y2="128" stroke="#546e7a" stroke-width="1" stroke-dasharray="3,2"/>
+            <polygon points="167,126 170,131 173,126" fill="#546e7a"/>
+            <line x1="258" y1="105" x2="258" y2="128" stroke="#263238" stroke-width="1" stroke-dasharray="3,2"/>
+            <polygon points="255,126 258,131 261,126" fill="#263238"/>
+
+            <!-- Domain instances -->
+            <rect x="5"   y="131" width="150" height="36" rx="4" fill="#001e14" stroke="#00695c" stroke-width="1.2"/>
+            <text x="80"  y="144" fill="#4db6ac" font-size="8" text-anchor="middle" font-weight="700">IJssel Domain Service</text>
+            <text x="80"  y="155" fill="#004d40" font-size="7" text-anchor="middle">wflow-ijssel.yaml</text>
+            <text x="80"  y="164" fill="#004d40" font-size="6.5" text-anchor="middle">Kampen · Westervoort · Roggebotsluis</text>
+
+            <rect x="162" y="131" width="86" height="36" rx="4" fill="#0a1428" stroke="#37474f" stroke-width="1" stroke-dasharray="3,2"/>
+            <text x="205" y="144" fill="#607d8b" font-size="8" text-anchor="middle">Maas Domain</text>
+            <text x="205" y="155" fill="#37474f" font-size="7" text-anchor="middle">maas.yaml</text>
+            <text x="205" y="164" fill="#263238" font-size="6.5" text-anchor="middle">plug-in</text>
+
+            <rect x="254" y="131" width="81" height="36" rx="4" fill="#0a1428" stroke="#37474f" stroke-width="1" stroke-dasharray="3,2"/>
+            <text x="294" y="144" fill="#607d8b" font-size="8" text-anchor="middle">+ Nieuw</text>
+            <text x="294" y="155" fill="#37474f" font-size="7" text-anchor="middle">any.yaml</text>
+            <text x="294" y="164" fill="#263238" font-size="6.5" text-anchor="middle">0 code</text>
+
+            <!-- Legend note -->
+            <text x="5"  y="186" fill="#263238" font-size="7">Doorgetrokken = bestaand · Gestippeld = toekomstig plug-in</text>
+            <line x1="5" y1="195" x2="335" y2="195" stroke="#0d1f2a" stroke-width="0.5"/>
+            <text x="5" y="207" fill="#263238" font-size="7">Domeinkennis = YAML config · Geen fork van platform-code vereist</text>
+          </svg>
+        </div>
+        <div class="arch-col-desc">
+          De kernlaag werkt domein-agnostisch: model-runners, data-connectors en AI-agent zijn generiek.
+          Een nieuw stroomgebied (Maas, kust, buitenland) vereist alleen een <code style="color:#4db6ac;font-size:11px">domain.yaml</code>
+          met schematisatie-pad, meetpuntlocaties, drempelwaarden en LLM-contextprompt.
+        </div>
+      </div>
+
+      <!-- AI Agent Flow -->
+      <div class="arch-col">
+        <div class="arch-col-title">AI Orchestrator — agent flow</div>
+        <div class="arch-diagram-wrap">
+          <svg width="100%" viewBox="0 0 340 220" style="display:block">
+            <!-- Vertical timeline spine -->
+            <line x1="50" y1="18" x2="50" y2="208" stroke="#0d2035" stroke-width="2"/>
+
+            <!-- Step 1: Trigger -->
+            <circle cx="50" cy="25" r="8" fill="#bf360c" stroke="#ff8a65" stroke-width="1"/>
+            <text x="50" y="29" fill="#fff" font-size="8" text-anchor="middle" font-weight="700">⚡</text>
+            <text x="65" y="22" fill="#ff8a65" font-size="8" font-weight="700">Trigger</text>
+            <text x="65" y="32" fill="#546e7a" font-size="7">nieuwe observatie / user request / cron</text>
+
+            <!-- Step 2: Agent Planning -->
+            <circle cx="50" cy="58" r="8" fill="#1565c0" stroke="#4fc3f7" stroke-width="1"/>
+            <text x="50" y="62" fill="#fff" font-size="7" text-anchor="middle">AI</text>
+            <text x="65" y="55" fill="#4fc3f7" font-size="8" font-weight="700">Agent Planning</text>
+            <text x="65" y="65" fill="#546e7a" font-size="7">"welke tools zijn nodig voor dit verzoek?"</text>
+
+            <!-- Tool call boxes -->
+            <!-- Tool 1 -->
+            <rect x="66" y="74" width="264" height="18" rx="3" fill="#030e20" stroke="#00695c" stroke-width="0.8"/>
+            <text x="75" y="86" fill="#00695c" font-size="7">→ tool:</text>
+            <text x="110" y="86" fill="#4db6ac" font-size="7" font-weight="600">get_observations</text>
+            <text x="205" y="86" fill="#37474f" font-size="7">(station="Kampen", days=1)</text>
+            <line x1="50" y1="58" x2="50" y2="100" stroke="#0d2035" stroke-width="2"/>
+
+            <!-- Tool 2 -->
+            <rect x="66" y="98" width="264" height="18" rx="3" fill="#030e20" stroke="#00695c" stroke-width="0.8"/>
+            <text x="75" y="110" fill="#00695c" font-size="7">→ tool:</text>
+            <text x="110" y="110" fill="#4db6ac" font-size="7" font-weight="600">get_forecast_forcing</text>
+            <text x="220" y="110" fill="#37474f" font-size="7">(days=14)</text>
+            <line x1="50" y1="100" x2="50" y2="122" stroke="#0d2035" stroke-width="2"/>
+
+            <!-- Tool 3 -->
+            <rect x="66" y="122" width="264" height="18" rx="3" fill="#030e20" stroke="#1b5e20" stroke-width="0.8"/>
+            <text x="75" y="134" fill="#1b5e20" font-size="7">→ tool:</text>
+            <text x="110" y="134" fill="#66bb6a" font-size="7" font-weight="600">run_model_ensemble</text>
+            <text x="220" y="134" fill="#37474f" font-size="7">(n=5, model="wflow")</text>
+            <line x1="50" y1="122" x2="50" y2="146" stroke="#0d2035" stroke-width="2"/>
+
+            <!-- Tool 4 -->
+            <rect x="66" y="146" width="264" height="18" rx="3" fill="#030e20" stroke="#4a148c" stroke-width="0.8"/>
+            <text x="75" y="158" fill="#4a148c" font-size="7">→ tool:</text>
+            <text x="110" y="158" fill="#ce93d8" font-size="7" font-weight="600">compute_ensemble_stats</text>
+            <text x="240" y="158" fill="#37474f" font-size="7">(p10,p90)</text>
+            <line x1="50" y1="146" x2="50" y2="170" stroke="#0d2035" stroke-width="2"/>
+
+            <!-- Tool 5 -->
+            <rect x="66" y="170" width="264" height="18" rx="3" fill="#030e20" stroke="#bf360c" stroke-width="0.8"/>
+            <text x="75" y="182" fill="#bf360c" font-size="7">→ tool:</text>
+            <text x="110" y="182" fill="#ff8a65" font-size="7" font-weight="600">check_thresholds</text>
+            <text x="200" y="182" fill="#37474f" font-size="7">(domain="ijssel")</text>
+            <line x1="50" y1="170" x2="50" y2="198" stroke="#0d2035" stroke-width="2"/>
+
+            <!-- Output -->
+            <circle cx="50" cy="205" r="8" fill="#004d40" stroke="#00bfa5" stroke-width="1"/>
+            <text x="50" y="209" fill="#80cbc4" font-size="8" text-anchor="middle">✓</text>
+            <text x="65" y="201" fill="#00bfa5" font-size="8" font-weight="700">Output</text>
+            <text x="65" y="211" fill="#546e7a" font-size="7">structured JSON + NL interventie-tekst</text>
+          </svg>
+        </div>
+        <div class="arch-col-desc">
+          De AI-agent beslist autonoom welke tools worden aangeroepen op basis van het verzoek en de domeincontext.
+          Tool-calls zijn traceerbaar (audit log). Het zelfde agent-patroon werkt voor dijkbewaking (hoogwater),
+          laagwaterbeheer en klimaatdoorrekeningen — alleen de context-prompt verschilt.
+        </div>
+      </div>
+
+    </div><!-- /arch-two-col -->
+  </div><!-- /roadmap-section -->
+
+  <!-- ── Afhankelijkheden huidig vs nieuw ──────────────────────────────── -->
+  <div class="roadmap-section">
+    <div class="roadmap-section-title">Afhankelijkheden: huidig vs. nieuw platform</div>
+    <table class="arch-table">
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Huidig (Waterlab)</th>
+          <th>Nieuw platform</th>
+          <th>Winst</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Model-uitvoer</td>
+          <td>Per-event Julia scripts, hardcoded paden, handmatig starten</td>
+          <td>Model Execution API: <code>POST /models/wflow-sbm/run</code> → run-id</td>
+          <td><span class="arch-tag" style="background:#071408; color:#66bb6a; border:1px solid #1b5e20">containerized</span> <span class="arch-tag" style="background:#071408; color:#66bb6a; border:1px solid #1b5e20">versioned</span></td>
+        </tr>
+        <tr>
+          <td>GUI / frontend</td>
+          <td>FastAPI serveert statische HTML + JS; tightly coupled met server</td>
+          <td>API retourneert JSON/GeoJSON; elke consumer is verwisselbaar</td>
+          <td><span class="arch-tag" style="background:#040e1e; color:#4fc3f7; border:1px solid #01579b">ontkoppeld</span> <span class="arch-tag" style="background:#040e1e; color:#4fc3f7; border:1px solid #01579b">headless</span></td>
+        </tr>
+        <tr>
+          <td>AI / LLM</td>
+          <td>Directe Anthropic API-call in server.py; lokale Qwen los beheerd</td>
+          <td>AI Orchestration Service: één interface, pluggable backends (cloud/lokaal)</td>
+          <td><span class="arch-tag" style="background:#0e0618; color:#ce93d8; border:1px solid #4a148c">unified</span> <span class="arch-tag" style="background:#0e0618; color:#ce93d8; border:1px solid #4a148c">switchable</span></td>
+        </tr>
+        <tr>
+          <td>Data-ingestie</td>
+          <td>Per-script: download_forcing.py, forecast.py, RWS-fetch los</td>
+          <td>Data Hub connectors: gestandaardiseerde adapter per bron, gecached</td>
+          <td><span class="arch-tag" style="background:#040e1e; color:#4fc3f7; border:1px solid #01579b">normalized</span> <span class="arch-tag" style="background:#040e1e; color:#4fc3f7; border:1px solid #01579b">cacheable</span></td>
+        </tr>
+        <tr>
+          <td>Configuratie</td>
+          <td>Hardcoded paden in TOML/YAML, per-event handmatig aanpassen</td>
+          <td>Domain config YAML: één bestand volledig beschrijft een domein</td>
+          <td><span class="arch-tag" style="background:#071408; color:#66bb6a; border:1px solid #1b5e20">portable</span> <span class="arch-tag" style="background:#071408; color:#66bb6a; border:1px solid #1b5e20">reproduceerbaar</span></td>
+        </tr>
+        <tr>
+          <td>Observability</td>
+          <td>Print-statements, handmatig logbestanden bekijken</td>
+          <td>Structured logs, distributed tracing (OpenTelemetry), audit trail</td>
+          <td><span class="arch-tag" style="background:#1a0604; color:#ff8a65; border:1px solid #bf360c">traceable</span> <span class="arch-tag" style="background:#1a0604; color:#ff8a65; border:1px solid #bf360c">alerting</span></td>
+        </tr>
+        <tr>
+          <td>Nieuw domein toevoegen</td>
+          <td>Fork + aanpassen van model-scripts, nieuwe export-scripts, nieuwe endpoints</td>
+          <td>Schrijf <code>domain.yaml</code>, registreer model-adapter → klaar</td>
+          <td><span class="arch-tag" style="background:#071408; color:#66bb6a; border:1px solid #1b5e20">0 code-wijziging</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Migratiestappen ───────────────────────────────────────────────── -->
+  <div class="roadmap-section">
+    <div class="roadmap-section-title">Migratiestappen — van Waterlab naar platform</div>
+    <div class="arch-steps">
+      <div class="arch-step">
+        <div class="arch-step-num">1</div>
+        <div class="arch-step-body">
+          <div class="arch-step-title">API-laag over bestaande modellen</div>
+          <div class="arch-step-desc">
+            Wrap de huidige Julia-scripts achter een Model Execution REST API (FastAPI of gRPC).
+            <code>POST /models/wflow-sbm-ijssel/run</code> retourneert een <code>run_id</code>;
+            polling of webhook bij gereed. Bestaande scripts ongewijzigd — API is een thin adapter.
+            Resultaat: model-uitvoer is nu aanroepbaar door elke service of agent.
+          </div>
+        </div>
+      </div>
+      <div class="arch-step">
+        <div class="arch-step-num">2</div>
+        <div class="arch-step-body">
+          <div class="arch-step-title">Data Hub — gestandaardiseerde connectors</div>
+          <div class="arch-step-desc">
+            Verplaats download_forcing.py, forecast.py en RWS Waterinfo-fetch naar een Data Hub
+            met één interface: <code>GET /data/{source}/{variable}/{bbox}/{period}</code>.
+            Cache-laag (15 min) vervangt de huidige ad-hoc caching in server.py.
+            Open-Meteo, ERA5T, RWS Waterinfo en FEWS Web Services krijgen elk een adapter.
+          </div>
+        </div>
+      </div>
+      <div class="arch-step">
+        <div class="arch-step-num">3</div>
+        <div class="arch-step-body">
+          <div class="arch-step-title">AI Orchestrator als centrale controller</div>
+          <div class="arch-step-desc">
+            Vervang de directe model-calls in server.py door een AI Orchestration Service.
+            De agent gebruikt tool use (of MCP) om Data Hub en Model Runner aan te roepen,
+            resultaten te interpreteren en een gestructureerde respons te produceren.
+            Huidige Claude- en Qwen-integraties worden als backend geregistreerd in de tool registry.
+          </div>
+        </div>
+      </div>
+      <div class="arch-step">
+        <div class="arch-step-num">4</div>
+        <div class="arch-step-body">
+          <div class="arch-step-title">Domain config + Event Bus</div>
+          <div class="arch-step-desc">
+            Extraheer IJssel-specifieke kennis (thresholds, schematisatie-paden, LLM system prompt,
+            stakeholder-mapping) naar een <code>ijssel.yaml</code>.
+            Voeg een Event Bus toe die observatie-triggers en drempeloverschrijdingen publiceert;
+            de AI-agent subscribet hierop. Nieuw domein = nieuw YAML-bestand.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /arch-panel -->
+
 <!-- ── roadmap panel ─────────────────────────────────────────────────────── -->
 <div id="roadmap-panel">
 
@@ -2151,6 +2620,6 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=26"></script>
+<script src="/static/app.js?v=27"></script>
 </body>
 </html>

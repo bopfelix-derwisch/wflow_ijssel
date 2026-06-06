@@ -124,6 +124,8 @@ function switchYear(year) {
     if (mmPnl) mmPnl.classList.remove("visible");
     const roadmapPnl = document.getElementById("roadmap-panel");
     if (roadmapPnl) roadmapPnl.classList.remove("visible");
+    const archPnl = document.getElementById("arch-panel");
+    if (archPnl) archPnl.classList.remove("visible");
   }
 
   if (year === "intro") {
@@ -177,6 +179,16 @@ function switchYear(year) {
     document.getElementById("alert-badge").style.background = "#1565c0";
     document.body.className = "";
     loadMultimodel();
+    return;
+  }
+
+  if (year === "arch") {
+    hideAll();
+    document.getElementById("arch-panel").classList.add("visible");
+    banner.textContent = "Platform Visie  ·  API-first · AI-orchestrated · Domain-agnostic  ·  van Waterlab naar platform";
+    document.getElementById("alert-badge").textContent = "🏗 Platform";
+    document.getElementById("alert-badge").style.background = "#004d40";
+    document.body.className = "";
     return;
   }
 
