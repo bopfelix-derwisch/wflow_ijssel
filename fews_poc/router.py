@@ -21,7 +21,7 @@ _FILTERS = [
 
 _LOCATIONS = [
     PiLocation(locationId="KAMPEN",      shortName="Kampen",      lon=5.921, lat=52.555),
-    PiLocation(locationId="WESTERVOORT", shortName="Westervoort", lon=6.003, lat=51.971),
+    PiLocation(locationId="WESTERVOORT", shortName="Westervoort", lon=5.969, lat=51.964),
     PiLocation(locationId="LOBITH",      shortName="Lobith",      lon=6.115, lat=51.866),
 ]
 
@@ -31,11 +31,7 @@ _PARAMETERS = [
     PiParameter(id="Q.sim",    name="Debiet simulatie wflow",  unit="m3/s",  displayUnit="m³/s"),
 ]
 
-_UNITS: dict = {
-    "H.meting": "m NAP",
-    "Q.meting": "m3/s",
-    "Q.sim":    "m3/s",
-}
+_UNITS: dict[str, str] = {p.id: p.unit for p in _PARAMETERS}
 
 
 @router.get("/filters", response_model=PiFiltersResponse)
