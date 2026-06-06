@@ -2,8 +2,10 @@
 import json
 import os
 import re
+import time
 from pathlib import Path
 
+import requests as _requests
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -110,6 +112,69 @@ def get_forecast():
         return JSONResponse(build_forecast())
     except Exception as e:
         raise HTTPException(503, f"Voorspelling niet beschikbaar: {e}")
+
+
+_LLM_URL   = "http://127.0.0.1:8080/v1/chat/completions"
+_LLM_MODEL = "qwen2.5-32b-instruct-q4_k_m-00001-of-00005.gguf"
+_intv_cache: dict = {}
+_INTV_TTL = 900  # 15 min — zelfde als forecast cache
+
+
+def _build_intervention(forecast: dict) -> str:
+    kpis  = forecast["kpis"]
+    alert = forecast["alert"]
+    alert_nl = {"normaal": "Normaal", "waakzaam": "Waakzaam",
+                "verhoogd": "Verhoogd", "hoog": "HOOG"}
+    prompt = (
+        f"Actuele IJssel-situatie ({forecast['generated_at']}):\n"
+        f"- Waakzaamheidsniveau: {alert_nl.get(alert, alert)}\n"
+        f"- Huidig debiet Kampen: {kpis['current_q_kampen']} m³/s\n"
+        f"- Verwacht piekdebiet (14 d): {kpis['peak_forecast_q']} m³/s"
+        f" op {kpis['peak_forecast_date']}\n"
+        f"- Dagen boven 1500 m³/s drempel: {kpis['days_above_threshold']}\n"
+        f"- Neerslag komende 14 dagen: {kpis['total_precip_14d']} mm\n\n"
+        "Stel als waterbeheerder een concrete interventie voor die past bij dit niveau. "
+        "Beschrijf acties in chronologische volgorde."
+    )
+    payload = {
+        "model": _LLM_MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "Je bent een waterbeheerder bij Rijkswaterstaat voor het IJssel-district. "
+                    "Geef een beknopte interventie-aanbeveling in het Nederlands op basis van "
+                    "de actuele 14-daagse verwachting. Beschrijf concrete acties in chronologische "
+                    "volgorde. Maximaal 180 woorden. Schrijf doorlopende tekst."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "max_tokens": 350,
+        "temperature": 0.4,
+    }
+    resp = _requests.post(_LLM_URL, json=payload, timeout=90)
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"].strip()
+
+
+@app.get("/api/forecast/intervention")
+def get_forecast_intervention():
+    cached_ts = _intv_cache.get("ts")
+    if cached_ts and time.monotonic() - cached_ts < _INTV_TTL:
+        return JSONResponse(_intv_cache["data"])
+    try:
+        forecast = build_forecast()
+        text     = _build_intervention(forecast)
+        result   = {"available": True, "intervention": text,
+                    "alert": forecast["alert"],
+                    "generated_at": forecast["generated_at"]}
+        _intv_cache["ts"]   = time.monotonic()
+        _intv_cache["data"] = result
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"available": False, "intervention": "",
+                             "error": str(e)})
 
 
 @app.get("/api/ensemble")

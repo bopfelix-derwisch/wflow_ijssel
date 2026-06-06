@@ -486,6 +486,8 @@ async function loadForecast() {
     badge.textContent = `🌊 ${al.text}`;
     badge.style.background = al.color;
 
+    loadForecastIntervention();
+
     const src = document.getElementById("forecast-source");
     const src_str = data.data_available
       ? `RWS Waterinfo · Open-Meteo · gegenereerd ${data.generated_at}`
@@ -698,6 +700,20 @@ async function loadInfoKpis() {
         real.days_above_threshold;
     }
   } catch (_) {}
+}
+
+async function loadForecastIntervention() {
+  const el = document.getElementById("forecast-llm-text");
+  try {
+    const data = await fetch(`${API}/api/forecast/intervention`).then(r => r.json());
+    if (data.available && data.intervention) {
+      el.innerHTML = data.intervention.replace(/\n/g, "<br>");
+    } else {
+      el.innerHTML = "<span class=\"llm-loading\">Geen AI-interventie beschikbaar</span>";
+    }
+  } catch (_) {
+    el.innerHTML = "<span class=\"llm-loading\">AI-interventie niet beschikbaar</span>";
+  }
 }
 
 // ── ensemble tab ──────────────────────────────────────────────────────────────
