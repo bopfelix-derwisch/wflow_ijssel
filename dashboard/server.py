@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from dashboard.forecast import build_forecast
+from dashboard.grondwater import build_grondwater, build_interpretation
 from fews_poc.router import router as _fews_router
 from fews_poc.data_adapter import get_wflow_timeseries, get_waterinfo_timeseries
 
@@ -350,6 +351,23 @@ def get_multimodel():
     except Exception:
         return JSONResponse({"available": False})
     return JSONResponse({"available": True, **stats})
+
+
+# WL-BRO-1 / Proef 9 — grondwater↔IJssel koppeling (BRO GLD + lag-correlatie + Qwen)
+@app.get("/api/grondwater")
+def get_grondwater(event: str = "zomer2018"):
+    try:
+        return JSONResponse(build_grondwater(event))
+    except Exception as e:
+        return JSONResponse({"available": False, "error": str(e)})
+
+
+@app.get("/api/grondwater/interpretation")
+def get_grondwater_interpretation(event: str = "zomer2018"):
+    try:
+        return JSONResponse(build_interpretation(event))
+    except Exception as e:
+        return JSONResponse({"available": False, "error": str(e)})
 
 
 @app.get("/api/fews/data")

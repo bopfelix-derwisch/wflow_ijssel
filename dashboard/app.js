@@ -118,7 +118,7 @@ function switchYear(year) {
     [infoPnl, uitlegPnl, forecastPnl, ensemblePnl, introPnl].forEach(p => {
       if (p) p.classList.remove("visible");
     });
-    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel"].forEach(id => {
+    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel","grondwater-panel"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove("visible");
     });
@@ -186,6 +186,17 @@ function switchYear(year) {
     document.getElementById("alert-badge").style.background = "#004d40";
     document.body.className = "";
     loadFewsChart();
+    return;
+  }
+
+  if (year === "grondwater") {
+    hideAll();
+    document.getElementById("grondwater-panel").classList.add("visible");
+    banner.textContent = "Grondwater ↔ IJssel · BRO GLD-putten Veluwe-oostflank · lag-correlatie · Qwen2.5-32B";
+    document.getElementById("alert-badge").textContent = "💧 Grondwater";
+    document.getElementById("alert-badge").style.background = "#00838f";
+    document.body.className = "";
+    loadGrondwater();
     return;
   }
 
@@ -760,6 +771,89 @@ async function loadForecastIntervention() {
 }
 
 // ── ensemble tab ──────────────────────────────────────────────────────────────
+
+/* ── Proef 9 · Grondwater ↔ IJssel (WL-BRO-1) ─────────────────────────────── */
+async function loadGrondwater() {
+  const unavail = document.getElementById("grondwater-unavailable");
+  const content = document.getElementById("grondwater-content");
+  const llmEl   = document.getElementById("gw-llm-text");
+  try {
+    llmEl.innerHTML = "<span class=\"llm-loading\">AI-duiding laden (Qwen2.5-32B lokaal, ~1 min)…</span>";
+    const data = await fetch(`${API}/api/grondwater`).then(r => {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    });
+    if (!data.available) {
+      unavail.style.display = ""; content.style.display = "none"; return;
+    }
+    unavail.style.display = "none"; content.style.display = "";
+    renderGrondwaterKpis(data);
+    renderGrondwaterChart(data);
+    renderGrondwaterTable(data);
+    loadGrondwaterInterpretation();  // trage Qwen-call apart, grafiek staat al
+  } catch (err) {
+    unavail.style.display = ""; content.style.display = "none";
+    console.warn("grondwater load failed:", err);
+  }
+}
+
+async function loadGrondwaterInterpretation() {
+  const llmEl = document.getElementById("gw-llm-text");
+  try {
+    const d = await fetch(`${API}/api/grondwater/interpretation`).then(r => r.json());
+    if (d.interpretation) {
+      llmEl.innerHTML = d.interpretation.replace(/\n/g, "<br>");
+    } else {
+      llmEl.innerHTML = "<span class=\"llm-loading\">Geen AI-duiding beschikbaar (lokale LLM offline)</span>";
+    }
+  } catch (err) {
+    llmEl.innerHTML = "<span class=\"llm-loading\">AI-duiding niet beschikbaar</span>";
+    console.warn("grondwater interpretation failed:", err);
+  }
+}
+
+function renderGrondwaterKpis(d) {
+  const rs   = d.wells.map(w => w.r).filter(x => x != null);
+  const lags = d.wells.map(w => w.lag_days).filter(x => x != null);
+  const meanR   = rs.length   ? rs.reduce((a, b) => a + b, 0) / rs.length : null;
+  const meanLag = lags.length ? Math.round(lags.reduce((a, b) => a + b, 0) / lags.length) : null;
+  const h = d.river.h.filter(x => x != null);
+  document.getElementById("gw-kpi-window").textContent    = d.window.start + " – " + d.window.end;
+  document.getElementById("gw-kpi-riverdrop").textContent = h.length ? (h[0].toFixed(2) + " → " + h[h.length - 1].toFixed(2) + " m") : "—";
+  document.getElementById("gw-kpi-r").textContent         = meanR   != null ? meanR.toFixed(2) : "—";
+  document.getElementById("gw-kpi-lag").textContent       = meanLag != null ? (meanLag + " d") : "—";
+}
+
+function renderGrondwaterChart(d) {
+  const colors = ["#4dd0e1", "#4db6ac", "#81c784", "#ffb74d", "#ba68c8"];
+  const traces = d.wells.map((w, i) => ({
+    x: w.series.dates, y: w.series.values, type: "scatter", mode: "lines",
+    name: w.bro_id.replace("GLD0000000", "GLD…") + " · lag " + w.lag_days + "d (r " + w.r + ")",
+    line: { color: colors[i % colors.length], width: 1.8 }, yaxis: "y",
+  }));
+  traces.push({
+    x: d.river.dates, y: d.river.h, type: "scatter", mode: "lines",
+    name: "IJssel-peil Kampen", line: { color: "#ef5350", width: 2.5, dash: "dash" }, yaxis: "y2",
+  });
+  Plotly.react("grondwater-chart", traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a",
+    font: { color: "#e0e0e0", size: 11 }, margin: { t: 8, b: 40, l: 58, r: 58 },
+    legend: { orientation: "h", y: -0.3, font: { size: 9 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: { title: "Grondwaterstand (m)", gridcolor: "#1a3a5c",
+             titlefont: { color: "#4dd0e1" }, tickfont: { color: "#4dd0e1" } },
+    yaxis2: { title: "IJssel-peil (m+NAP)", overlaying: "y", side: "right", showgrid: false,
+              titlefont: { color: "#ef5350" }, tickfont: { color: "#ef5350" } },
+  }, { responsive: true, displayModeBar: false });
+}
+
+function renderGrondwaterTable(d) {
+  document.getElementById("gw-table-body").innerHTML = d.wells.map(w =>
+    `<tr><td><code>${w.bro_id}</code></td><td>${w.lat}, ${w.lon}</td>` +
+    `<td>${w.gw_first} → ${w.gw_last} m</td>` +
+    `<td>${w.lag_days != null ? w.lag_days + " d" : "—"}</td>` +
+    `<td>${w.r != null ? w.r : "—"}</td></tr>`).join("");
+}
 
 async function loadEnsemble() {
   const unavail  = document.getElementById("ensemble-unavailable");

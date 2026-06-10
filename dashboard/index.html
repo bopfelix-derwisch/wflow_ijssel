@@ -347,6 +347,8 @@
 
     /* ── ensemble panel ── */
     #ensemble-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #grondwater-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #grondwater-panel.visible { display: block; }
     #ensemble-panel.visible { display: block; }
     #ensemble-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
     #ensemble-chart { width: 100%; height: 220px; margin: 0 0 16px; }
@@ -632,6 +634,7 @@
     <button class="year-tab" data-year="2021">Jul 2021</button>
     <button class="year-tab" data-year="arch">Platform Visie</button>
     <button class="year-tab" data-year="fews">FEWS</button>
+    <button class="year-tab" data-year="grondwater">Grondwater</button>
     <button class="year-tab" data-year="roadmap">Roadmap</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
   </div>
@@ -1472,7 +1475,7 @@
         <h3>BRO grondwater-koppeling — IJssel ↔ Veluwe</h3>
         <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 9 · WL-BRO-1 · BRO GLD + PDOK OGC · grondwater vs rivierpeil + AI</div>
       </div>
-      <span class="poc-tag" style="background:#1a1400; color:#ffca28; border:1px solid #ff8f00;">📋 gepland</span>
+      <span class="poc-tag" style="background:#00251a; color:#4dd0e1; border:1px solid #00838f;">✓ live</span>
     </div>
     <div class="poc-body">
       <div class="poc-col">
@@ -1480,6 +1483,7 @@
         <p>Koppelt <strong>echte gemeten grondwaterstanden</strong> (BRO) langs de oostflank van de Veluwe aan het IJssel-peil bij Kampen. Toetst de hypothese <em>kwelzone-omkering bij laagwater</em> data-gedreven op het droogte-event <strong>zomer 2018</strong> — zonder eerst een MODFLOW/iMOD-model te bouwen.</p>
         <p>De analyse berekent de <strong>lag-correlatie</strong> (rivierpeil → grondwaterrespons, dagen–weken vertraging) en laat <strong>Qwen2.5-32B lokaal</strong> een hydrologische duiding genereren.</p>
         <p>Maakt de bestaande conceptuele backlog-POC "iMOD · Veluwe grondwater" voor het eerst uitvoerbaar met data.</p>
+        <button class="poc-goto" style="color:#4dd0e1; border-color:#00838f;" onclick="switchYear('grondwater')">Bekijk POC →</button>
       </div>
       <div class="poc-col">
         <div class="poc-col-label" style="color:#4dd0e1;">Technisch</div>
@@ -1641,6 +1645,47 @@
   </div><!-- /#ensemble-content -->
 
 </div><!-- /#ensemble-panel -->
+
+<div id="grondwater-panel">
+
+  <div id="grondwater-unavailable" style="display:none; padding:2rem; text-align:center; color:#888;">
+    <span style="font-size:2rem">💧</span>
+    <div style="font-weight:700; margin-top:8px;">Grondwater-koppeling niet beschikbaar</div>
+    <div style="margin-top:8px; font-size:13px;">De BRO-bron of de IJssel-reeks (zomer 2018) kon niet geladen worden.</div>
+  </div>
+
+  <div id="grondwater-content" style="display:none;">
+
+    <div class="info-section" style="margin-bottom:8px">
+      <h2>Proef 9 · Grondwater ↔ IJssel — droogte zomer 2018</h2>
+      <p style="color:#90a4ae; font-size:13px; margin:6px 0 0;">Gemeten grondwaterstanden (BRO Grondwaterstandendossier, GLD) langs de Veluwe-oostflank vs het IJssel-peil bij Kampen. De lag-correlatie toont hoe het grondwater de rivier volgt met dagen–weken vertraging — de kern van de kwelzone-hypothese, nu data-gedreven getoetst.</p>
+    </div>
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin:12px 0;">
+      <div class="info-card"><div class="ic-label">Analyse-venster</div><div class="ic-value" id="gw-kpi-window" style="color:#4dd0e1; font-size:14px">—</div><div class="ic-sub">droogte-event</div></div>
+      <div class="info-card"><div class="ic-label">IJssel-peil Kampen</div><div class="ic-value" id="gw-kpi-riverdrop" style="color:#ef5350; font-size:14px">—</div><div class="ic-sub">daling over venster</div></div>
+      <div class="info-card"><div class="ic-label">Gem. correlatie r</div><div class="ic-value" id="gw-kpi-r" style="color:#4db6ac">—</div><div class="ic-sub">rivier → grondwater</div></div>
+      <div class="info-card"><div class="ic-label">Gem. lag</div><div class="ic-value" id="gw-kpi-lag" style="color:#ffb74d">—</div><div class="ic-sub">responsvertraging</div></div>
+    </div>
+
+    <div class="info-section" style="margin-bottom:8px"><h2>Overlay — grondwaterstand vs IJssel-peil</h2></div>
+    <div id="grondwater-chart" style="width:100%; height:320px; margin:0 0 16px;"></div>
+
+    <div class="llm-block">
+      <div class="llm-header">🤖 AI-duiding (Qwen2.5-32B · lokaal)</div>
+      <div class="llm-text" id="gw-llm-text"><span class="llm-loading">Laden…</span></div>
+    </div>
+
+    <div class="info-section" style="margin:16px 0 8px"><h2>Monitoringputten (BRO GLD)</h2></div>
+    <table class="ensemble-scenario-table">
+      <thead><tr><th>BRO-ID</th><th>Locatie (lat, lon)</th><th>Grondwater begin → eind</th><th>Lag</th><th>r</th></tr></thead>
+      <tbody id="gw-table-body"></tbody>
+    </table>
+
+    <p style="color:#607d8b; font-size:11px; margin-top:12px;">Bron: BRO GLD via PDOK OGC API (gm_gld, bbox) + broservices <code>seriesAsCsv</code> · IJssel-reeks: wflow SBM 2018 · server-side, gecached. Data-gedreven toets, geen fysisch kwelmodel.</p>
+
+  </div>
+</div><!-- /#grondwater-panel -->
 
 <div id="intro-panel" class="visible">
 
@@ -3103,7 +3148,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=32"></script>
+<script src="/static/app.js?v=34"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {
@@ -3130,7 +3175,7 @@
 
   var panels = [
     'uitleg-panel','forecast-panel','ensemble-panel','multimodel-panel',
-    'fews-panel','pocs-panel','arch-panel','roadmap-panel','info-panel'
+    'fews-panel','pocs-panel','grondwater-panel','arch-panel','roadmap-panel','info-panel'
   ];
   document.addEventListener('DOMContentLoaded', function() {
     panels.forEach(function(id) {
