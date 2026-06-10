@@ -16,8 +16,8 @@ from __future__ import annotations
 import csv
 import io
 import logging
+import math
 import time
-from datetime import datetime
 
 import requests
 
@@ -138,3 +138,37 @@ def fetch_series(bro_id: str, start: str | None = None, end: str | None = None) 
         lo, hi = start or "0000", end or "9999"
         rows = [e for e in rows if lo <= e["date"] <= hi]
     return rows
+
+
+# ── WL-GQL-2: ruimtelijke query (putten nabij een station) ───────────────────
+
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    R = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlam = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlam / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+def wells_near(lat: float, lon: float, radius_km: float = 15.0, limit: int = 5,
+               covers_start: str = "2018-06-01", covers_end: str = "2018-08-31") -> list[dict]:
+    """BRO GLD-putten binnen radius_km van (lat, lon) met data die [covers_start,
+    covers_end] dekken. Bbox-query → haversine-afstand → dedup per locatie →
+    gesorteerd op afstand. Elke put: {bro_id, lat, lon, n_obs, first, last, distance_km}."""
+    dlat = radius_km / 111.0
+    dlon = radius_km / (111.0 * max(math.cos(math.radians(lat)), 0.01))
+    bbox = (round(lon - dlon, 4), round(lat - dlat, 4),
+            round(lon + dlon, 4), round(lat + dlat, 4))
+    seen: dict = {}
+    for w in discover_wells(bbox=bbox, covers_start=covers_start, covers_end=covers_end):
+        if w["lat"] is None or w["lon"] is None:
+            continue
+        d = _haversine_km(lat, lon, w["lat"], w["lon"])
+        if d > radius_km:
+            continue
+        loc = (w["lat"], w["lon"])
+        cand = {**w, "distance_km": round(d, 1)}
+        if loc not in seen or cand["n_obs"] > seen[loc]["n_obs"]:
+            seen[loc] = cand
+    return sorted(seen.values(), key=lambda w: w["distance_km"])[:limit]

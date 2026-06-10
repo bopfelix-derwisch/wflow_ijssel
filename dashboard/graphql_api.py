@@ -8,6 +8,9 @@ bestaande bronfuncties — geen tweede datapad, geen gedupliceerde datalogica:
   - simulated  → fews_poc.data_adapter.get_wflow_timeseries()      (wflow output op schijf)
   - intervention → dashboard.server._build_intervention()  (lazy import i.v.m. cykel)
 
+WL-GQL-2: station → nearbyGroundwaterWells koppelt de façade aan de BRO-connector
+(dashboard.bro_gld) — de merge-node tussen spoor A (GraphQL) en spoor B (grondwater).
+
 Mount: server.py doet  app.include_router(graphql_app, prefix="/graphql").
 GraphiQL staat aan (PoC, LAN/Tailscale only — geen auth in deze fase).
 """
@@ -18,6 +21,7 @@ from typing import List, Optional
 
 import strawberry
 
+from dashboard import bro_gld
 from dashboard.forecast import build_forecast
 from fews_poc.data_adapter import get_wflow_timeseries, get_waterinfo_timeseries
 
@@ -25,6 +29,7 @@ from fews_poc.data_adapter import get_wflow_timeseries, get_waterinfo_timeseries
 from fews_poc.router import _LOCATIONS as _PI_LOCATIONS
 
 _STATION_NAMES = {loc.locationId: loc.shortName for loc in _PI_LOCATIONS}
+_STATION_LOCS  = {loc.locationId: (loc.lat, loc.lon) for loc in _PI_LOCATIONS}
 
 # Regimebanden — spiegelt dashboard.server._classify_regime() (m+NAP, Kampen).
 _REGIME_BANDS = [
@@ -130,6 +135,30 @@ def _events_to_gql(raw: List[dict], period: Optional[str]) -> List[Event]:
     return out
 
 
+# ── Grondwater (WL-GQL-2 — koppelt de platform-laag aan de BRO-connector) ────
+
+@strawberry.type
+class GroundwaterWell:
+    bro_id: str = strawberry.field(name="broId")
+    lat: float
+    lon: float
+    distance_km: float = strawberry.field(name="distanceKm")
+    n_obs: int = strawberry.field(name="nObs")
+    first: str
+    last: str
+
+    @strawberry.field
+    def series(self, period: Optional[str] = None) -> Measured:
+        """Daggemiddelde grondwaterreeks (BRO GLD), optioneel geclipt op period
+        ('start/end'). Wordt alleen opgehaald als dit veld wordt opgevraagd."""
+        start = end = None
+        if period and "/" in period:
+            s, _, e = period.partition("/")
+            start, end = s.strip(), e.strip()
+        raw = bro_gld.fetch_series(self.bro_id, start, end)
+        return Measured(events=_events_to_gql(raw, None))
+
+
 # ── Station type ─────────────────────────────────────────────────────────────
 
 @strawberry.type
@@ -206,6 +235,31 @@ class Station:
             intervention = None  # graceful fallback bij LLM-/keyuitval
 
         return Forecast(band=band, intervention=intervention)
+
+    @strawberry.field
+    def nearby_groundwater_wells(
+        self,
+        radius_km: float = 15.0,
+        limit: int = 5,
+        covers_from: str = "2018-06-01",
+        covers_to: str = "2018-08-31",
+    ) -> List[GroundwaterWell]:
+        """BRO GLD-grondwaterputten nabij dit station — de merge-node die de
+        GraphQL-façade (WL-GQL-1) aan de BRO-connector (WL-BRO-1) koppelt.
+        Metadata is goedkoop; de reeks per put volgt alleen bij `series`."""
+        loc = _STATION_LOCS.get(self.id.upper())
+        if not loc or loc[0] is None or loc[1] is None:
+            return []
+        lat, lon = loc
+        wells = bro_gld.wells_near(lat, lon, radius_km, limit, covers_from, covers_to)
+        return [
+            GroundwaterWell(
+                bro_id=w["bro_id"], lat=w["lat"], lon=w["lon"],
+                distance_km=w["distance_km"], n_obs=w["n_obs"],
+                first=w["first"], last=w["last"],
+            )
+            for w in wells
+        ]
 
 
 # ── Query root ───────────────────────────────────────────────────────────────
