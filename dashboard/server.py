@@ -23,18 +23,24 @@ if _env_file.exists() and not os.environ.get("ANTHROPIC_API_KEY"):
 
 ROOT       = Path(__file__).parent.parent
 STATIC_DIR = Path(__file__).parent
+# wflow-uitvoer staat onder wflow_ijssel/data/ (de model-werkmap), niet onder <root>/data/.
+DATA_ROOT  = ROOT / "wflow_ijssel" / "data"
 
 OUTPUT_DIRS = {
-    "1995":      ROOT / "data" / "output",
-    "2018":      ROOT / "data" / "output_2018",
-    "2021":      ROOT / "data" / "output_2021_real",   # echte gemeten inflow
-    "2021synth": ROOT / "data" / "output_2021",        # synthetische inflow (vergelijking)
+    "1995":      DATA_ROOT / "output",
+    "2018":      DATA_ROOT / "output_2018",
+    "2021":      DATA_ROOT / "output_2021_real",   # echte gemeten inflow
+    "2021synth": DATA_ROOT / "output_2021",        # synthetische inflow (vergelijking)
 }
 
 ENSEMBLE_DIR = Path("/home/bob/waterlab/ensemble_data/outputs")
 
 app = FastAPI(title="Waterlab API")
 app.include_router(_fews_router)
+
+# WL-GQL-1: read-only GraphQL-façade (resolvers delegeren naar bestaande bronfuncties)
+from dashboard.graphql_api import graphql_app  # noqa: E402
+app.include_router(graphql_app, prefix="/graphql")
 
 if os.path.isdir(str(STATIC_DIR)):
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -79,8 +85,8 @@ def get_measured(year: str):
     # gemeten data zit altijd in de synth-map (ongeacht inflow-variant)
     base = year.replace("synth", "")
     candidates = [
-        OUTPUT_DIRS.get(f"{base}synth", ROOT / "data" / f"output_{base}") / "measured_2021.json",
-        OUTPUT_DIRS.get(base, ROOT / "data" / f"output_{base}") / "measured_2021.json",
+        OUTPUT_DIRS.get(f"{base}synth", DATA_ROOT / f"output_{base}") / "measured_2021.json",
+        OUTPUT_DIRS.get(base, DATA_ROOT / f"output_{base}") / "measured_2021.json",
     ]
     for path in candidates:
         if path.exists():

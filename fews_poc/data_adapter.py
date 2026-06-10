@@ -4,11 +4,13 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
+# wflow-uitvoer staat onder wflow_ijssel/data/ (de model-werkmap), niet onder <root>/data/.
+DATA_ROOT = ROOT / "wflow_ijssel" / "data"
 
 PERIOD_DIRS: dict[str, Path] = {
-    "1995": ROOT / "data" / "output",
-    "2018": ROOT / "data" / "output_2018",
-    "2021": ROOT / "data" / "output_2021_real",
+    "1995": DATA_ROOT / "output",
+    "2018": DATA_ROOT / "output_2018",
+    "2021": DATA_ROOT / "output_2021_real",
 }
 
 _STATION_FILES: dict[str, str] = {
