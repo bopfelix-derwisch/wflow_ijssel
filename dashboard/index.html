@@ -1015,10 +1015,11 @@
     Bron: <strong>RWS Waterinfo</strong> (meting) · <strong>Open-Meteo</strong> (neerslag) · cache 15 min.
   </div>
   <div class="llm-block" style="margin: 0 16px 16px">
-    <div class="llm-header">🤖 AI-interventie · Claude (Anthropic) · betrouwbare bron</div>
+    <div class="llm-header">🤖 AI-interventie · integraal · Claude (Anthropic) + BRO grondwater-koppeling</div>
     <div class="llm-text" id="forecast-llm-text">
       <span class="llm-loading">Interventie genereren…</span>
     </div>
+    <div id="forecast-gw-context" style="margin-top:10px; padding-top:8px; border-top:1px solid #1a3a5c; font-size:11px; color:#607d8b;"></div>
   </div>
 </div>
 
@@ -1170,7 +1171,7 @@
       <span class="poc-num" style="color:#4db6ac;">1</span>
       <div>
         <h3>14-daagse verwachting &amp; AI-interventie</h3>
-        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 1 · Verwachting + Claude expert-agent</div>
+        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 1 · Verwachting + Claude expert-agent · integraal met grondwater</div>
       </div>
       <span class="poc-tag" style="background:#00251a; color:#4db6ac; border:1px solid #00695c;">✓ live</span>
     </div>
@@ -1180,13 +1181,15 @@
         <p>Het dashboard toont een <strong>14-daagse debietverwachting</strong> bij Kampen op basis van de actuele RWS Waterinfo-meting bij Lobith en de ECMWF-verwachting.</p>
         <p>Een Claude-agent (Anthropic API) legt de verwachting uit als <strong>expert-hydroloog</strong>: niet "het debiet wordt X m³/s" maar "het peil nadert de waakdrempel — RWS en HHNK starten dan doorgaans Y protocol".</p>
         <p>De meerwaarde: domeinkennis over stakeholders, peilregimes en de Pannerdense Kop-verdeling zit in de systeemprompt, niet in de modeloutput.</p>
+        <p><strong>Integraal (nieuw):</strong> de interventie is cross-domein. Via de gekalibreerde IJssel→Veluwe-grondwaterkoppeling (Proef 9) vertaalt de agent de live peilverwachting óók naar drinkwaterwinning (Vitens), landbouw/beregening en natuur/kweldruk — niet alleen scheepvaart en peil.</p>
         <button class="poc-goto" style="color:#4db6ac; border-color:#00695c;" onclick="switchYear('forecast')">Bekijk verwachting →</button>
       </div>
       <div class="poc-col">
         <div class="poc-col-label" style="color:#4db6ac;">Technisch</div>
         <p><strong>Model:</strong> lineaire regressie op ERA5-historiek (recessiecoëfficiënt + impulsrespons). Geen fysisch gekalibreerd model — bewust simpel om de AI-interventie centraal te stellen.</p>
         <p><strong>Data:</strong> RWS Waterinfo live via REST (debiet Lobith), ECMWF open API (14-daagse neerslag), ERA5-Land (trainingsdata).</p>
-        <p><strong>AI:</strong> <code>claude-sonnet</code> via Anthropic API. Systeemprompt bevat gebiedsschematisatie: Pannerdense Kop-verdeling (~13% IJssel), peilregimes (waak/alarm), stakeholders (RWS-dist. Oost-Nederland, HHNK, Vitens Oost).</p>
+        <p><strong>AI:</strong> <code>claude-haiku-4-5</code> via Anthropic API. Systeemprompt bevat gebiedsschematisatie: Pannerdense Kop-verdeling (~13% IJssel), peilregimes (waak/alarm), stakeholders (RWS-dist. Oost-Nederland, HHNK, Vitens Oost).</p>
+        <p><strong>Grondwater-context:</strong> de prompt krijgt live de recente Veluwe-grondwaterstand (BRO GLD) + de gekalibreerde koppeling (lag ~18 d, r≈0.9) mee, zodat de interventie de domeinen koppelt. Aparte snelle/trage endpoints (<code>/api/forecast/intervention</code>).</p>
         <p><strong>Stack:</strong> Python/FastAPI backend, Plotly.js chart, server-sent events voor live update.</p>
       </div>
       <div class="poc-col">
@@ -1195,6 +1198,7 @@
           <li>Vervang het statistische model door een <strong>wflow SBM nowcast</strong> met assimilatie van actuele RWS-metingen (Ensemble Kalman Filter).</li>
           <li>Breid de AI-interventie uit met een <strong>tool-use patroon</strong>: de agent roept zelf de Waterinfo API aan om live peilmetingen op te vragen.</li>
           <li>Koppel de verwachting aan de <strong>FEWS PI REST API</strong> (Proef 7) zodat het als externe databron in operationele systemen zichtbaar wordt.</li>
+          <li>Maak de grondwater-koppeling <strong>voorspellend</strong>: projecteer de 14-daagse IJssel-verwachting via de lag-relatie naar een verwachte grondwatertrend per Veluwe-put.</li>
           <li>Test met een <strong>kleiner lokaal model</strong> (bijv. Qwen2.5-7B) om te meten hoeveel domeinkennis verloren gaat bij downsizing.</li>
         </ul>
       </div>
@@ -3148,7 +3152,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=34"></script>
+<script src="/static/app.js?v=35"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {

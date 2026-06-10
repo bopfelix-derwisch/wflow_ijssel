@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from dashboard.forecast import build_forecast
-from dashboard.grondwater import build_grondwater, build_interpretation
+from dashboard.grondwater import build_grondwater, build_interpretation, forecast_groundwater_context
 from fews_poc.router import router as _fews_router
 from fews_poc.data_adapter import get_wflow_timeseries, get_waterinfo_timeseries
 
@@ -198,6 +198,23 @@ def _build_intervention(forecast: dict) -> str:
     peak_q   = kpis["peak_forecast_q"]
     peak_h_est = round(0.0012 * peak_q - 0.05, 2)  # grove linearisatie Q~H Kampen
 
+    # Grondwater-context (BRO GLD, Veluwe-oostflank) voor een integrale interventie
+    gw = forecast_groundwater_context()
+    if gw["wells"]:
+        gw_lines = "\n".join(
+            f"  {w['bro_id']}: laatste meting {w['last_date']} = {w['last_value']} m"
+            f" (90-daagse trend {w['trend_90d']:+.2f} m)" for w in gw["wells"]
+        )
+    else:
+        gw_lines = "  (geen recente BRO-meting beschikbaar)"
+    gw_block = (
+        "GRONDWATER-CONTEXT (Veluwe-oostflank, BRO GLD — let op: meetlatentie ~maanden):\n"
+        f"{gw_lines}\n"
+        f"Gekalibreerde koppeling IJsselpeil → Veluwe-grondwater (droogte 2018): "
+        f"lag ~{gw['lag_days']} dagen, r≈{gw['r']}. Een dalend of stijgend IJsselpeil werkt "
+        "met deze vertraging door in de grondwaterstand op de Veluwe-flank."
+    )
+
     prompt = (
         f"Actuele IJssel-situatie bij Kampen ({forecast['generated_at']}):\n\n"
         f"Huidig waterpeil:     {h_str}  →  regime: {regime}\n"
@@ -206,17 +223,22 @@ def _build_intervention(forecast: dict) -> str:
         f"  (geschat peil ≈ {peak_h_est} m+NAP)\n"
         f"Neerslag komende 14 d: {kpis['total_precip_14d']} mm\n\n"
         f"{rws_block}\n\n"
+        f"{gw_block}\n\n"
         f"Regimecontext:\n{_REGIME_CONTEXT}\n"
-        "Beoordeel de situatie UITSLUITEND op het waterpeil en het regime. "
-        "Een verwachte debietspiek is alleen relevant als het bijbehorende geschatte peil "
-        "een ander regime bereikt. Stel een concrete interventie voor die past bij het "
-        "HUIDIGE regime. Beschrijf acties chronologisch."
+        "Geef een INTEGRALE interventie die past bij het HUIDIGE regime. Behandel primair het "
+        "waterpeil en de scheepvaart; betrek — alleen waar het regime én de grondwater-context "
+        "dat rechtvaardigen (vooral bij laagwater/droogte) — ook de grondwaterafhankelijke "
+        "domeinen: drinkwaterwinning (Vitens), landbouw/beregening en natuur/verdroging en "
+        "kweldruk op de Veluwe. Leg het verband expliciet via de IJssel→grondwater-koppeling. "
+        "Beschrijf acties chronologisch; noem geen domein dat nu niet relevant is. "
+        "Schrijf vloeiende lopende tekst zonder kopjes, vetgedrukte koppen, opsommingstekens of "
+        "markdown-symbolen (# of *); strikt maximaal 220 woorden."
     )
 
     client = _anthropic.Anthropic()
     msg = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=500,
+        max_tokens=750,
         system="""Je bent dr. Marieke van den Berg, senior hydroloog bij RWS Water, Verkeer en Leefomgeving \
 met 25 jaar ervaring in het IJssel-Rijngebied. Je combineert diepgaande hydrologische expertise \
 met grondige kennis van lokale infrastructuur, bestuurlijke verhoudingen en praktijkervaring \
@@ -290,10 +312,12 @@ Historische referenties die jij uit je hoofd kent:
 - Hoogwater jul 2021: piek +4.87 m+NAP; dijkbewaking 24u, geen evacuatie nodig
 
 INSTRUCTIES:
-Baseer je interventie UITSLUITEND op het waterpeil en het regime. \
-Een debietsverandering is alleen relevant als het corresponderende geschatte peil \
-een ander regime bereikt. Wees concreet en gebruik jargon dat professionals herkennen. \
-Maximaal 180 woorden. Vloeiende lopende tekst, geen opsomming.""",
+Baseer je interventie primair op het waterpeil en het regime; betrek bij laagwater/droogte \
+ook de grondwaterafhankelijke domeinen (drinkwater, landbouw, natuur/kwel) via de \
+IJssel→Veluwe-grondwaterkoppeling, maar alleen waar regime en grondwater-context dat \
+rechtvaardigen. Een debietsverandering is alleen relevant als het corresponderende geschatte \
+peil een ander regime bereikt. Wees concreet en gebruik jargon dat professionals herkennen. \
+Maximaal 220 woorden. Vloeiende lopende tekst zonder markdown-opmaak (geen # of *), geen opsomming.""",
         messages=[{"role": "user", "content": prompt}],
     )
     return msg.content[0].text.strip()
@@ -309,6 +333,7 @@ def get_forecast_intervention():
         text     = _build_intervention(forecast)
         result   = {"available": True, "intervention": text,
                     "alert": forecast["alert"],
+                    "groundwater": forecast_groundwater_context(),
                     "generated_at": forecast["generated_at"]}
         _intv_cache["ts"]   = time.monotonic()
         _intv_cache["data"] = result

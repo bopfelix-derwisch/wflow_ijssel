@@ -765,6 +765,18 @@ async function loadForecastIntervention() {
     } else {
       el.innerHTML = "<span class=\"llm-loading\">Geen AI-interventie beschikbaar</span>";
     }
+    const gwEl = document.getElementById("forecast-gw-context");
+    if (gwEl) {
+      const gw = data.groundwater;
+      if (gw && gw.wells && gw.wells.length) {
+        const wells = gw.wells.map(w =>
+          `${w.bro_id} (laatste meting ${w.last_date}: ${w.last_value} m, 90-d trend ${w.trend_90d >= 0 ? "+" : ""}${w.trend_90d} m)`
+        ).join(" · ");
+        gwEl.innerHTML = `💧 Grondwater-context (Veluwe-oostflank, BRO GLD): ${wells} — gekalibreerde koppeling IJsselpeil → grondwater: lag ~${gw.lag_days} d, r≈${gw.r}.`;
+      } else {
+        gwEl.innerHTML = "";
+      }
+    }
   } catch (_) {
     el.innerHTML = "<span class=\"llm-loading\">AI-interventie niet beschikbaar</span>";
   }

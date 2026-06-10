@@ -31,6 +31,15 @@ LLM_MODEL    = "qwen2.5-32b-instruct-q4_k_m-00001-of-00005.gguf"
 _cache: dict = {}
 _TTL = 900  # 15 min
 
+# Gekalibreerde koppeling rivierpeil → Veluwe-grondwater (mediaan uit de zomer-2018
+# analyse: lags 6–28 d, r 0.77–0.94). Gebruikt om de live IJssel-verwachting door te
+# vertalen naar verwachte grondwaterrespons in de integrale interventie (Proef 1).
+CALIBRATED_LAG_DAYS = 18
+CALIBRATED_R = 0.9
+# Datadichte putten met recente metingen langs de Veluwe-oostflank (zuid → flank).
+CONTEXT_WELLS = ["GLD000000008239", "GLD000000008262"]
+_ctx_cache: dict = {}
+
 
 # ── IJssel-signaal (bestaande wflow-reeks op schijf) ─────────────────────────
 
@@ -191,3 +200,30 @@ def build_interpretation(event: str = "zomer2018") -> dict:
         out = {"available": True, "interpretation": "", "llm_available": False}
     _interp_cache[event] = (time.monotonic(), out)
     return out
+
+
+# ── Integrale forecast-context: actuele Veluwe-grondwaterstand + koppeling ────
+
+def forecast_groundwater_context() -> dict:
+    """Recente gemeten Veluwe-grondwaterstand + 90-daagse trend, plus de
+    gekalibreerde rivier→grondwater-koppeling. Voedt de integrale interventie
+    (Proef 1). Gecached; graceful (lege wells-lijst bij bron-uitval)."""
+    hit = _ctx_cache.get("ctx")
+    if hit and time.monotonic() - hit[0] < _TTL:
+        return hit[1]
+    wells = []
+    for bid in CONTEXT_WELLS:
+        s = bro_gld.fetch_series(bid)
+        if not s:
+            continue
+        recent = s[-90:]
+        trend = round(recent[-1]["value"] - recent[0]["value"], 2) if len(recent) >= 2 else None
+        wells.append({
+            "bro_id": bid,
+            "last_date": s[-1]["date"],
+            "last_value": s[-1]["value"],
+            "trend_90d": trend,
+        })
+    ctx = {"wells": wells, "lag_days": CALIBRATED_LAG_DAYS, "r": CALIBRATED_R}
+    _ctx_cache["ctx"] = (time.monotonic(), ctx)
+    return ctx
