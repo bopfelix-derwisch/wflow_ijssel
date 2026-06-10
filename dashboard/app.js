@@ -115,19 +115,13 @@ function switchYear(year) {
 
   function hideAll() {
     simView.style.display = "none";
-    infoPnl.classList.remove("visible");
-    uitlegPnl.classList.remove("visible");
-    forecastPnl.classList.remove("visible");
-    ensemblePnl.classList.remove("visible");
-    introPnl.classList.remove("visible");
-    const mmPnl = document.getElementById("multimodel-panel");
-    if (mmPnl) mmPnl.classList.remove("visible");
-    const roadmapPnl = document.getElementById("roadmap-panel");
-    if (roadmapPnl) roadmapPnl.classList.remove("visible");
-    const archPnl = document.getElementById("arch-panel");
-    if (archPnl) archPnl.classList.remove("visible");
-    const fewsPnl = document.getElementById("fews-panel");
-    if (fewsPnl) fewsPnl.classList.remove("visible");
+    [infoPnl, uitlegPnl, forecastPnl, ensemblePnl, introPnl].forEach(p => {
+      if (p) p.classList.remove("visible");
+    });
+    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove("visible");
+    });
   }
 
   if (year === "intro") {
@@ -211,6 +205,16 @@ function switchYear(year) {
     banner.textContent = "Backlog & POC's  ·  FEWS · SOBEK · D-FLOW FM · EnKF · KNMI'23  ·  Deltares ecosysteem";
     document.getElementById("alert-badge").textContent = "🔬 Roadmap";
     document.getElementById("alert-badge").style.background = "#4a148c";
+    document.body.className = "";
+    return;
+  }
+
+  if (year === "pocs") {
+    hideAll();
+    document.getElementById("pocs-panel").classList.add("visible");
+    banner.textContent = "Waterlab · negen proeven · POC's · hydrologische modellering + AI";
+    document.getElementById("alert-badge").textContent = "🧪 POC's";
+    document.getElementById("alert-badge").style.background = "#004d40";
     document.body.className = "";
     return;
   }
@@ -1043,3 +1047,4 @@ function renderFewsChart(data) {
     font: { color: "#90a4ae" },
   });
 }
+
