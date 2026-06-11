@@ -69,20 +69,27 @@ let loadAbortController = null;
 
 // ── kaart ─────────────────────────────────────────────────────────────────────
 
-const map = new maplibregl.Map({
-  container: "map",
-  style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-  center: [6.1, 52.4],
-  zoom: 9.5,
-  pitch: 45,
-  bearing: 0,
-});
+// Kaart-init in try/catch: faalt WebGL (bv. headless/oude browser), dan blijft
+// de rest van het dashboard (data-tabs, grafieken) gewoon werken.
+let map = null;
+try {
+  map = new maplibregl.Map({
+    container: "map",
+    style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+    center: [6.1, 52.4],
+    zoom: 9.5,
+    pitch: 45,
+    bearing: 0,
+  });
 
-map.on("load", () => {
-  overlay = new deck.MapboxOverlay({ layers: [] });
-  map.addControl(overlay);
-  loadYear("1995");
-});
+  map.on("load", () => {
+    overlay = new deck.MapboxOverlay({ layers: [] });
+    map.addControl(overlay);
+    loadYear("1995");
+  });
+} catch (err) {
+  console.warn("Kaart kon niet initialiseren (WebGL?) — kaart-tabs uitgeschakeld, rest van het dashboard werkt:", err);
+}
 
 // ── jaar wisselen ─────────────────────────────────────────────────────────────
 
