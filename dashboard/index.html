@@ -1693,7 +1693,14 @@
       <tbody id="gw-table-body"></tbody>
     </table>
 
-    <p style="color:#607d8b; font-size:11px; margin-top:12px;">Bron: BRO GLD via PDOK OGC API (gm_gld, bbox) + broservices <code>seriesAsCsv</code> · IJssel-reeks: wflow SBM 2018 · server-side, gecached. Data-gedreven toets, geen fysisch kwelmodel.</p>
+    <div class="info-section" style="margin:18px 0 8px"><h2>Vooruitblik — verwachte grondwaterrespons (live IJssel-verwachting)</h2>
+      <p style="color:#90a4ae; font-size:13px; margin:6px 0 0;">De op zomer 2018 gekalibreerde koppeling (IJssel-afvoer → grondwater, per put een eigen lag en gevoeligheid) projecteert de <strong>Δ grondwaterstand t.o.v. vandaag</strong> over de komende weken. De eerste ~lag dagen liggen al <em>vast</em> door reeds-gemeten afvoer; daarna telt de 14-daagse verwachting mee (gearceerd). Indicatief en relatief — geen absolute grondwaterstand.</p>
+    </div>
+    <div id="grondwater-projection-unavailable" style="display:none; color:#607d8b; font-size:12px; padding:8px 0;">Vooruitblik niet beschikbaar (live verwachting offline).</div>
+    <div id="grondwater-projection-chart" style="width:100%; height:300px; margin:4px 0 4px;"></div>
+    <div id="gw-proj-table"></div>
+
+    <p style="color:#607d8b; font-size:11px; margin-top:12px;">Bron: BRO GLD via PDOK OGC API (gm_gld, bbox) + broservices <code>seriesAsCsv</code> · IJssel-reeks: wflow SBM 2018 · live afvoer: RWS Waterinfo + verwachting · server-side, gecached. Data-gedreven toets, geen fysisch kwelmodel.</p>
 
   </div>
 </div><!-- /#grondwater-panel -->
@@ -3251,7 +3258,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=36"></script>
+<script src="/static/app.js?v=37"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {

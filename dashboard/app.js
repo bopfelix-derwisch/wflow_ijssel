@@ -812,6 +812,7 @@ async function loadGrondwater() {
     renderGrondwaterKpis(data);
     renderGrondwaterChart(data);
     renderGrondwaterTable(data);
+    loadGrondwaterProjection();       // vooruitblik o.b.v. live verwachting
     loadGrondwaterInterpretation();  // trage Qwen-call apart, grafiek staat al
   } catch (err) {
     unavail.style.display = ""; content.style.display = "none";
@@ -875,6 +876,72 @@ function renderGrondwaterTable(d) {
     `<td>${w.gw_first} → ${w.gw_last} m</td>` +
     `<td>${w.lag_days != null ? w.lag_days + " d" : "—"}</td>` +
     `<td>${w.r != null ? w.r : "—"}</td></tr>`).join("");
+}
+
+async function loadGrondwaterProjection() {
+  const chart   = document.getElementById("grondwater-projection-chart");
+  const unavail = document.getElementById("grondwater-projection-unavailable");
+  try {
+    const d = await fetch(`${API}/api/grondwater/projection`).then(r => r.json());
+    if (!d.available || !d.wells || !d.wells.length) {
+      unavail.style.display = ""; chart.style.display = "none"; return;
+    }
+    unavail.style.display = "none"; chart.style.display = "";
+    renderGrondwaterProjectionChart(d);
+    renderGrondwaterProjectionTable(d);
+  } catch (err) {
+    unavail.style.display = ""; chart.style.display = "none";
+    console.warn("grondwater projection failed:", err);
+  }
+}
+
+function renderGrondwaterProjectionChart(d) {
+  const colors = ["#4dd0e1", "#4db6ac", "#81c784", "#ffb74d", "#ba68c8"];
+  const traces = d.wells.map((w, i) => ({
+    x: w.projection.dates, y: w.projection.delta_m, type: "scatter", mode: "lines",
+    name: w.bro_id.replace("GLD0000000", "GLD…") + " · lag " + w.lag_days + "d",
+    line: { color: colors[i % colors.length], width: 1.8 },
+  }));
+  let lastDate = d.today;
+  traces.forEach(t => { if (t.x.length && t.x[t.x.length - 1] > lastDate) lastDate = t.x[t.x.length - 1]; });
+  const shapes = [
+    { type: "line", x0: d.today, x1: d.today, yref: "paper", y0: 0, y1: 1,
+      line: { color: "#90a4ae", width: 1, dash: "dot" } },
+  ];
+  if (d.river.forecast_from) {
+    shapes.push({ type: "rect", xref: "x", yref: "paper",
+      x0: d.river.forecast_from, x1: lastDate, y0: 0, y1: 1,
+      fillcolor: "rgba(77,208,225,0.07)", line: { width: 0 } });
+  }
+  Plotly.react("grondwater-projection-chart", traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a",
+    font: { color: "#e0e0e0", size: 11 }, margin: { t: 16, b: 40, l: 64, r: 14 },
+    legend: { orientation: "h", y: -0.3, font: { size: 9 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: { title: "Δ grondwater t.o.v. vandaag (m)", gridcolor: "#1a3a5c",
+             zeroline: true, zerolinecolor: "#37474f" },
+    shapes: shapes,
+    annotations: [{ x: d.today, yref: "paper", y: 1.04, text: "vandaag",
+                    showarrow: false, font: { size: 10, color: "#90a4ae" } }],
+  }, { responsive: true, displayModeBar: false });
+}
+
+function renderGrondwaterProjectionTable(d) {
+  const el = document.getElementById("gw-proj-table");
+  if (!el) return;
+  const rows = d.wells.map(w => {
+    const dir = w.direction === "stijgend" ? "↑ stijgend"
+              : (w.direction === "dalend" ? "↓ dalend" : "→ stabiel");
+    const col = w.direction === "stijgend" ? "#4db6ac"
+              : (w.direction === "dalend" ? "#ef5350" : "#90a4ae");
+    const sign = w.expected_change_m >= 0 ? "+" : "";
+    return `<tr><td><code>${w.bro_id}</code></td><td>lag ${w.lag_days} d</td>` +
+           `<td>${w.committed_days} d vastgelegd</td>` +
+           `<td style="color:${col}">${sign}${w.expected_change_m} m (${dir})</td></tr>`;
+  }).join("");
+  el.innerHTML = `<table class="ensemble-scenario-table" style="margin-top:8px">` +
+    `<thead><tr><th>BRO-ID</th><th>Lag</th><th>Reeds vastgelegd</th><th>Verwachte Δ (horizon)</th></tr></thead>` +
+    `<tbody>${rows}</tbody></table>`;
 }
 
 async function loadEnsemble() {

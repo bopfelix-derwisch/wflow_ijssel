@@ -12,7 +12,9 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from dashboard.forecast import build_forecast
-from dashboard.grondwater import build_grondwater, build_interpretation, forecast_groundwater_context
+from dashboard.grondwater import (
+    build_grondwater, build_interpretation, forecast_groundwater_context, project_groundwater,
+)
 from fews_poc.router import router as _fews_router
 from fews_poc.data_adapter import get_wflow_timeseries, get_waterinfo_timeseries
 
@@ -418,6 +420,14 @@ def get_grondwater(event: str = "zomer2018"):
 def get_grondwater_interpretation(event: str = "zomer2018"):
     try:
         return JSONResponse(build_interpretation(event))
+    except Exception as e:
+        return JSONResponse({"available": False, "error": str(e)})
+
+
+@app.get("/api/grondwater/projection")
+def get_grondwater_projection(event: str = "zomer2018"):
+    try:
+        return JSONResponse(project_groundwater(event))
     except Exception as e:
         return JSONResponse({"available": False, "error": str(e)})
 

@@ -16,6 +16,7 @@ import numpy as np
 import requests
 
 from dashboard import bro_gld
+from dashboard.forecast import build_forecast
 from fews_poc.data_adapter import PERIOD_DIRS
 
 logger = logging.getLogger(__name__)
@@ -227,3 +228,108 @@ def forecast_groundwater_context() -> dict:
     ctx = {"wells": wells, "lag_days": CALIBRATED_LAG_DAYS, "r": CALIBRATED_R}
     _ctx_cache["ctx"] = (time.monotonic(), ctx)
     return ctx
+
+
+# ── Vooruitblik: verwachte grondwaterrespons o.b.v. de live IJssel-verwachting ─
+
+_proj_cache: dict = {}
+
+
+def _calibrate_q(river_dates, river_q, gw_dates, gw_vals, max_lag=30) -> dict:
+    """Kalibreer op het droogte-event: beste lag + lineaire helling (dGW/dQ)
+    tussen IJssel-afvoer[t] en grondwater[t+lag]. Afvoer (q) is de driver want die
+    is in zowel het event als de live verwachting betrouwbaar beschikbaar."""
+    from datetime import date, timedelta
+    rv = {d: v for d, v in zip(river_dates, river_q) if v is not None}
+    gw = {d: v for d, v in zip(gw_dates, gw_vals) if v is not None}
+    best = {"lag_days": None, "r": None, "slope": None}
+    for lag in range(0, max_lag + 1):
+        xs, ys = [], []
+        for d, rval in rv.items():
+            gd = (date.fromisoformat(d) + timedelta(days=lag)).isoformat()
+            if gd in gw:
+                xs.append(rval); ys.append(gw[gd])
+        if len(xs) >= 10:
+            r = float(np.corrcoef(xs, ys)[0, 1])
+            if not np.isnan(r) and (best["r"] is None or abs(r) > abs(best["r"])):
+                best = {"lag_days": lag, "r": round(r, 3), "slope": float(np.polyfit(xs, ys, 1)[0])}
+    return best
+
+
+def project_groundwater(event_calib: str = "zomer2018", max_wells: int = 5) -> dict:
+    """Projecteer de verwachte grondwater-RESPONS (Δm t.o.v. vandaag) per put over
+    de komende dagen, gedreven door de live 14-daagse IJssel-afvoerverwachting via de
+    op het event gekalibreerde lag+helling. De eerste ~lag dagen zijn al 'vastgelegd'
+    door reeds-waargenomen afvoer; daarna telt de forecast. Indicatief, relatief."""
+    cached = _proj_cache.get(event_calib)
+    if cached and time.monotonic() - cached[0] < _TTL:
+        return cached[1]
+
+    base = build_grondwater(event_calib, max_wells)
+    if not base.get("available"):
+        return {"available": False, "error": "kalibratie-event niet beschikbaar"}
+    try:
+        fc = build_forecast()
+    except Exception as e:
+        return {"available": False, "error": f"verwachting niet beschikbaar: {e}"}
+
+    from datetime import date, timedelta
+    addd = lambda d, k: (date.fromisoformat(d) + timedelta(days=k)).isoformat()
+
+    # Live IJssel-afvoer driver: gemeten (~35 d) + verwacht (14 d)
+    m, f = fc.get("measured", {}), fc.get("forecast", {})
+    river_q: dict = {}
+    for d, q in zip(m.get("dates", []), m.get("q_kampen", [])):
+        if q is not None:
+            river_q[str(d)[:10]] = float(q)
+    fcast_dates = [str(d)[:10] for d in f.get("dates", [])]
+    for d, q in zip(fcast_dates, f.get("q_mid", [])):
+        if q is not None:
+            river_q[d] = float(q)
+    today = str(fc.get("generated_at"))[:10]
+    river18 = base["river"]
+
+    wells_out, horizon = [], 14
+    for w in base["wells"]:
+        cal = _calibrate_q(river18["dates"], river18["q"], w["series"]["dates"], w["series"]["values"])
+        if cal["slope"] is None:
+            continue
+        L, slope = cal["lag_days"], cal["slope"]
+        q_ref = river_q.get(addd(today, -L))
+        if q_ref is None:
+            continue
+        wh = L + 14
+        horizon = max(horizon, wh)
+        dates_p, delta_p, src_p = [], [], []
+        for dd in range(0, wh + 1):
+            qd = river_q.get(addd(today, dd - L))
+            if qd is None:
+                continue
+            dates_p.append(addd(today, dd))
+            delta_p.append(round(slope * (qd - q_ref), 3))
+            src_p.append("forecast" if (dd - L) > 0 else "vastgelegd")
+        if not dates_p:
+            continue
+        end = delta_p[-1]
+        wells_out.append({
+            "bro_id": w["bro_id"], "lat": w["lat"], "lon": w["lon"],
+            "lag_days": L, "r": cal["r"], "slope": round(slope, 6),
+            "committed_days": L,
+            "projection": {"dates": dates_p, "delta_m": delta_p, "source": src_p},
+            "expected_change_m": end,
+            "direction": "stijgend" if end > 0.02 else ("dalend" if end < -0.02 else "stabiel"),
+        })
+
+    sd = sorted(river_q)
+    result = {
+        "available": True,
+        "today": today,
+        "horizon_days": horizon,
+        "calibrated_on": event_calib,
+        "river": {"dates": sd, "q": [river_q[d] for d in sd],
+                  "forecast_from": fcast_dates[0] if fcast_dates else None},
+        "wells": wells_out,
+        "generated_at": time.strftime("%Y-%m-%d %H:%M"),
+    }
+    _proj_cache[event_calib] = (time.monotonic(), result)
+    return result
