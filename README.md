@@ -32,16 +32,61 @@ op één edge computer.
 
 ---
 
-## Zes experimenten
+## Negen proeven
 
 | Proef | Tab | Kern | AI-component |
 |-------|-----|------|-------------|
-| 1 | **Verwachting** | Statistisch debietmodel + RWS Waterinfo live + Open-Meteo 14d | Claude (Anthropic) — waterpeil-regime-afhankelijke interventie |
+| 1 | **Verwachting** | Statistisch debietmodel + RWS Waterinfo live + Open-Meteo 14d | Claude — **integrale** interventie: peil/scheepvaart én grondwater-domeinen (Vitens, landbouw, kwel) via de IJssel→grondwater-koppeling |
 | 2 | **Ensemble AI** | wflow SBM ×5 neerslag-scenario's (×0.70–×1.30) | Qwen2.5-32B lokaal — spread-interpretatie |
 | 3 | **Multimodel** | Ribasim netwerk → LLM-orchestrator → wflow ensemble | Qwen2.5-32B lokaal — kritieke-knoop-selectie |
 | 4 | **Jan 1995** | wflow SBM hoogwater, ERA5-Land forcing | — |
 | 5 | **Zomer 2018** | wflow SBM droogte, laagwaterperiode | — |
 | 6 | **Jul 2021** | wflow SBM hoogwater, gemeten vs. synthetische inflow | — |
+| 7 | **FEWS** | Waterlab als Deltares PI REST 1.25-service | — |
+| 8 | **GraphQL-façade** | Read-only query-laag over de domeingraaf (`/graphql`) | — |
+| 9 | **Grondwater** | BRO grondwater ↔ IJssel-peil: lag-correlatie (zomer 2018) + voorspellende projectie | Qwen2.5-32B lokaal — hydrologische duiding |
+
+---
+
+## API's & platform-laag
+
+API-first: dashboard, FEWS, GraphQL en webhooks zijn verwisselbare clients op dezelfde data.
+
+### GraphQL-façade — `/graphql` (GraphiQL aan)
+Eén read-only query stitcht de domeingraaf; resolvers delegeren naar bestaande bronfuncties (geen tweede datapad).
+
+```graphql
+{ station(id: "kampen") {
+    name
+    forecast(days: 14) { band { date mean } intervention { regime } }
+    nearbyGroundwaterWells(radiusKm: 20, limit: 3) {     # merge-node: platform ↔ BRO
+      broId distanceKm
+      series(period: "2018-06-01/2018-08-31") { events { date value } }
+    }
+} }
+```
+
+Limieten: query-diepte ≤ 10, ≤ 2000 tokens, ≤ 15 aliassen, en 60 verzoeken/min per IP (HTTP 429).
+
+### FEWS PI REST 1.25 — `/fews/rest/fewspiservice/v1/`
+Deltares-compatibel: `filters` · `locations` · `parameters` · `timeseries` (PI JSON). De niet-standaard `period`-parameter selecteert een historische wflow-run (1995/2018/2021).
+
+### REST data-endpoints
+- `GET /api/forecast` · `/api/forecast/intervention` — live verwachting + integrale AI-interventie
+- `GET /api/grondwater` · `/api/grondwater/interpretation` · `/api/grondwater/projection` — Proef 9 (overlay, AI-duiding, vooruitblik)
+- `GET /api/ensemble` · `/api/multimodel` · `/api/{1995|2018|2021}/...`
+
+### Databron grondwater (Proef 9)
+Gemeten grondwaterstanden uit het **BRO Grondwaterstandendossier (GLD)**. Ruimtelijke discovery + GMW↔GLD-koppeling via de **PDOK OGC API** (`gm_gld`, bbox); reeksen via broservices `seriesAsCsv`. Server-side opgehaald (CORS omzeild), gecached. De IJssel→grondwater-koppeling is gekalibreerd op zomer 2018 (lag 6–28 d, r tot 0.94) en data-gedreven — geen fysisch kwelmodel. Feasibility: `docs/WL-BRO-0_feasibility.md`.
+
+---
+
+## Dashboard & rondleiding
+
+- **Tabs** zijn deelbaar via deep-link (hash), bv. `…/#grondwater`, `…/#forecast`.
+- **Handleiding-tab** — navigatie, de drie API's met voorbeeldquery, databronnen en beperkingen.
+- **▶ Rondleiding** — knop rechtsonder start een geleide auto-tour langs de kerntabs.
+- **`DEMO.md`** — korte demo-flow / video-script (~3–4 min) met talking points.
 
 ---
 
@@ -115,6 +160,11 @@ IJssel-ervaring. De systeemprompt bevat:
 - Ecologische minimumafvoer (50 m³/s KRW, Veluwe-kwelzone)
 - Historische referenties (droogte 2018: −0.45 m+NAP, droogte 2022: −0.38 m+NAP)
 
+**Integraal (Proef 9-koppeling):** de prompt krijgt live de recente Veluwe-grondwaterstand (BRO GLD)
+en de gekalibreerde IJssel→grondwater-koppeling (lag ~18 d, r≈0.9) mee. Bij laagwater/droogte
+adresseert de interventie daardoor óók de grondwaterafhankelijke domeinen — drinkwaterwinning
+(Vitens), landbouw/beregening en natuur/kweldruk — niet alleen peil en scheepvaart.
+
 **Regime-classificatie** stuurt het type interventie:
 
 | Regime | Peil Kampen | Interventie-focus |
@@ -136,7 +186,10 @@ IJssel-ervaring. De systeemprompt bevat:
 | Lokale LLM | Qwen2.5-32B-Instruct-Q4 | llama.cpp · localhost:8080 |
 | Cloud LLM | Claude Haiku | Anthropic API · `.env` voor API-key |
 | Live data | RWS Waterinfo + Open-Meteo | 15-min cache · graceful fallback |
+| Grondwater | BRO GLD via PDOK OGC API + broservices | server-side (`requests`) · gecached |
 | API / server | FastAPI + uvicorn | Python 3.10 · poort 8000 |
+| Query-laag | GraphQL | `strawberry-graphql[fastapi]` · `/graphql` · depth/rate-limited |
+| Interop | FEWS PI REST 1.25 | `/fews/rest/fewspiservice/v1/` |
 | Frontend | Dashboard | MapLibre GL · Plotly · deck.gl · vanilla JS |
 | Tunneling | Cloudflare Tunnel | IPv4 (`edge-ip-version: 4`) — IPv6 uitgezet wegens adresrotatie |
 | Hardware | NVIDIA Jetson AGX Orin | aarch64 · 64 GB · Ubuntu 22.04 |
