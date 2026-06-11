@@ -266,16 +266,11 @@ function switchYear(year) {
     return;
   }
 
-  // simulatie-view
+  // simulatie-view — hideAll() verbergt álle panels (single source of truth),
+  // daarna alleen de sim-view tonen. Voorkomt dat een eerder paneel (bv. Handleiding)
+  // onder de jaar-tabs (1995/2018/2021) blijft staan.
+  hideAll();
   simView.style.display = "";
-  infoPnl.classList.remove("visible");
-  uitlegPnl.classList.remove("visible");
-  forecastPnl.classList.remove("visible");
-  ensemblePnl.classList.remove("visible");
-  const mmPnlSim = document.getElementById("multimodel-panel");
-  if (mmPnlSim) mmPnlSim.classList.remove("visible");
-  const fewsPnlSim = document.getElementById("fews-panel");
-  if (fewsPnlSim) fewsPnlSim.classList.remove("visible");
 
   const cfg = YEAR_CONFIG[year];
   document.body.className = cfg.themeClass;
