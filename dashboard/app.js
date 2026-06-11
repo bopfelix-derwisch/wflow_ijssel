@@ -110,6 +110,49 @@ document.querySelectorAll(".year-tab").forEach(btn => {
   }
 })();
 
+// ── Interactieve rondleiding ───────────────────────────────────────────────
+const TOUR_STEPS = [
+  { year: "handleiding", title: "Handleiding",
+    text: "Waterlab draait op één NVIDIA Jetson AGX Orin. API-first: dashboard, FEWS en GraphQL zijn verwisselbare clients op dezelfde data." },
+  { year: "uitleg", title: "Rijn & IJssel",
+    text: "De IJssel krijgt ~13% van de Rijn via de Pannerdense Kop. Rode draad door alle proeven: het traject Westervoort → Kampen." },
+  { year: "forecast", title: "Live verwachting + integrale AI",
+    text: "14-daagse debietverwachting uit RWS Waterinfo + Open-Meteo. Claude duidt integraal — óók drinkwater, landbouw en kwel via de grondwater-koppeling." },
+  { year: "grondwater", title: "Grondwater ↔ IJssel",
+    text: "Gemeten BRO-grondwater vs IJssel-peil: sterke lag-correlatie (r tot 0.94, 6–28 dagen). Scroll voor de vooruitblik — de live verwachting geprojecteerd naar grondwatertrend." },
+  { year: "pocs", title: "Negen proeven",
+    text: "Elke proef langs drie lijnen: functioneel, technisch, opvolging. Van ensemble-AI en multimodel-pipeline tot FEWS en grondwater." },
+  { year: "fews", title: "Interoperabel — FEWS",
+    text: "Dezelfde data ook als Deltares PI REST 1.25. Tip: open ook /graphql voor één query die station, verwachting én nabije grondwaterputten stitcht." },
+];
+let tourIdx = -1;
+let tourTimer = null;
+const TOUR_MS = 9000;
+
+function tourShow(i) {
+  if (i < 0) i = 0;
+  if (i >= TOUR_STEPS.length) { tourStop(); return; }
+  tourIdx = i;
+  const s = TOUR_STEPS[i];
+  switchYear(s.year);
+  const ov = document.getElementById("tour-overlay");
+  document.getElementById("tour-title").textContent = `Stap ${i + 1}/${TOUR_STEPS.length} · ${s.title}`;
+  document.getElementById("tour-text").textContent = s.text;
+  document.getElementById("tour-next").textContent = (i === TOUR_STEPS.length - 1) ? "Klaar ✓" : "Volgende ›";
+  ov.classList.add("visible");
+  clearTimeout(tourTimer);
+  tourTimer = setTimeout(() => tourShow(tourIdx + 1), TOUR_MS);  // op laatste stap → tourStop
+}
+function tourStart() { tourShow(0); }
+function tourNext()  { tourShow(tourIdx + 1); }
+function tourPrev()  { tourShow(tourIdx - 1); }
+function tourStop()  {
+  clearTimeout(tourTimer);
+  const ov = document.getElementById("tour-overlay");
+  if (ov) ov.classList.remove("visible");
+  tourIdx = -1;
+}
+
 function switchYear(year) {
   if (playing) stopPlay();
   currentYear = year;
