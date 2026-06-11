@@ -118,7 +118,7 @@ function switchYear(year) {
     [infoPnl, uitlegPnl, forecastPnl, ensemblePnl, introPnl].forEach(p => {
       if (p) p.classList.remove("visible");
     });
-    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel","grondwater-panel"].forEach(id => {
+    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel","grondwater-panel","handleiding-panel"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove("visible");
     });
@@ -130,6 +130,16 @@ function switchYear(year) {
     banner.textContent = "Waterlab · micro-innovatielab · hydrologische modellering + AI · NVIDIA Jetson AGX Orin";
     document.getElementById("alert-badge").textContent = "⚗ Waterlab";
     document.getElementById("alert-badge").style.background = "#37474f";
+    document.body.className = "";
+    return;
+  }
+
+  if (year === "handleiding") {
+    hideAll();
+    document.getElementById("handleiding-panel").classList.add("visible");
+    banner.textContent = "Handleiding · navigatie, API's (PI REST · GraphQL) en databronnen";
+    document.getElementById("alert-badge").textContent = "📖 Handleiding";
+    document.getElementById("alert-badge").style.background = "#455a64";
     document.body.className = "";
     return;
   }

@@ -271,7 +271,20 @@ class Query:
         return Station(id=id)
 
 
-schema = strawberry.Schema(query=Query)
+# Limieten: bescherm de (semi-)publieke gateway tegen te zware/diepe queries.
+# Rate-limiting (per IP) zit in server.py als middleware op /graphql.
+from strawberry.extensions import (  # noqa: E402
+    MaxAliasesLimiter, MaxTokensLimiter, QueryDepthLimiter,
+)
+
+schema = strawberry.Schema(
+    query=Query,
+    extensions=[
+        QueryDepthLimiter(max_depth=10),       # diepste legitieme query ~5 niveaus
+        MaxAliasesLimiter(max_alias_count=15),
+        MaxTokensLimiter(max_token_count=2000),
+    ],
+)
 
 # GraphiQL aan (PoC). Wordt gemount in server.py.
 from strawberry.fastapi import GraphQLRouter  # noqa: E402

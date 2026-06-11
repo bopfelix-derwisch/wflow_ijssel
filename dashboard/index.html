@@ -349,6 +349,12 @@
     #ensemble-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #grondwater-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #grondwater-panel.visible { display: block; }
+    #handleiding-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #handleiding-panel.visible { display: block; }
+    #handleiding-panel pre { background:#0d1b2a; border:1px solid #1a3a5c; border-radius:6px; padding:12px 14px; overflow-x:auto; font-size:12px; color:#cfd8dc; line-height:1.5; }
+    #handleiding-panel .hl-grid { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0; }
+    #handleiding-panel .hl-card { flex:1 1 220px; background:#0d1b2a; border:1px solid #1a3a5c; border-radius:8px; padding:12px 14px; }
+    #handleiding-panel .hl-card b { color:#4dd0e1; }
     #ensemble-panel.visible { display: block; }
     #ensemble-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
     #ensemble-chart { width: 100%; height: 220px; margin: 0 0 16px; }
@@ -624,6 +630,7 @@
   <span class="badge" id="alert-badge" style="background:#37474f">⚗ Waterlab</span>
   <div id="year-tabs">
     <button class="year-tab active-intro" data-year="intro">Waterlab</button>
+    <button class="year-tab" data-year="handleiding">Handleiding</button>
     <button class="year-tab" data-year="uitleg">Rijn &amp; IJssel</button>
     <button class="year-tab" data-year="pocs">POC's</button>
     <button class="year-tab" data-year="forecast">Verwachting</button>
@@ -1690,6 +1697,98 @@
 
   </div>
 </div><!-- /#grondwater-panel -->
+
+<div id="handleiding-panel">
+
+  <div class="info-section">
+    <h2 style="color:#4db6ac">📖 Handleiding — Waterlab</h2>
+    <p>Waterlab is een persoonlijk leerplatform rond hydrologische modellering en AI, draaiend op een NVIDIA Jetson AGX Orin. Drie leerdoelen: <span class="highlight">modellen leren</span> (wflow, Ribasim), <span class="highlight">het vakgebied verkennen</span> (IJssel–Rijn, droogte/hoogwater) en <span class="highlight">AI testen</span> (Claude + lokale Qwen). Deze pagina legt uit hoe je het dashboard en de API's gebruikt.</p>
+  </div>
+
+  <div class="info-section">
+    <h2>1 · Navigatie — de tabbladen</h2>
+    <table class="ll-table" style="margin:10px 0">
+      <tr><th>Tab</th><th>Wat je ziet</th></tr>
+      <tr><td><strong>Waterlab</strong></td><td>Introductie en de drie leerdoelen.</td></tr>
+      <tr><td><strong>Rijn &amp; IJssel</strong></td><td>Uitleg van het stroomgebied: Pannerdense Kop, het traject Westervoort → Kampen, en de kaart.</td></tr>
+      <tr><td><strong>POC's</strong></td><td>De negen proeven, elk langs drie lijnen: <em>functioneel · technisch · opvolging</em>.</td></tr>
+      <tr><td><strong>Verwachting</strong></td><td>Live 14-daagse IJssel-verwachting + de <em>integrale</em> AI-interventie (incl. grondwater-koppeling).</td></tr>
+      <tr><td><strong>Ensemble AI · Multimodel</strong></td><td>wflow-ensemble (5 neerslagscenario's) en de Ribasim→LLM→wflow pipeline.</td></tr>
+      <tr><td><strong>Jan 1995 · Zomer 2018 · Jul 2021</strong></td><td>Historische wflow-simulaties (hoogwater/droogte-events).</td></tr>
+      <tr><td><strong>Grondwater</strong></td><td>Proef 9: gemeten grondwater (BRO) vs IJssel-peil + lag-correlatie + AI-duiding.</td></tr>
+      <tr><td><strong>FEWS</strong></td><td>Waterlab als FEWS PI REST-service (API-explorer).</td></tr>
+      <tr><td><strong>Platform Visie · Roadmap · Info</strong></td><td>Architectuurvisie, backlog en analyse-achtergrond.</td></tr>
+    </table>
+  </div>
+
+  <div class="info-section">
+    <h2>2 · De API's (platform-laag)</h2>
+    <p>Waterlab is API-first: elke consumer (dashboard, FEWS, app) is een verwisselbare client. Er zijn drie ingangen.</p>
+
+    <div class="hl-grid">
+      <div class="hl-card">
+        <b>FEWS PI REST 1.25</b><br>
+        Deltares-compatibele tijdreeksen-API. Basis: <code>/fews/rest/fewspiservice/v1/</code><br>
+        Endpoints: <code>filters</code>, <code>locations</code>, <code>parameters</code>, <code>timeseries</code>.
+      </div>
+      <div class="hl-card">
+        <b>GraphQL-façade</b><br>
+        Eén query-laag over de domeingraaf. Verken interactief in GraphiQL.<br>
+        <button class="poc-goto" style="color:#f48fb1; border-color:#ad1457; margin-top:6px" onclick="window.open('/graphql','_blank')">Open GraphiQL →</button>
+      </div>
+      <div class="hl-card">
+        <b>REST data-endpoints</b><br>
+        <code>/api/forecast</code> · <code>/api/grondwater</code> · <code>/api/ensemble</code> · <code>/api/multimodel</code> — JSON voor de dashboardpanelen.
+      </div>
+    </div>
+
+    <p style="margin-top:14px"><strong>GraphQL voorbeeld</strong> — één query haalt stationmetadata, de live verwachting én de nabije grondwaterputten op:</p>
+    <pre>{
+  station(id: "kampen") {
+    name
+    forecast(days: 14) {
+      band { date p10 mean p90 }
+      intervention { regime text source }
+    }
+    nearbyGroundwaterWells(radiusKm: 20, limit: 3) {
+      broId  distanceKm  nObs
+      series(period: "2018-06-01/2018-08-31") { events { date value } }
+    }
+  }
+}</pre>
+
+    <p><strong>PI REST voorbeeld</strong> (vanaf de commandline):</p>
+    <pre>curl "http://&lt;host&gt;:8000/fews/rest/fewspiservice/v1/timeseries?locationIds=KAMPEN&amp;parameterIds=Q.sim&amp;period=2021"</pre>
+
+    <p style="color:#90a4ae; font-size:12px"><strong>Limieten op GraphQL:</strong> read-only (geen mutations); query-diepte max 10, max 2000 tokens, max 15 aliassen per query; en max 60 verzoeken per minuut per IP (HTTP 429 bij overschrijding). Zware bulk-tijdreeksen blijven bewust op PI REST/JSON (HTTP-caching).</p>
+  </div>
+
+  <div class="info-section">
+    <h2>3 · Databronnen</h2>
+    <table class="ll-table" style="margin:10px 0">
+      <tr><th>Bron</th><th>Gebruik</th></tr>
+      <tr><td><strong>RWS Waterinfo</strong></td><td>Live debiet (Westervoort/Lobith) en waterpeil (Kampen) — voor de verwachting.</td></tr>
+      <tr><td><strong>Open-Meteo / ECMWF</strong></td><td>14-daagse neerslagverwachting IJssel-stroomgebied.</td></tr>
+      <tr><td><strong>wflow SBM (Julia)</strong></td><td>Hydrologische simulaties (historische events + ensemble), output op schijf.</td></tr>
+      <tr><td><strong>BRO GLD + PDOK OGC</strong></td><td>Gemeten grondwaterstanden + putlocaties (Proef 9). Server-side opgehaald, gecached.</td></tr>
+      <tr><td><strong>ERA5-Land</strong></td><td>Historische forcing/training voor de modellen.</td></tr>
+    </table>
+  </div>
+
+  <div class="info-section">
+    <h2>4 · AI-componenten</h2>
+    <div class="hl-grid">
+      <div class="hl-card"><b>Claude (Anthropic API)</b><br>De expert-interventie bij de live verwachting — integraal: peil/scheepvaart én grondwaterafhankelijke domeinen (drinkwater, landbouw, natuur/kwel).</div>
+      <div class="hl-card"><b>Qwen2.5-32B (lokaal)</b><br>Draait op de Jetson via llama.cpp. Interpreteert het ensemble en de grondwater↔IJssel-koppeling — geen cloud, ~30–60 s per duiding.</div>
+    </div>
+  </div>
+
+  <div class="info-section">
+    <h2>5 · Beperkingen</h2>
+    <p style="color:#b0bec5">Waterlab is een leer-/PoC-omgeving, geen operationeel systeem. De verwachting is indicatief (statistisch model, geen gekalibreerde nowcast). BRO-grondwaterdata heeft maanden latentie; de IJssel→grondwater-koppeling is gekalibreerd op één droogte-event (2018) en data-gedreven, niet fysisch (geen MODFLOW/iMOD). Voor operationele beslissingen: <code>waterinfo.rws.nl</code>.</p>
+  </div>
+
+</div><!-- /#handleiding-panel -->
 
 <div id="intro-panel" class="visible">
 
@@ -3152,7 +3251,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=35"></script>
+<script src="/static/app.js?v=36"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {
@@ -3179,7 +3278,7 @@
 
   var panels = [
     'uitleg-panel','forecast-panel','ensemble-panel','multimodel-panel',
-    'fews-panel','pocs-panel','grondwater-panel','arch-panel','roadmap-panel','info-panel'
+    'fews-panel','pocs-panel','grondwater-panel','handleiding-panel','arch-panel','roadmap-panel','info-panel'
   ];
   document.addEventListener('DOMContentLoaded', function() {
     panels.forEach(function(id) {

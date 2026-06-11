@@ -1,4 +1,5 @@
 """FastAPI server: levert API-data en statische dashboard-bestanden."""
+import collections
 import json
 import os
 import re
@@ -42,6 +43,32 @@ app.include_router(_fews_router)
 # WL-GQL-1: read-only GraphQL-façade (resolvers delegeren naar bestaande bronfuncties)
 from dashboard.graphql_api import graphql_app  # noqa: E402
 app.include_router(graphql_app, prefix="/graphql")
+
+# Rate-limiting op /graphql: per IP een sliding window. Schema-limieten (depth/tokens/
+# aliases) zitten in graphql_api.py; dit beschermt tegen request-floods.
+_GQL_RATE_WINDOW = 60   # seconden
+_GQL_RATE_MAX    = 60   # verzoeken per window per IP
+_gql_hits: dict = collections.defaultdict(list)
+
+
+@app.middleware("http")
+async def _graphql_rate_limit(request, call_next):
+    if request.url.path.startswith("/graphql"):
+        xff = request.headers.get("x-forwarded-for", "")
+        ip = xff.split(",")[0].strip() or (request.client.host if request.client else "?")
+        now = time.monotonic()
+        hits = _gql_hits[ip]
+        cutoff = now - _GQL_RATE_WINDOW
+        while hits and hits[0] < cutoff:
+            hits.pop(0)
+        if len(hits) >= _GQL_RATE_MAX:
+            return JSONResponse(
+                {"errors": [{"message": f"Rate limit overschreden — max "
+                                        f"{_GQL_RATE_MAX} GraphQL-verzoeken per minuut."}]},
+                status_code=429,
+            )
+        hits.append(now)
+    return await call_next(request)
 
 if os.path.isdir(str(STATIC_DIR)):
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
