@@ -90,9 +90,18 @@ document.querySelectorAll(".year-tab").forEach(btn => {
   btn.addEventListener("click", () => {
     const y = btn.dataset.year;
     if (y === currentYear) return;
+    history.replaceState(null, "", "#" + y);
     switchYear(y);
   });
 });
+
+// Deep-link: open een tab via #hash (bv. /#grondwater) — handig voor delen/embedden.
+(function () {
+  const h = (location.hash || "").replace(/^#/, "");
+  if (h && document.querySelector('.year-tab[data-year="' + h + '"]')) {
+    switchYear(h);
+  }
+})();
 
 function switchYear(year) {
   if (playing) stopPlay();
