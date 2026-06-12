@@ -604,6 +604,11 @@ async function loadForecast() {
     badge.textContent = `🌊 ${al.text}`;
     badge.style.background = al.color;
 
+    // Verwachte grondwaterstand (BRO) als extra reeks in de verwachtingsgrafiek
+    fetch(`${API}/api/grondwater/projection`).then(r => r.json())
+      .then(proj => renderForecastChart(data, proj))
+      .catch(() => { /* grondwater optioneel; grafiek staat al */ });
+
     loadForecastIntervention();
 
     const src = document.getElementById("forecast-source");
@@ -638,12 +643,31 @@ function renderForecastKpis(d) {
       : "onder drempel 1500 m³/s";
 }
 
-function renderForecastChart(d) {
+function renderForecastChart(d, proj) {
   const today     = d.generated_at;
   const measDates = d.measured.dates;
   const fDates    = d.forecast.dates;
   const allX0     = measDates[0];
   const allX1     = fDates[fDates.length - 1];
+
+  // Representatieve put met recente meting → verwachte absolute grondwaterstand (anker + projectie)
+  let gwTrace = null, gwName = "";
+  if (proj && proj.available && proj.wells && proj.wells.length) {
+    const cand = proj.wells.filter(w => w.last_value != null && w.last_date);
+    if (cand.length) {
+      const w = cand.sort((a, b) => (a.last_date < b.last_date ? 1 : -1))[0];  // meest recente meting
+      const xs = [], ys = [];
+      w.projection.dates.forEach((dt, i) => {
+        if (dt >= today && dt <= allX1) { xs.push(dt); ys.push(+(w.last_value + w.projection.delta_m[i]).toFixed(3)); }
+      });
+      if (xs.length) {
+        gwName = `Verwacht grondwater ${w.bro_id.replace("GLD0000000", "GLD…")} (m)`;
+        gwTrace = { x: xs, y: ys, type: "scatter", mode: "lines", name: gwName,
+          line: { color: "#ba68c8", width: 2 }, yaxis: "y3",
+          hovertemplate: "%{y:.2f} m<extra>grondwater</extra>" };
+      }
+    }
+  }
 
   const hasH = d.measured.h_kampen_m && d.measured.h_kampen_m.some(v => v !== null);
   const hasRwsFcast = d.rws_forecast && d.rws_forecast.dates && d.rws_forecast.dates.length > 0;
@@ -719,15 +743,18 @@ function renderForecastChart(d) {
     });
   }
 
+  if (gwTrace) traces.push(gwTrace);
+
   const layout = {
     paper_bgcolor: "#080c14",
     plot_bgcolor:  "#0d1b2a",
     font:   { color: "#e0e0e0", size: 11 },
-    margin: { t: 8, b: 36, l: 58, r: hasH ? 58 : 14 },
+    margin: { t: 8, b: 36, l: 58, r: (hasH || gwTrace) ? 58 : 14 },
     legend: { orientation: "h", y: -0.28, font: { size: 10 } },
     xaxis: {
       gridcolor: "#1a3a5c", tickformat: "%d %b",
       range: [allX0, allX1],
+      domain: gwTrace ? [0, 0.88] : [0, 1],
     },
     yaxis: {
       title: "Debiet (m³/s)", gridcolor: "#1a3a5c",
@@ -737,6 +764,15 @@ function renderForecastChart(d) {
       yaxis2: {
         title: "Peil (m+NAP)", overlaying: "y", side: "right",
         titlefont: { color: "#4caf50" }, tickfont: { color: "#4caf50" },
+        gridcolor: "rgba(0,0,0,0)",
+        ...(gwTrace ? { anchor: "free", position: 0.88 } : {}),
+      },
+    } : {}),
+    ...(gwTrace ? {
+      yaxis3: {
+        title: "Grondwater (m)", overlaying: "y", side: "right",
+        anchor: "free", position: 1.0,
+        titlefont: { color: "#ba68c8" }, tickfont: { color: "#ba68c8" },
         gridcolor: "rgba(0,0,0,0)",
       },
     } : {}),

@@ -236,12 +236,26 @@ def _build_intervention(forecast: dict) -> str:
         )
     else:
         gw_lines = "  (geen recente BRO-meting beschikbaar)"
+
+    # Verwachte grondwaterrespons o.b.v. de live afvoerverwachting (projectie per put)
+    try:
+        proj = project_groundwater()
+        proj_lines = "\n".join(
+            f"  {w['bro_id']}: verwachte respons over ~{w['committed_days'] + 14} d = "
+            f"{w['expected_change_m']:+.2f} m ({w['direction']})"
+            for w in proj.get("wells", [])[:5]
+        ) if proj.get("available") and proj.get("wells") else "  (projectie niet beschikbaar)"
+    except Exception:
+        proj_lines = "  (projectie niet beschikbaar)"
+
     gw_block = (
         "GRONDWATER-CONTEXT (Veluwe-oostflank, BRO GLD — let op: meetlatentie ~maanden):\n"
         f"{gw_lines}\n"
         f"Gekalibreerde koppeling IJsselpeil → Veluwe-grondwater (droogte 2018): "
-        f"lag ~{gw['lag_days']} dagen, r≈{gw['r']}. Een dalend of stijgend IJsselpeil werkt "
-        "met deze vertraging door in de grondwaterstand op de Veluwe-flank."
+        f"lag ~{gw['lag_days']} dagen, r≈{gw['r']}.\n"
+        "VERWACHTE GRONDWATERRESPONS (projectie via de afvoerverwachting; eerste ~lag dagen "
+        "al vastgelegd door reeds-gemeten afvoer):\n"
+        f"{proj_lines}"
     )
 
     prompt = (
@@ -259,9 +273,12 @@ def _build_intervention(forecast: dict) -> str:
         "dat rechtvaardigen (vooral bij laagwater/droogte) — ook de grondwaterafhankelijke "
         "domeinen: drinkwaterwinning (Vitens), landbouw/beregening en natuur/verdroging en "
         "kweldruk op de Veluwe. Leg het verband expliciet via de IJssel→grondwater-koppeling. "
+        "Benoem hierbij CONCREET de grondwatercijfers uit de context: de laatste gemeten stand "
+        "en trend, en de verwachte respons (richting + grootte in meters, met de lag). Verbind "
+        "die cijfers aan een gevolg of maatregel; noem de meetlatentie als onzekerheid. "
         "Beschrijf acties chronologisch; noem geen domein dat nu niet relevant is. "
         "Schrijf vloeiende lopende tekst zonder kopjes, vetgedrukte koppen, opsommingstekens of "
-        "markdown-symbolen (# of *); strikt maximaal 220 woorden."
+        "markdown-symbolen (# of *); strikt maximaal 240 woorden."
     )
 
     client = _anthropic.Anthropic()

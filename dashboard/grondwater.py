@@ -311,10 +311,14 @@ def project_groundwater(event_calib: str = "zomer2018", max_wells: int = 5) -> d
         if not dates_p:
             continue
         end = delta_p[-1]
+        full = bro_gld.fetch_series(w["bro_id"])  # volledige reeks → laatste echte meting (anker)
+        last_value = full[-1]["value"] if full else None
+        last_date = full[-1]["date"] if full else None
         wells_out.append({
             "bro_id": w["bro_id"], "lat": w["lat"], "lon": w["lon"],
             "lag_days": L, "r": cal["r"], "slope": round(slope, 6),
             "committed_days": L,
+            "last_value": last_value, "last_date": last_date,
             "projection": {"dates": dates_p, "delta_m": delta_p, "source": src_p},
             "expected_change_m": end,
             "direction": "stijgend" if end > 0.02 else ("dalend" if end < -0.02 else "stabiel"),
