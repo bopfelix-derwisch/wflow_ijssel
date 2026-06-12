@@ -1,0 +1,14 @@
+[Unit]
+Description=Waterlab — FastAPI dashboard (poort 8000)
+After=network.target cloudflared.service
+
+[Service]
+User=bob
+WorkingDirectory=/home/bob/waterlab
+EnvironmentFile=-/home/bob/waterlab/.env
+ExecStart=/home/bob/.local/bin/uvicorn dashboard.server:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
