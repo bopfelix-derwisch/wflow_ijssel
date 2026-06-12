@@ -1712,7 +1712,13 @@
     <div id="grondwater-projection-chart" style="width:100%; height:300px; margin:4px 0 4px;"></div>
     <div id="gw-proj-table"></div>
 
-    <p style="color:#607d8b; font-size:11px; margin-top:12px;">Bron: BRO GLD via PDOK OGC API (gm_gld, bbox) + broservices <code>seriesAsCsv</code> · IJssel-reeks: wflow SBM 2018 · live afvoer: RWS Waterinfo + verwachting · server-side, gecached. Data-gedreven toets, geen fysisch kwelmodel.</p>
+    <div class="info-section" style="margin:18px 0 8px"><h2>Reservoirmodel — voorspelling &amp; fit-kwaliteit (v2 / v2b)</h2>
+      <p style="color:#90a4ae; font-size:13px; margin:6px 0 0;">Absolute grondwaterstand per put uit een lineair reservoir (recharge = neerslag−ET0, plus een IJssel-stand-term in v2b), gekalibreerd op de BRO-historie. <strong>NSE</strong> = fit-kwaliteit (1 = perfect; hoger = betrouwbaarder); de band is ±1.96·residu. Geankerd op de laatste echte meting → nowcast vandaag en +14 dagen.</p>
+    </div>
+    <div id="gw-reservoir-unavailable" style="display:none; color:#607d8b; font-size:12px; padding:8px 0;">Reservoirmodel laden (eerste keer ~1 min: meerjarige neerslag/RWS-fetch)…</div>
+    <div id="gw-reservoir-table"></div>
+
+    <p style="color:#607d8b; font-size:11px; margin-top:12px;">Bron: BRO GLD via PDOK OGC API (gm_gld, bbox) + broservices <code>seriesAsCsv</code> · IJssel-reeks: wflow SBM 2018 · live afvoer/stand: RWS Waterinfo · neerslag/ET0: Open-Meteo · server-side, gecached. Data-gedreven, geen fysisch kwelmodel.</p>
 
   </div>
 </div><!-- /#grondwater-panel -->
@@ -3282,7 +3288,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=44"></script>
+<script src="/static/app.js?v=45"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {

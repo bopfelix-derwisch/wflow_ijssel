@@ -909,6 +909,7 @@ async function loadGrondwater() {
     renderGrondwaterChart(data);
     renderGrondwaterTable(data);
     loadGrondwaterProjection();       // vooruitblik o.b.v. live verwachting
+    loadGrondwaterReservoir();        // reservoirmodel fit-kwaliteit (traag, apart)
     loadGrondwaterInterpretation();  // trage Qwen-call apart, grafiek staat al
   } catch (err) {
     unavail.style.display = ""; content.style.display = "none";
@@ -1038,6 +1039,40 @@ function renderGrondwaterProjectionTable(d) {
   el.innerHTML = `<table class="ensemble-scenario-table" style="margin-top:8px">` +
     `<thead><tr><th>BRO-ID</th><th>Lag</th><th>Reeds vastgelegd</th><th>Verwachte Δ (horizon)</th></tr></thead>` +
     `<tbody>${rows}</tbody></table>`;
+}
+
+async function loadGrondwaterReservoir() {
+  const tbl = document.getElementById("gw-reservoir-table");
+  const un  = document.getElementById("gw-reservoir-unavailable");
+  if (!tbl) return;
+  un.style.display = "";
+  try {
+    const d = await fetch(`${API}/api/grondwater/reservoir`).then(r => r.json());
+    if (!d.available || !d.wells || !d.wells.length) {
+      un.textContent = "Reservoirmodel niet beschikbaar."; return;
+    }
+    un.style.display = "none";
+    const rows = d.wells.map(w => {
+      const nse = w.nse;
+      const col = nse >= 0.7 ? "#4db6ac" : (nse >= 0.4 ? "#ffb74d" : "#ef5350");
+      const tau = w.tau_river_days ? `${w.tau_days} / ${w.tau_river_days} d` : `${w.tau_days} d`;
+      const modBadge = w.model === "recharge+river" ? "recharge + river" : "recharge";
+      return `<tr><td><code>${w.bro_id}</code></td>` +
+        `<td>${modBadge}</td>` +
+        `<td style="color:${col}; font-weight:700">${nse}</td>` +
+        `<td>${tau}</td>` +
+        `<td>±${w.band_m} m</td>` +
+        `<td>${w.nowcast_today} → ${w.forecast_horizon} m</td>` +
+        `<td>${w.last_value} m (${w.last_date})</td></tr>`;
+    }).join("");
+    tbl.innerHTML = `<table class="ensemble-scenario-table" style="margin-top:8px">` +
+      `<thead><tr><th>BRO-ID</th><th>Model</th><th>NSE</th><th>τ recharge / river</th>` +
+      `<th>Band</th><th>Nowcast → +14d</th><th>Laatste meting</th></tr></thead>` +
+      `<tbody>${rows}</tbody></table>`;
+  } catch (err) {
+    un.textContent = "Reservoirmodel niet beschikbaar.";
+    console.warn("grondwater reservoir failed:", err);
+  }
 }
 
 async function loadEnsemble() {
