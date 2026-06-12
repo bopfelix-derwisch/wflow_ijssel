@@ -58,8 +58,9 @@ dGW/dt = −(GW − GW_base)/τ  +  k · recharge(t)  +  m · (river(t) − GW)
 | Fase | Inhoud | Effort | Status |
 |------|--------|--------|--------|
 | **v1** | Relatieve Δ-projectie via lag+helling, geankerd op laatste meting (huidige `project_groundwater`); getoond in de verwachtingsgrafiek + interventie | klein | **deels gedaan** |
-| **v2** | Lineair-reservoirmodel per put (recharge = neerslag−ET0), gekalibreerd op de BRO-historie (grid-τ + regressie); nowcast laatste-meting→vandaag + forecast +14 d; bias-correctie + band + NSE. `dashboard/reservoir.py`, `/api/grondwater/reservoir`; getoond als absolute reeks in de verwachtingsgrafiek | middel | **GEDAAN (2026-06-12)** — NSE put-afhankelijk (bv. GLD…8239 0.82, GLD…8262 0.17 → river-term nodig, v2b) |
-| **v3** | Recharge uit ERA5/Open-Meteo met verdamping + bodemberging; validatie op uitgehouden BRO-perioden (Nash–Sutcliffe per put) | middel | voorstel |
+| **v2** | Lineair-reservoirmodel per put (recharge = neerslag−ET0), gekalibreerd op de BRO-historie (grid-τ + regressie); nowcast laatste-meting→vandaag + forecast +14 d; bias-correctie + band + NSE. `dashboard/reservoir.py`, `/api/grondwater/reservoir`; getoond als absolute reeks in de verwachtingsgrafiek | middel | **GEDAAN (2026-06-12)** |
+| **v2b** | Tweede reservoir-term gedreven door de IJssel-stand (RWS WATHTE Kampen, ~4 jr, gedeeld); 2D-grid (τ_recharge, τ_river) + gezamenlijke regressie; graceful fallback naar recharge-only bij RWS-uitval | middel | **GEDAAN (2026-06-12)** — verbetert alle putten (8239 0.82→0.84, 53138 0.49→0.52, 8262 0.17→0.22); 8262 blijft moeilijk (band ±1.0 m → lokale/onttrekkings-invloed) |
+| **v3** | Recharge uit ERA5/Open-Meteo met verdamping + bodemberging; validatie op uitgehouden BRO-perioden (Nash–Sutcliffe per put, hindcast) | middel | voorstel |
 | **v4** | Fysisch grondwatermodel (iMOD-python / MODFLOW 6) voor de Veluwe-flank; ruimtelijk veld i.p.v. puntreeksen; kwelzone-omkering expliciet | groot | backlog |
 
 **Aanrader:** v2 als eerstvolgende stap — het lost het latentie-anker op en levert

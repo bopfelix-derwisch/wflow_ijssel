@@ -1514,13 +1514,12 @@
         <p><strong>Reeksen:</strong> broservices <code>GET /gm/gld/v1/seriesAsCsv/{broId}?asISO8601=true</code> (CSV, m-waarden). Server-side <code>requests</code> (CORS-restrictie omzeild), 15-min cache.</p>
         <p><strong>Feasibility bevestigd (WL-BRO-0):</strong> bbox Veluwe-oostflank ↔ IJssel = 997 GMW-putten, 313 GLD's met zomer-2018 data. 5 kandidaatputten gecureerd.</p>
         <p><strong>AI:</strong> <code>Qwen2.5-32B</code> lokaal — zelfde patroon als de ensemble-interpretatie, met graceful fallback.</p>
-        <p><strong>Voorspelling (v2):</strong> lineair reservoir <code>GW = base + k·Σ&nbsp;recharge·e^(−i/τ)</code>, recharge = Open-Meteo neerslag−ET0, per put gekalibreerd (grid-τ + regressie); nowcast laatste-meting→vandaag + forecast +14 d, bias-correctie + NSE + band. Endpoints <code>/api/grondwater/projection</code>, <code>/api/grondwater/reservoir</code>. Zie <code>docs/grondwater_voorspelling_voorstel.md</code>.</p>
+        <p><strong>Voorspelling (v2 + v2b):</strong> lineair reservoir met twee termen — recharge (Open-Meteo neerslag−ET0) én de IJssel-stand (RWS WATHTE Kampen): <code>GW = base + k_r·Σ recharge·e^(−i/τr) + k_q·Σ rivier·e^(−i/τq)</code>. Per put gekalibreerd op de BRO-historie (2D-grid τ + regressie); nowcast laatste-meting→vandaag + forecast +14 d, bias-correctie + NSE + band; graceful fallback naar recharge-only. Endpoints <code>/api/grondwater/projection</code>, <code>/api/grondwater/reservoir</code>. Zie <code>docs/grondwater_voorspelling_voorstel.md</code>.</p>
       </div>
       <div class="poc-col">
         <div class="poc-col-label" style="color:#4dd0e1;">Opvolging</div>
         <ul>
-          <li>✓ <strong>Gedaan:</strong> connector <code>bro_gld</code> + overlay, lag-correlatie, voorspellende projectie, reservoirmodel (v2) en GraphQL-koppeling <code>nearbyGroundwaterWells</code> (Proef 8).</li>
-          <li><strong>v2b:</strong> river-term in het reservoir voor putten die neerslag-alleen niet verklaart (bv. GLD…8262, NSE 0.17).</li>
+          <li>✓ <strong>Gedaan:</strong> connector <code>bro_gld</code> + overlay, lag-correlatie, projectie, reservoirmodel <strong>v2 (recharge)</strong> + <strong>v2b (river-term, RWS-stand)</strong> en GraphQL-koppeling <code>nearbyGroundwaterWells</code> (Proef 8). De river-term verbetert alle putten; GLD…8262 blijft moeilijk (NSE 0.22, band ±1 m).</li>
           <li>Vervang de data-gedreven toets door een fysisch <strong>iMOD/MODFLOW 6</strong>-kwelmodel.</li>
           <li>Breid uit naar meerdere droogte-events (2018, 2022) om de respons te valideren.</li>
         </ul>

@@ -30,10 +30,39 @@ ARCHIVE_URL  = "https://archive-api.open-meteo.com/v1/archive"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
 CALIB_YEARS = 8
+RIVER_YEARS = 4             # v2b: river-term kalibratievenster (RWS-fetch-kosten)
 WARMUP_DAYS = 1095          # ~3·τ_max convolutie-aanloop
 TAU_GRID    = [10, 20, 30, 45, 60, 90, 120, 180, 250, 365]  # dagen
 _cache: dict = {}
+_river_cache: dict = {}
 _TTL = 6 * 3600             # 6 uur
+
+
+def _river_series(years: int = RIVER_YEARS) -> dict:
+    """v2b — Kampen waterstand (WATHTE, m+NAP) daggemiddeld over ~years jaar; gedeelde
+    river-driver. Lege dict bij uitval → het model valt terug op recharge-only (v2)."""
+    hit = _river_cache.get(years)
+    if hit and time.monotonic() - hit[0] < _TTL:
+        return hit[1]
+    out: dict = {}
+    try:
+        import pandas as pd
+        import rws_waterinfo as rw
+        end = date.today()
+        start = end - timedelta(days=365 * years)
+        df = rw.get_data([{"locatie_code": "kampen.ijssel", "compartiment_code": "OW",
+                           "grootheid_code": "WATHTE", "eenheid_code": "cm",
+                           "start_date": str(start), "end_date": str(end),
+                           "proces_type": "meting"}], return_df=True, parallel=False)
+        if df is not None and len(df):
+            df2 = df[["Tijdstip", "Meetwaarde.Waarde_Numeriek"]].copy()
+            df2["Tijdstip"] = pd.to_datetime(df2["Tijdstip"].str[:19])
+            daily = df2.set_index("Tijdstip")["Meetwaarde.Waarde_Numeriek"].resample("D").mean().dropna()
+            out = {ts.strftime("%Y-%m-%d"): float(v) / 100.0 for ts, v in daily.items()}  # cm → m
+    except Exception as e:
+        logger.warning("v2b river-fetch faalde: %s", e)
+    _river_cache[years] = (time.monotonic(), out)
+    return out
 
 
 def _daterange(start: str, end: str) -> list[str]:
@@ -93,8 +122,16 @@ def predict_well(bro_id: str, lat: float, lon: float, horizon: int = 14) -> dict
         return {"available": False, "error": "te weinig BRO-metingen"}
 
     today = date.today()
-    cstart = max(gw[0]["date"], (today - timedelta(days=365 * CALIB_YEARS)).isoformat())
+    # v2b: river-term meenemen als RWS-data beschikbaar is; venster dan tot RIVER_YEARS.
+    river = _river_series()
+    use_river = len(river) > 200
+    calib_years = RIVER_YEARS if use_river else CALIB_YEARS
+    cstart = max(gw[0]["date"], (today - timedelta(days=365 * calib_years)).isoformat())
+    if use_river:
+        cstart = max(cstart, min(river))
     gw = [e for e in gw if e["date"] >= cstart]
+    if len(gw) < 50:
+        return {"available": False, "error": "te weinig metingen in kalibratievenster"}
     gw_map = {e["date"]: e["value"] for e in gw}
 
     warmup_start = (date.fromisoformat(gw[0]["date"]) - timedelta(days=WARMUP_DAYS)).isoformat()
@@ -110,21 +147,41 @@ def predict_well(bro_id: str, lat: float, lon: float, horizon: int = 14) -> dict
     obs_dates = [d for d in gw_map if d in idx]
     ys = np.array([gw_map[d] for d in obs_dates])
 
-    best = None
-    for tau in TAU_GRID:
-        S = _convolve(all_dates, rech, tau)
-        xs = np.array([S[idx[d]] for d in obs_dates])
-        A = np.vstack([xs, np.ones_like(xs)]).T
-        k, b = np.linalg.lstsq(A, ys, rcond=None)[0]
-        pred = k * xs + b
+    # rivier-driver over alle datums: backfill vóór eerste meting, flat-hold ná laatste
+    rivmap = None
+    if use_river:
+        rk = sorted(river)
+        r_first, r_last = river[rk[0]], river[rk[-1]]
+        rivmap = {d: river.get(d, r_first if d < rk[0] else r_last) for d in all_dates}
+
+    def _nse(pred):
         ss_res = float(np.sum((ys - pred) ** 2))
         ss_tot = float(np.sum((ys - ys.mean()) ** 2))
-        nse = 1 - ss_res / ss_tot if ss_tot > 0 else -999.0
-        if best is None or nse > best["nse"]:
-            best = {"tau": tau, "k": float(k), "base": float(b), "nse": round(nse, 3),
-                    "resid_std": float(np.std(ys - pred)), "S": S}
+        return 1 - ss_res / ss_tot if ss_tot > 0 else -999.0
 
-    model = best["k"] * best["S"] + best["base"]
+    best = None
+    for tau_r in TAU_GRID:
+        Sr = _convolve(all_dates, rech, tau_r)
+        xr = np.array([Sr[idx[d]] for d in obs_dates])
+        tauq_list = TAU_GRID if use_river else [None]
+        for tau_q in tauq_list:
+            if tau_q is None:
+                Sq = None
+                A = np.vstack([xr, np.ones_like(xr)]).T
+            else:
+                Sq = _convolve(all_dates, rivmap, tau_q)
+                xq = np.array([Sq[idx[d]] for d in obs_dates])
+                A = np.vstack([xr, xq, np.ones_like(xr)]).T
+            coef = np.linalg.lstsq(A, ys, rcond=None)[0]
+            nse = _nse(A @ coef)
+            if best is None or nse > best["nse"]:
+                best = {"tau_r": tau_r, "tau_q": tau_q, "coef": coef, "nse": round(nse, 3),
+                        "resid_std": float(np.std(ys - A @ coef)), "Sr": Sr, "Sq": Sq}
+
+    if best["tau_q"] is None:
+        model = best["coef"][0] * best["Sr"] + best["coef"][1]
+    else:
+        model = best["coef"][0] * best["Sr"] + best["coef"][1] * best["Sq"] + best["coef"][2]
     mmap = {d: model[idx[d]] for d in all_dates}
     last_date = max(gw_map)
     last_value = gw_map[last_date]
@@ -142,7 +199,9 @@ def predict_well(bro_id: str, lat: float, lon: float, horizon: int = 14) -> dict
         "available": True,
         "bro_id": bro_id, "lat": lat, "lon": lon,
         "last_date": last_date, "last_value": last_value,
-        "tau_days": best["tau"], "nse": best["nse"], "band_m": band,
+        "tau_days": best["tau_r"], "tau_river_days": best["tau_q"],
+        "model": "recharge+river" if best["tau_q"] else "recharge",
+        "nse": best["nse"], "band_m": band,
         "dates": out_dates, "gw": gw_pred,
         "lower": [round(v - band, 3) for v in gw_pred],
         "upper": [round(v + band, 3) for v in gw_pred],
