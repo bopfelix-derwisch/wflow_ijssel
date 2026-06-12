@@ -643,7 +643,7 @@ function renderForecastKpis(d) {
       : "onder drempel 1500 m³/s";
 }
 
-function renderForecastChart(d, proj) {
+function renderForecastChart(d, res) {
   const today     = d.generated_at;
   const measDates = d.measured.dates;
   const fDates    = d.forecast.dates;
