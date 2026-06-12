@@ -1199,6 +1199,7 @@
         <p>Een Claude-agent (Anthropic API) legt de verwachting uit als <strong>expert-hydroloog</strong>: niet "het debiet wordt X m³/s" maar "het peil nadert de waakdrempel — RWS en HHNK starten dan doorgaans Y protocol".</p>
         <p>De meerwaarde: domeinkennis over stakeholders, peilregimes en de Pannerdense Kop-verdeling zit in de systeemprompt, niet in de modeloutput.</p>
         <p><strong>Integraal (nieuw):</strong> de interventie is cross-domein. Via de gekalibreerde IJssel→Veluwe-grondwaterkoppeling (Proef 9) vertaalt de agent de live peilverwachting óók naar drinkwaterwinning (Vitens), landbouw/beregening en natuur/kweldruk — niet alleen scheepvaart en peil.</p>
+        <p><strong>Grondwater in de grafiek:</strong> de verwachtingsgrafiek toont nu naast debiet en peil ook de verwachte <strong>absolute grondwaterstand</strong> (Veluwe-flank, BRO) met onzekerheidsband, uit het reservoirmodel (Proef 9 / v2).</p>
         <button class="poc-goto" style="color:#4db6ac; border-color:#00695c;" onclick="switchYear('forecast')">Bekijk verwachting →</button>
       </div>
       <div class="poc-col">
@@ -1206,7 +1207,7 @@
         <p><strong>Model:</strong> lineaire regressie op ERA5-historiek (recessiecoëfficiënt + impulsrespons). Geen fysisch gekalibreerd model — bewust simpel om de AI-interventie centraal te stellen.</p>
         <p><strong>Data:</strong> RWS Waterinfo live via REST (debiet Lobith), ECMWF open API (14-daagse neerslag), ERA5-Land (trainingsdata).</p>
         <p><strong>AI:</strong> <code>claude-haiku-4-5</code> via Anthropic API. Systeemprompt bevat gebiedsschematisatie: Pannerdense Kop-verdeling (~13% IJssel), peilregimes (waak/alarm), stakeholders (RWS-dist. Oost-Nederland, HHNK, Vitens Oost).</p>
-        <p><strong>Grondwater-context:</strong> de prompt krijgt live de recente Veluwe-grondwaterstand (BRO GLD) + de gekalibreerde koppeling (lag ~18 d, r≈0.9) mee, zodat de interventie de domeinen koppelt. Aparte snelle/trage endpoints (<code>/api/forecast/intervention</code>).</p>
+        <p><strong>Grondwater (Proef 9-koppeling):</strong> de prompt krijgt live de recente BRO-grondwaterstand + de gekalibreerde koppeling (lag ~18 d, r≈0.9) én de <strong>reservoirmodel-voorspelling</strong> (nowcast/forecast met NSE) mee; de grafiek toont die absolute voorspelling + band. Endpoints <code>/api/forecast/intervention</code> en <code>/api/grondwater/reservoir</code>.</p>
         <p><strong>Stack:</strong> Python/FastAPI backend, Plotly.js chart, server-sent events voor live update.</p>
       </div>
       <div class="poc-col">
@@ -1215,7 +1216,7 @@
           <li>Vervang het statistische model door een <strong>wflow SBM nowcast</strong> met assimilatie van actuele RWS-metingen (Ensemble Kalman Filter).</li>
           <li>Breid de AI-interventie uit met een <strong>tool-use patroon</strong>: de agent roept zelf de Waterinfo API aan om live peilmetingen op te vragen.</li>
           <li>Koppel de verwachting aan de <strong>FEWS PI REST API</strong> (Proef 7) zodat het als externe databron in operationele systemen zichtbaar wordt.</li>
-          <li>Maak de grondwater-koppeling <strong>voorspellend</strong>: projecteer de 14-daagse IJssel-verwachting via de lag-relatie naar een verwachte grondwatertrend per Veluwe-put.</li>
+          <li>✓ <strong>Gedaan:</strong> grondwater-projectie + lineair reservoirmodel (absolute voorspelling met band). Volgende: een <strong>river-term</strong> in het reservoir (v2b) voor putten die neerslag-alleen niet verklaart.</li>
           <li>Test met een <strong>kleiner lokaal model</strong> (bijv. Qwen2.5-7B) om te meten hoeveel domeinkennis verloren gaat bij downsizing.</li>
         </ul>
       </div>
@@ -1494,7 +1495,7 @@
       <span class="poc-num" style="color:#4dd0e1;">9</span>
       <div>
         <h3>BRO grondwater-koppeling — IJssel ↔ Veluwe</h3>
-        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 9 · WL-BRO-1 · BRO GLD + PDOK OGC · grondwater vs rivierpeil + AI</div>
+        <div style="font-size:11px; color:#546e7a; margin-top:2px;">Proef 9 · BRO GLD + PDOK OGC · grondwater↔IJssel · lag-correlatie + voorspelling + AI</div>
       </div>
       <span class="poc-tag" style="background:#00251a; color:#4dd0e1; border:1px solid #00838f;">✓ live</span>
     </div>
@@ -1503,6 +1504,7 @@
         <div class="poc-col-label" style="color:#4dd0e1;">Functioneel</div>
         <p>Koppelt <strong>echte gemeten grondwaterstanden</strong> (BRO) langs de oostflank van de Veluwe aan het IJssel-peil bij Kampen. Toetst de hypothese <em>kwelzone-omkering bij laagwater</em> data-gedreven op het droogte-event <strong>zomer 2018</strong> — zonder eerst een MODFLOW/iMOD-model te bouwen.</p>
         <p>De analyse berekent de <strong>lag-correlatie</strong> (rivierpeil → grondwaterrespons, dagen–weken vertraging) en laat <strong>Qwen2.5-32B lokaal</strong> een hydrologische duiding genereren.</p>
+        <p><strong>Vooruitblik + voorspelling:</strong> de tab projecteert de live IJssel-verwachting naar de verwachte grondwaterrespons, en een <strong>lineair reservoirmodel</strong> voorspelt de <strong>absolute grondwaterstand</strong> per put met onzekerheidsband — dat overbrugt de BRO-meetlatentie van maanden (nowcast → forecast).</p>
         <p>Maakt de bestaande conceptuele backlog-POC "iMOD · Veluwe grondwater" voor het eerst uitvoerbaar met data.</p>
         <button class="poc-goto" style="color:#4dd0e1; border-color:#00838f;" onclick="switchYear('grondwater')">Bekijk POC →</button>
       </div>
@@ -1512,14 +1514,15 @@
         <p><strong>Reeksen:</strong> broservices <code>GET /gm/gld/v1/seriesAsCsv/{broId}?asISO8601=true</code> (CSV, m-waarden). Server-side <code>requests</code> (CORS-restrictie omzeild), 15-min cache.</p>
         <p><strong>Feasibility bevestigd (WL-BRO-0):</strong> bbox Veluwe-oostflank ↔ IJssel = 997 GMW-putten, 313 GLD's met zomer-2018 data. 5 kandidaatputten gecureerd.</p>
         <p><strong>AI:</strong> <code>Qwen2.5-32B</code> lokaal — zelfde patroon als de ensemble-interpretatie, met graceful fallback.</p>
+        <p><strong>Voorspelling (v2):</strong> lineair reservoir <code>GW = base + k·Σ&nbsp;recharge·e^(−i/τ)</code>, recharge = Open-Meteo neerslag−ET0, per put gekalibreerd (grid-τ + regressie); nowcast laatste-meting→vandaag + forecast +14 d, bias-correctie + NSE + band. Endpoints <code>/api/grondwater/projection</code>, <code>/api/grondwater/reservoir</code>. Zie <code>docs/grondwater_voorspelling_voorstel.md</code>.</p>
       </div>
       <div class="poc-col">
         <div class="poc-col-label" style="color:#4dd0e1;">Opvolging</div>
         <ul>
-          <li>Bouw de connector <code>bro_gld</code> (+ <code>bro_gmw</code>) als Data Hub-adapter en de overlay-grafiek grondwaterstand vs IJssel-peil Kampen.</li>
-          <li>Koppel terug aan Proef 8 via <code>station → nearbyGroundwaterWells</code> (WL-GQL-2).</li>
-          <li>Vervang de data-gedreven toets door een fysisch <strong>iMOD/MODFLOW 6</strong>-kwelmodel zodra de correlatie veelbelovend is.</li>
-          <li>Breid uit naar meerdere droogte-events (2018, 2022) om de lag-respons te valideren.</li>
+          <li>✓ <strong>Gedaan:</strong> connector <code>bro_gld</code> + overlay, lag-correlatie, voorspellende projectie, reservoirmodel (v2) en GraphQL-koppeling <code>nearbyGroundwaterWells</code> (Proef 8).</li>
+          <li><strong>v2b:</strong> river-term in het reservoir voor putten die neerslag-alleen niet verklaart (bv. GLD…8262, NSE 0.17).</li>
+          <li>Vervang de data-gedreven toets door een fysisch <strong>iMOD/MODFLOW 6</strong>-kwelmodel.</li>
+          <li>Breid uit naar meerdere droogte-events (2018, 2022) om de respons te valideren.</li>
         </ul>
       </div>
     </div>
