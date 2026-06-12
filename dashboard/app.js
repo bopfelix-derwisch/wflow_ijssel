@@ -604,9 +604,9 @@ async function loadForecast() {
     badge.textContent = `🌊 ${al.text}`;
     badge.style.background = al.color;
 
-    // Verwachte grondwaterstand (BRO) als extra reeks in de verwachtingsgrafiek
-    fetch(`${API}/api/grondwater/projection`).then(r => r.json())
-      .then(proj => renderForecastChart(data, proj))
+    // Verwachte absolute grondwaterstand (reservoirmodel v2) als extra reeks
+    fetch(`${API}/api/grondwater/reservoir`).then(r => r.json())
+      .then(res => renderForecastChart(data, res))
       .catch(() => { /* grondwater optioneel; grafiek staat al */ });
 
     loadForecastIntervention();
@@ -650,22 +650,27 @@ function renderForecastChart(d, proj) {
   const allX0     = measDates[0];
   const allX1     = fDates[fDates.length - 1];
 
-  // Representatieve put met recente meting → verwachte absolute grondwaterstand (anker + projectie)
-  let gwTrace = null, gwName = "";
-  if (proj && proj.available && proj.wells && proj.wells.length) {
-    const cand = proj.wells.filter(w => w.last_value != null && w.last_date);
-    if (cand.length) {
-      const w = cand.sort((a, b) => (a.last_date < b.last_date ? 1 : -1))[0];  // meest recente meting
-      const xs = [], ys = [];
-      w.projection.dates.forEach((dt, i) => {
-        if (dt >= today && dt <= allX1) { xs.push(dt); ys.push(+(w.last_value + w.projection.delta_m[i]).toFixed(3)); }
-      });
-      if (xs.length) {
-        gwName = `Verwacht grondwater ${w.bro_id.replace("GLD0000000", "GLD…")} (m)`;
-        gwTrace = { x: xs, y: ys, type: "scatter", mode: "lines", name: gwName,
+  // Reservoirmodel (v2): verwachte absolute grondwaterstand + onzekerheidsband (beste-NSE put)
+  let gwTraces = [];
+  if (res && res.available && res.wells && res.wells.length) {
+    const w = res.wells[0];   // hoogste NSE
+    const xs = [], ys = [], lo = [], hi = [];
+    (w.dates || []).forEach((dt, i) => {
+      if (dt >= allX0 && dt <= allX1) { xs.push(dt); ys.push(w.gw[i]); lo.push(w.lower[i]); hi.push(w.upper[i]); }
+    });
+    if (xs.length) {
+      const wid = w.bro_id.replace("GLD0000000", "GLD…");
+      gwTraces = [
+        { x: xs, y: lo, type: "scatter", mode: "lines", line: { width: 0 },
+          yaxis: "y3", showlegend: false, hoverinfo: "skip" },
+        { x: xs, y: hi, type: "scatter", mode: "lines", line: { width: 0 },
+          fill: "tonexty", fillcolor: "rgba(186,104,200,0.13)", yaxis: "y3",
+          name: "Grondwater onzekerheid", hoverinfo: "skip" },
+        { x: xs, y: ys, type: "scatter", mode: "lines",
+          name: `Verwacht grondwater ${wid} (m · NSE ${w.nse})`,
           line: { color: "#ba68c8", width: 2 }, yaxis: "y3",
-          hovertemplate: "%{y:.2f} m<extra>grondwater</extra>" };
-      }
+          hovertemplate: "%{y:.2f} m<extra>grondwater</extra>" },
+      ];
     }
   }
 
@@ -743,18 +748,19 @@ function renderForecastChart(d, proj) {
     });
   }
 
-  if (gwTrace) traces.push(gwTrace);
+  if (gwTraces.length) traces.push(...gwTraces);
+  const hasGw = gwTraces.length > 0;
 
   const layout = {
     paper_bgcolor: "#080c14",
     plot_bgcolor:  "#0d1b2a",
     font:   { color: "#e0e0e0", size: 11 },
-    margin: { t: 8, b: 36, l: 58, r: (hasH || gwTrace) ? 58 : 14 },
+    margin: { t: 8, b: 36, l: 58, r: (hasH || hasGw) ? 58 : 14 },
     legend: { orientation: "h", y: -0.28, font: { size: 10 } },
     xaxis: {
       gridcolor: "#1a3a5c", tickformat: "%d %b",
       range: [allX0, allX1],
-      domain: gwTrace ? [0, 0.88] : [0, 1],
+      domain: hasGw ? [0, 0.88] : [0, 1],
     },
     yaxis: {
       title: "Debiet (m³/s)", gridcolor: "#1a3a5c",
@@ -765,10 +771,10 @@ function renderForecastChart(d, proj) {
         title: "Peil (m+NAP)", overlaying: "y", side: "right",
         titlefont: { color: "#4caf50" }, tickfont: { color: "#4caf50" },
         gridcolor: "rgba(0,0,0,0)",
-        ...(gwTrace ? { anchor: "free", position: 0.88 } : {}),
+        ...(hasGw ? { anchor: "free", position: 0.88 } : {}),
       },
     } : {}),
-    ...(gwTrace ? {
+    ...(hasGw ? {
       yaxis3: {
         title: "Grondwater (m)", overlaying: "y", side: "right",
         anchor: "free", position: 1.0,

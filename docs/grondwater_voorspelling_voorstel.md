@@ -58,7 +58,7 @@ dGW/dt = −(GW − GW_base)/τ  +  k · recharge(t)  +  m · (river(t) − GW)
 | Fase | Inhoud | Effort | Status |
 |------|--------|--------|--------|
 | **v1** | Relatieve Δ-projectie via lag+helling, geankerd op laatste meting (huidige `project_groundwater`); getoond in de verwachtingsgrafiek + interventie | klein | **deels gedaan** |
-| **v2** | Lineair-reservoirmodel per put, gekalibreerd op de volledige BRO-historie; nowcast laatste-meting→vandaag via RWS-afvoer + neerslag; absolute stand + band | middel | voorstel |
+| **v2** | Lineair-reservoirmodel per put (recharge = neerslag−ET0), gekalibreerd op de BRO-historie (grid-τ + regressie); nowcast laatste-meting→vandaag + forecast +14 d; bias-correctie + band + NSE. `dashboard/reservoir.py`, `/api/grondwater/reservoir`; getoond als absolute reeks in de verwachtingsgrafiek | middel | **GEDAAN (2026-06-12)** — NSE put-afhankelijk (bv. GLD…8239 0.82, GLD…8262 0.17 → river-term nodig, v2b) |
 | **v3** | Recharge uit ERA5/Open-Meteo met verdamping + bodemberging; validatie op uitgehouden BRO-perioden (Nash–Sutcliffe per put) | middel | voorstel |
 | **v4** | Fysisch grondwatermodel (iMOD-python / MODFLOW 6) voor de Veluwe-flank; ruimtelijk veld i.p.v. puntreeksen; kwelzone-omkering expliciet | groot | backlog |
 

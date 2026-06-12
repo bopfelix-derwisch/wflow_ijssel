@@ -248,6 +248,18 @@ def _build_intervention(forecast: dict) -> str:
     except Exception:
         proj_lines = "  (projectie niet beschikbaar)"
 
+    # Absolute grondwaterstand-voorspelling (reservoirmodel v2, recharge-gedreven)
+    try:
+        from dashboard.reservoir import predict_set
+        resv = predict_set()
+        resv_lines = "\n".join(
+            f"  {w['bro_id']} (NSE {w['nse']}): nowcast vandaag {w['nowcast_today']} m → "
+            f"+14 d {w['forecast_horizon']} m (±{w['band_m']} m); laatste meting {w['last_value']} m"
+            for w in resv.get("wells", [])[:3]
+        ) if resv.get("available") and resv.get("wells") else "  (reservoirmodel niet beschikbaar)"
+    except Exception:
+        resv_lines = "  (reservoirmodel niet beschikbaar)"
+
     gw_block = (
         "GRONDWATER-CONTEXT (Veluwe-oostflank, BRO GLD — let op: meetlatentie ~maanden):\n"
         f"{gw_lines}\n"
@@ -255,7 +267,10 @@ def _build_intervention(forecast: dict) -> str:
         f"lag ~{gw['lag_days']} dagen, r≈{gw['r']}.\n"
         "VERWACHTE GRONDWATERRESPONS (projectie via de afvoerverwachting; eerste ~lag dagen "
         "al vastgelegd door reeds-gemeten afvoer):\n"
-        f"{proj_lines}"
+        f"{proj_lines}\n"
+        "ABSOLUTE GRONDWATERSTAND-VOORSPELLING (reservoirmodel, neerslag/verdamping-gedreven, "
+        "geankerd op laatste meting; NSE = fit-kwaliteit, hoger = betrouwbaarder):\n"
+        f"{resv_lines}"
     )
 
     prompt = (
@@ -445,6 +460,16 @@ def get_grondwater_interpretation(event: str = "zomer2018"):
 def get_grondwater_projection(event: str = "zomer2018"):
     try:
         return JSONResponse(project_groundwater(event))
+    except Exception as e:
+        return JSONResponse({"available": False, "error": str(e)})
+
+
+# v2 — absolute grondwaterstand-voorspelling (lineair reservoir, recharge-gedreven)
+@app.get("/api/grondwater/reservoir")
+def get_grondwater_reservoir():
+    from dashboard.reservoir import predict_set
+    try:
+        return JSONResponse(predict_set())
     except Exception as e:
         return JSONResponse({"available": False, "error": str(e)})
 
