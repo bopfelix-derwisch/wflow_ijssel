@@ -391,7 +391,7 @@ function renderChart(tsK, tsW, days, cfg, measured) {
     {
       x: tsK.dates, y: tsK.q,
       type: "scatter", mode: "lines",
-      name: "Gesimuleerd Kampen (m³/s)",
+      name: "Gesimuleerd · debiet Kampen (m³/s)",
       line: { color: `rgb(${r},${g},${b})`, width: 2 },
       yaxis: "y",
       fill: "tozeroy",
@@ -400,7 +400,7 @@ function renderChart(tsK, tsW, days, cfg, measured) {
     {
       x: tsK.dates, y: tsK.h_nap,
       type: "scatter", mode: "lines",
-      name: "Waterpeil Kampen (m+NAP)",
+      name: "Gesimuleerd · waterpeil Kampen (m+NAP)",
       line: { color: "#4caf50", width: 2, dash: "dot" },
       yaxis: "y2",
     },
@@ -420,7 +420,7 @@ function renderChart(tsK, tsW, days, cfg, measured) {
       traces.push({
         x: measured.westervoort.dates, y: measured.westervoort.q,
         type: "scatter", mode: "lines",
-        name: "Gemeten Westervoort m³/s (RWS)",
+        name: "Gemeten · debiet Westervoort (m³/s, RWS)",
         line: { color: "#80cbc4", width: 2, dash: "dashdot" },
         yaxis: "y",
       });
@@ -429,7 +429,7 @@ function renderChart(tsK, tsW, days, cfg, measured) {
       traces.push({
         x: measured.lobith.dates, y: measured.lobith.q,
         type: "scatter", mode: "lines",
-        name: "Gemeten Lobith m³/s (Rijn totaal)",
+        name: "Gemeten · debiet Lobith (m³/s, Rijn totaal)",
         line: { color: "#90caf9", width: 1.5, dash: "dot" },
         yaxis: "y3",
       });
@@ -665,9 +665,9 @@ function renderForecastChart(d, res) {
           yaxis: "y3", showlegend: false, hoverinfo: "skip" },
         { x: xs, y: hi, type: "scatter", mode: "lines", line: { width: 0 },
           fill: "tonexty", fillcolor: "rgba(186,104,200,0.13)", yaxis: "y3",
-          name: "Grondwater onzekerheid", hoverinfo: "skip" },
+          name: "Verwacht · grondwater onzekerheid", hoverinfo: "skip" },
         { x: xs, y: ys, type: "scatter", mode: "lines",
-          name: `Verwacht grondwater ${wid} (m · NSE ${w.nse})`,
+          name: `Verwacht · grondwater ${wid} (m, NSE ${w.nse})`,
           line: { color: "#ba68c8", width: 2 }, yaxis: "y3",
           hovertemplate: "%{y:.2f} m<extra>grondwater</extra>" },
       ];
@@ -688,13 +688,13 @@ function renderForecastChart(d, res) {
       x: fDates, y: d.forecast.q_high,
       type: "scatter", mode: "lines", line: { width: 0 },
       fill: "tonexty", fillcolor: "rgba(77,182,172,0.15)",
-      name: "Onzekerheidsband ±", hoverinfo: "skip", yaxis: "y",
+      name: "Verwacht · onzekerheidsband (debiet)", hoverinfo: "skip", yaxis: "y",
     },
     // Gemeten Westervoort Q
     {
       x: measDates, y: d.measured.q_westervoort,
       type: "scatter", mode: "lines",
-      name: "Debiet Westervoort (m³/s)",
+      name: "Gemeten · debiet Westervoort (m³/s, RWS)",
       line: { color: "#ff9800", width: 1.5, dash: "dot" },
       yaxis: "y",
     },
@@ -702,7 +702,7 @@ function renderForecastChart(d, res) {
     {
       x: measDates, y: d.measured.q_kampen,
       type: "scatter", mode: "lines",
-      name: "Debiet Kampen routing (m³/s)",
+      name: "Gemeten · debiet Kampen (routing, m³/s)",
       line: { color: "#4db6ac", width: 2 },
       yaxis: "y",
     },
@@ -710,7 +710,7 @@ function renderForecastChart(d, res) {
     {
       x: fDates, y: d.forecast.q_mid,
       type: "scatter", mode: "lines",
-      name: "Verwacht debiet Kampen",
+      name: "Verwacht · debiet Kampen (m³/s)",
       line: { color: "#4db6ac", width: 2, dash: "dash" },
       yaxis: "y",
     },
@@ -718,7 +718,7 @@ function renderForecastChart(d, res) {
     {
       x: [allX0, allX1], y: [1500, 1500],
       type: "scatter", mode: "lines",
-      name: "Drempel 1500 m³/s",
+      name: "Drempel · 1500 m³/s (referentie)",
       line: { color: "#f44336", width: 1, dash: "dash" },
       hoverinfo: "skip", yaxis: "y",
     },
@@ -730,7 +730,7 @@ function renderForecastChart(d, res) {
       x: measDates,
       y: d.measured.h_kampen_m,
       type: "scatter", mode: "lines",
-      name: "Waterpeil Kampen (m+NAP)",
+      name: "Gemeten · waterpeil Kampen (m+NAP, RWS)",
       line: { color: "#4caf50", width: 1.5, dash: "dot" },
       yaxis: "y2", connectgaps: true,
     });
@@ -741,7 +741,7 @@ function renderForecastChart(d, res) {
       x: d.rws_forecast.dates,
       y: d.rws_forecast.values_m,
       type: "scatter", mode: "lines+markers",
-      name: "RWS verwachting peil",
+      name: "Verwacht · waterpeil Kampen (m+NAP, RWS)",
       line: { color: "#81c784", width: 2 },
       marker: { size: 5 },
       yaxis: "y2",
@@ -802,12 +802,12 @@ function renderForecastPrecip(d) {
   const traces = [
     {
       x: d.precip.past_dates, y: d.precip.past_values,
-      type: "bar", name: "Neerslag gemeten (ERA5)",
+      type: "bar", name: "Gemeten · neerslag (mm, ERA5)",
       marker: { color: "rgba(100,130,160,0.7)" },
     },
     {
       x: d.precip.forecast_dates, y: d.precip.forecast_values,
-      type: "bar", name: "Neerslag verwacht (IFS)",
+      type: "bar", name: "Verwacht · neerslag (mm, IFS)",
       marker: { color: "rgba(77,182,172,0.7)" },
     },
   ];

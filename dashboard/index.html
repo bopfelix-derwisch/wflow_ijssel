@@ -311,6 +311,33 @@
       background: #0d2a3a; border: 1px solid #1a4a6a; border-radius: 4px;
       color: #4fc3f7; font-size: 10px; font-weight: 600; padding: 2px 8px; letter-spacing: .4px;
     }
+    /* ── WL-GOV-1: wat dit wél/niet bewijst (canoniek, zie docs/WL-GOV-1_wel_niet.md) ── */
+    .wel-niet {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+      margin: 1.6rem 2.5rem 0; max-width: 1100px;
+    }
+    .wn-card {
+      border: 1px solid #1a2e3f; border-radius: 10px; padding: 1rem 1.2rem;
+      background: #07111c;
+    }
+    .wn-card.wel  { border-left: 3px solid #00b894; }
+    .wn-card.niet { border-left: 3px solid #c55a11; }
+    .wn-head {
+      font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+      margin-bottom: .6rem; display: flex; align-items: center; gap: .5rem;
+    }
+    .wn-card.wel  .wn-head { color: #1de9b6; }
+    .wn-card.niet .wn-head { color: #ff9b63; }
+    .wn-card ul { margin: 0; padding: 0 0 0 1.1rem; }
+    .wn-card li { font-size: 12px; color: #8aa1ae; line-height: 1.6; margin-bottom: .4rem; }
+    .wn-card li:last-child { margin-bottom: 0; }
+    .wn-card li strong { color: #b0c4ce; }
+    .wn-pos {
+      margin: .7rem 2.5rem 0; max-width: 1100px;
+      font-size: 11.5px; color: #607d8b; line-height: 1.6;
+    }
+    .wn-pos code { color: #4db6ac; background:#001a13; padding:1px 5px; border-radius:3px; font-size:11px; }
+    @media (max-width: 700px) { .wel-niet { grid-template-columns: 1fr; margin: 1.2rem 1rem 0; } .wn-pos { margin: .7rem 1rem 0; } }
     .intro-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -522,6 +549,14 @@
     }
     #forecast-chart-wrap { padding: 8px 16px 0; }
     #forecast-chart  { width: 100%; height: 220px; }
+    /* WL-VIS-2: eerlijke labels — type-sleutel onder de grafiek */
+    .chart-legend-key {
+      display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center;
+      padding: 4px 2px 2px; font-size: 10px; color: #607d8b;
+    }
+    .chart-legend-key b { font-weight: 700; }
+    .chart-legend-key .clk-axis { margin-left: auto; color: #455a64; font-style: italic; }
+    @media (max-width: 700px) { .chart-legend-key .clk-axis { margin-left: 0; } }
     #forecast-precip { width: 100%; height: 130px; }
     #forecast-disclaimer {
       margin: 0 16px 12px; padding: 8px 12px;
@@ -624,9 +659,52 @@
   .poc-divider {
     height: 1px; background: #0e1e2a; margin: .75rem 0;
   }
+  /* ── Herkomst-keten (WL-PROV-1): aftepelbaar databron → … → AI-duiding ── */
+  .poc-prov { border-top: 1px solid #1a2e3f; background: #050d15; }
+  .poc-prov > summary {
+    list-style: none; cursor: pointer; user-select: none;
+    padding: .7rem 1.4rem; font-size: 10px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase; color: #607d8b;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .poc-prov > summary::-webkit-details-marker { display: none; }
+  .poc-prov > summary::before {
+    content: '▸'; color: #455a64; transition: transform .15s; font-size: 11px;
+  }
+  .poc-prov[open] > summary::before { transform: rotate(90deg); }
+  .poc-prov > summary:hover { color: #90a4ae; }
+  .poc-prov > summary .prov-hint {
+    margin-left: auto; font-weight: 500; letter-spacing: 0;
+    text-transform: none; font-size: 11px; color: #455a64;
+  }
+  .poc-prov-chain {
+    display: flex; flex-wrap: wrap; gap: 6px; padding: 0 1.4rem 1.2rem;
+  }
+  .prov-step {
+    flex: 1 1 150px; min-width: 140px;
+    background: #07131e; border: 1px solid #14283a; border-radius: 6px;
+    border-left: 3px solid var(--prov-accent, #2e4756);
+    padding: 9px 11px;
+  }
+  .prov-step-label {
+    font-size: 9px; font-weight: 800; letter-spacing: .07em;
+    text-transform: uppercase; color: #546e7a; margin-bottom: 5px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .prov-step-label .prov-n {
+    color: var(--prov-accent, #455a64); font-weight: 800;
+  }
+  .prov-step p { font-size: 11px; color: #7e96a3; line-height: 1.55; margin: 0; }
+  .prov-step code {
+    color: #4db6ac; background: #001a13; padding: 1px 4px;
+    border-radius: 3px; font-size: 10px;
+  }
+  .prov-warn { color: #ffb74d; }
+  .prov-na  { color: #546e7a; font-style: italic; }
   @media (max-width: 700px) {
     .poc-body { grid-template-columns: 1fr; }
     .poc-col { border-right: none; border-bottom: 1px solid #0e1e2a; }
+    .prov-step { flex: 1 1 100%; }
   }
 
   </style>
@@ -1022,6 +1100,12 @@
   <div id="forecast-source" id="forecast-source-bar">—</div>
   <div id="forecast-chart-wrap">
     <div id="forecast-chart"></div>
+    <div class="chart-legend-key">
+      <span><b style="color:#4caf50">Gemeten</b> = RWS-meting</span>
+      <span><b style="color:#4db6ac">Verwacht</b> = model / Open-Meteo</span>
+      <span><b style="color:#ba68c8">Grondwater</b> = reservoirmodel</span>
+      <span class="clk-axis">assen apart: debiet (links, m³/s) · waterpeil (rechts, m+NAP) · grondwater (m)</span>
+    </div>
     <div id="forecast-precip"></div>
   </div>
   <div id="forecast-disclaimer">
@@ -1180,7 +1264,7 @@
 
 <div class="poc-doc">
   <p class="poc-doc-title">🧪 Waterlab — negen proeven</p>
-  <p class="poc-doc-sub">Elke proef is een afgebakend experiment met één concrete leervraag. Hieronder per POC: wat het functioneel doet, hoe het technisch werkt, en wat een logische opvolging zou zijn.</p>
+  <p class="poc-doc-sub">Elke proef is een afgebakend experiment met één concrete leervraag. Hieronder per POC: wat het functioneel doet, hoe het technisch werkt, en wat een logische opvolging zou zijn. Klap onderaan elke kaart <strong>Herkomst — hoe komt dit tot stand</strong> open om elke stap af te pellen: databron → randvoorwaarde → modelstap → output → AI-duiding, met bron-endpoints en een eerlijke markering waar een stap <em>niet fysisch</em> is.</p>
 
   <!-- POC 1 -->
   <div class="poc-card">
@@ -1221,6 +1305,16 @@
         </ul>
       </div>
     </div>
+    <details class="poc-prov" style="--prov-accent:#4db6ac;">
+      <summary>Herkomst — hoe komt dit tot stand<span class="prov-hint">databron → randvoorwaarde → model → output → duiding</span></summary>
+      <div class="poc-prov-chain">
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">1</span> Databron</div><p>RWS Waterinfo (debiet Lobith, live REST) · ECMWF / Open-Meteo (14-d neerslag) · ERA5-Land (training) · BRO GLD (grondwater).</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">2</span> Randvoorwaarde</div><p>Actuele Lobith-meting + Pannerdense Kop-verdeling (~13% naar de IJssel) als instroom-aanname.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">3</span> Modelstap</div><p>Lineaire regressie (recessie + impulsrespons) + lineair reservoirmodel grondwater (v2/v2b). <span class="prov-warn">Niet fysisch gekalibreerd — bewust simpel.</span></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>14-d debietverwachting Kampen, P10/mean/P90-band + absolute grondwaterstand met band. <code>/api/forecast</code> · <code>/api/grondwater/reservoir</code></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><code>claude-haiku-4-5</code> (Anthropic API), expert-hydroloog-systeemprompt. <code>/api/forecast/intervention</code></p></div>
+      </div>
+    </details>
   </div>
 
   <!-- POC 2 -->
@@ -1258,6 +1352,16 @@
         </ul>
       </div>
     </div>
+    <details class="poc-prov" style="--prov-accent:#ffcc80;">
+      <summary>Herkomst — hoe komt dit tot stand<span class="prov-hint">databron → randvoorwaarde → model → output → duiding</span></summary>
+      <div class="poc-prov-chain">
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">1</span> Databron</div><p>ERA5-Land reanalyse (neerslag / temperatuur / verdamping), mei–aug 2018.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">2</span> Randvoorwaarde</div><p>Neerslagscaling ×0.70–×1.30. <span class="prov-warn">Synthetische perturbatie — geen echte meteorologische onzekerheid.</span></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">3</span> Modelstap</div><p>wflow SBM ×5 (Julia), ~800×800 m raster, IJssel-bekken ~8.000 km².</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>P10/P25/P50/P75/P90 percentielband (NetCDF → tijdreeks). <code>/api/ensemble</code></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><code>Qwen2.5-32B</code> lokaal (llama.cpp, Jetson AGX Orin) — ~45 s per interpretatie.</p></div>
+      </div>
+    </details>
   </div>
 
   <!-- POC 3 -->
@@ -1296,6 +1400,16 @@
         </ul>
       </div>
     </div>
+    <details class="poc-prov" style="--prov-accent:#90caf9;">
+      <summary>Herkomst — hoe komt dit tot stand<span class="prov-hint">databron → randvoorwaarde → model → output → duiding</span></summary>
+      <div class="poc-prov-chain">
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">1</span> Databron</div><p>Ribasim-netwerkschematisatie (Rijn/IJssel, Pannerdense Kop, 3 takken) + ERA5-Land voor de wflow-stap.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">2</span> Randvoorwaarde</div><p>Climatologisch gemiddelde Pannerdense Kop-verdeling als netwerk-instelling.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">3</span> Modelstap</div><p>Ribasim (Julia-solver, ARM64, géén x86-binary) → LLM kiest kritieke knoop → wflow SBM ×5 op het deelbekken.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>Kritieke knoop-ID + droogtescenario's voor het geselecteerde deelbekken. <code>/api/multimodel</code></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><code>Qwen2.5-32B</code> orchestrator (plain-text parsing + regex-fallback, geen function-calling).</p></div>
+      </div>
+    </details>
   </div>
 
   <!-- POC 4 -->
@@ -1333,6 +1447,16 @@
         </ul>
       </div>
     </div>
+    <details class="poc-prov" style="--prov-accent:#4fc3f7;">
+      <summary>Herkomst — hoe komt dit tot stand<span class="prov-hint">databron → randvoorwaarde → model → output → duiding</span></summary>
+      <div class="poc-prov-chain">
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">1</span> Databron</div><p>ERA5-Land reanalyse, nov 1994 – feb 1995 (90 dagstappen).</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">2</span> Randvoorwaarde</div><p>Bovenstrooms randconditie bij Westervoort <span class="prov-warn">uit ERA5 — géén gemeten RWS-data voor 1995; voornaamste foutbron.</span></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">3</span> Modelstap</div><p>wflow SBM, kinematische golfrouting, ~800 m raster. Cold start — geen spin-up vóór de event-periode.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>NetCDF → GeoJSON per dag (riviercellen + debiet Kampen) voor de 3D-kaart. <code>/fews … period=1995</code></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><span class="prov-na">Geen — historische simulatie zonder AI-stap.</span></p></div>
+      </div>
+    </details>
   </div>
 
   <!-- POC 5 -->
@@ -1370,6 +1494,16 @@
         </ul>
       </div>
     </div>
+    <details class="poc-prov" style="--prov-accent:#ffc107;">
+      <summary>Herkomst — hoe komt dit tot stand<span class="prov-hint">databron → randvoorwaarde → model → output → duiding</span></summary>
+      <div class="poc-prov-chain">
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">1</span> Databron</div><p>ERA5-Land reanalyse, mei–aug 2018 (123 dagstappen). Neerslagdeficiet gevalideerd vs KNMI-stations (RMSE &lt;1 mm/dag).</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">2</span> Randvoorwaarde</div><p>ERA5-forcing. <span class="prov-warn">Géén grondwateronttrekking (landbouw/Vitens) of stuwregulering → overschatting bij extreme droogte.</span></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">3</span> Modelstap</div><p>wflow SBM ~800 m raster (zelfde setup als Proef 4). Regen-afvoermodel.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>Debiet Kampen (sluipend laagwaterverloop). <code>/fews … period=2018</code></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><span class="prov-na">Geen — historische simulatie.</span></p></div>
+      </div>
+    </details>
   </div>
 
   <!-- POC 6 -->
@@ -1407,6 +1541,16 @@
         </ul>
       </div>
     </div>
+    <details class="poc-prov" style="--prov-accent:#ce93d8;">
+      <summary>Herkomst — hoe komt dit tot stand<span class="prov-hint">databron → randvoorwaarde → model → output → duiding</span></summary>
+      <div class="poc-prov-chain">
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">1</span> Databron</div><p>RWS Waterinfo: <strong>gemeten</strong> inflow Westervoort + validatie-debiet Kampen (daggemiddeld). ERA5-Land voor run (a).</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">2</span> Randvoorwaarde</div><p>Twee runs — (a) ERA5-forcing, (b) <strong>gemeten RWS-inflow</strong> bij Westervoort als bovenstrooms randconditie.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">3</span> Modelstap</div><p>wflow SBM, jun–aug 2021 (92 dagstappen). Alleen IJssel-bekken (Maas/Roer buiten het model).</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>Debiet Kampen + Nash-Sutcliffe vs gemeten — run (b) merkbaar hoger dan run (a). <code>/fews … period=2021</code></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><span class="prov-na">Geen — validatie-experiment zonder AI-stap.</span></p></div>
+      </div>
+    </details>
   </div>
 
   <!-- POC 7 -->
@@ -1450,6 +1594,16 @@
         </ul>
       </div>
     </div>
+    <details class="poc-prov" style="--prov-accent:#4db6ac;">
+      <summary>Herkomst — hoe komt dit tot stand<span class="prov-hint">dwarse interop-laag — geen eigen modelrun</span></summary>
+      <div class="poc-prov-chain">
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">1</span> Databron</div><p>wflow NetCDF-output (historische runs op schijf) + RWS Waterinfo live.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">2</span> Schematisatie</div><p><span class="prov-na">n.v.t. — interoplaag, geen eigen modelrun of randvoorwaarde.</span></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">3</span> Adapter</div><p><code>data_adapter.py</code> (wflow NetCDF) + <code>pi_client.py</code> (RWS) → PI JSON v1.25, FastAPI-router.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p><code>filters · locations · parameters · timeseries</code> op <code>/fews/rest/fewspiservice/v1/</code> (Deltares PI REST 1.25).</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><span class="prov-na">Geen — read-only databron-service.</span></p></div>
+      </div>
+    </details>
   </div>
 
   <!-- POC 8 -->
@@ -1487,6 +1641,16 @@
         </ul>
       </div>
     </div>
+    <details class="poc-prov" style="--prov-accent:#f48fb1;">
+      <summary>Herkomst — hoe komt dit tot stand<span class="prov-hint">dwarse query-laag — delegeert, geen tweede datapad</span></summary>
+      <div class="poc-prov-chain">
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">1</span> Bronfuncties</div><p>Delegeert naar bestaande bronnen: <code>build_forecast()</code>, <code>get_waterinfo_timeseries()</code>, <code>get_wflow_timeseries()</code>, <code>_build_intervention()</code>.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">2</span> Datapad</div><p><span class="prov-na">Geen tweede datapad — thin resolvers, geen gedupliceerde datalogica.</span></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">3</span> Resolverlaag</div><p><code>strawberry-graphql[fastapi]</code> read-only gateway op <code>/graphql</code> (GraphiQL aan).</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>Domeingraaf <code>station → thresholds / measured / simulated / forecast</code>; één query haalt precies de gevraagde velden.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><code>forecast.intervention</code> = Claude-duiding via de gedelegeerde functie (graceful fallback).</p></div>
+      </div>
+    </details>
   </div>
 
   <!-- POC 9 -->
@@ -1525,6 +1689,16 @@
         </ul>
       </div>
     </div>
+    <details class="poc-prov" style="--prov-accent:#4dd0e1;">
+      <summary>Herkomst — hoe komt dit tot stand<span class="prov-hint">databron → randvoorwaarde → model → output → duiding</span></summary>
+      <div class="poc-prov-chain">
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">1</span> Databron</div><p>BRO GLD via PDOK OGC (<code>gm_gld</code>, bbox) + broservices <code>seriesAsCsv</code> · Open-Meteo (neerslag/ET0) · RWS WATHTE Kampen. Server-side, gecached.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">2</span> Randvoorwaarde</div><p>Recharge (neerslag−ET0) + IJssel-stand (RWS WATHTE Kampen) als river-term; per put een eigen lag/τ, gekalibreerd op zomer 2018.</p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">3</span> Modelstap</div><p>Lag-correlatie + lineair reservoir (v2 recharge, v2b + river-term). <span class="prov-warn">Data-gedreven — géén fysisch kwelmodel (geen MODFLOW/iMOD).</span></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>Absolute grondwaterstand per put + NSE + onzekerheidsband. <code>/api/grondwater/projection</code> · <code>/api/grondwater/reservoir</code></p></div>
+        <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><code>Qwen2.5-32B</code> lokaal (llama.cpp, Jetson) — hydrologische duiding, graceful fallback.</p></div>
+      </div>
+    </details>
   </div>
 
 </div>
@@ -1736,7 +1910,7 @@
       <tr><th>Tab</th><th>Wat je ziet</th></tr>
       <tr><td><strong>Waterlab</strong></td><td>Introductie en de drie leerdoelen.</td></tr>
       <tr><td><strong>Rijn &amp; IJssel</strong></td><td>Uitleg van het stroomgebied: Pannerdense Kop, het traject Westervoort → Kampen, en de kaart.</td></tr>
-      <tr><td><strong>POC's</strong></td><td>De negen proeven, elk langs drie lijnen: <em>functioneel · technisch · opvolging</em>.</td></tr>
+      <tr><td><strong>POC's</strong></td><td>De negen proeven, elk langs drie lijnen: <em>functioneel · technisch · opvolging</em> + een uitklapbare <em>herkomst-keten</em> (databron → … → AI-duiding).</td></tr>
       <tr><td><strong>Verwachting</strong></td><td>Live 14-daagse IJssel-verwachting + de <em>integrale</em> AI-interventie (incl. grondwater-koppeling).</td></tr>
       <tr><td><strong>Ensemble AI · Multimodel</strong></td><td>wflow-ensemble (5 neerslagscenario's) en de Ribasim→LLM→wflow pipeline.</td></tr>
       <tr><td><strong>Jan 1995 · Zomer 2018 · Jul 2021</strong></td><td>Historische wflow-simulaties (hoogwater/droogte-events).</td></tr>
@@ -1927,6 +2101,28 @@
       <span>Claude API</span><span>Qwen2.5-32B</span><span>FastAPI</span><span>MapLibre GL</span><span>ARM64 Jetson</span>
     </div>
   </div>
+
+  <!-- ══ WL-GOV-1 · wat dit wél/niet bewijst (canoniek: docs/WL-GOV-1_wel_niet.md) ══ -->
+  <div class="wel-niet">
+    <div class="wn-card wel">
+      <div class="wn-head">✓ Wat Waterlab wél is</div>
+      <ul>
+        <li><strong>Redeneerlijn end-to-end op generieke bouwstenen</strong> — open data → open-source modellen → AI-duiding, op één edge-computer.</li>
+        <li><strong>AI als eerste klas op de rekenketen</strong> — duidende laag op model- en meetoutput, geen losse chatbot.</li>
+        <li><strong>Standaard-interop zonder tweede datapad</strong> — dezelfde data via PI REST (Deltares 1.25) én GraphQL; elke client is verwisselbaar.</li>
+      </ul>
+    </div>
+    <div class="wn-card niet">
+      <div class="wn-head">✗ Wat Waterlab niet is</div>
+      <ul>
+        <li><strong>Geen MKS-Goud / PIN-norm</strong> — geen operationele status, geen 24/7-keten.</li>
+        <li><strong>1 persoon, experimenteel</strong> — een micro-innovatielab, geen dienst.</li>
+        <li><strong>Deels statistisch i.p.v. fysisch</strong> — de verwachting rust op een statistisch model, geen gekalibreerde nowcast.</li>
+        <li><strong>Data-gedreven grondwater</strong> — lag-correlatie + reservoir op één event (2018), geen MODFLOW/iMOD-kwelmodel.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="wn-pos">Positionering: het <strong style="color:#78909c">innovatie-/leersegment</strong> van de waardeketenring, niet de operationele keten. Uitkomsten zijn indicatief — voor operationele beslissingen: <code>waterinfo.rws.nl</code>.</p>
 
   <!-- Proeven grid -->
   <div class="intro-grid">
@@ -3288,7 +3484,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=45"></script>
+<script src="/static/app.js?v=46"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {

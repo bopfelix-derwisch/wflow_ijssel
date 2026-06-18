@@ -70,7 +70,11 @@ als externe bron aanroepen, zonder aanpassing."
 
 ### Afsluiter (~10 s)
 **Zeggen:** "Eén edge-computer, open data, lokale + cloud-AI, en elke consumer praat met
-dezelfde API. Dat is Waterlab."
+dezelfde API. Dat is Waterlab — een **leerlab dat de redeneerlijn bewijst, geen
+operationeel voorspelsysteem**: deels statistisch i.p.v. fysisch, data-gedreven grondwater,
+één persoon. Voor operationele beslissingen: `waterinfo.rws.nl`."
+**Wijs aan:** de **wél/niet-grens** op de landing (`#intro`) — canoniek vastgelegd in
+`docs/WL-GOV-1_wel_niet.md` (WL-GOV-1); deck en dashboard gebruiken díe tekst.
 
 ---
 
