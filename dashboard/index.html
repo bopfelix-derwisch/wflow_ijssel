@@ -614,6 +614,23 @@
       margin: 0 0 1rem; padding-bottom: .5rem;
       border-bottom: 1px solid #1e2a34;
     }
+    /* ── Acties na review (rapportage) ── */
+    .review-lead { font-size: 13px; color: #90a4ae; line-height: 1.7; margin: 0 0 1rem; max-width: 880px; }
+    .review-lead a { color: #4db6ac; }
+    .review-kpis { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 1.2rem; }
+    .review-kpi { background: #07111c; border: 1px solid #1a2e3f; border-radius: 8px; padding: 8px 14px; }
+    .review-kpi b { font-size: 1.3rem; font-weight: 800; }
+    .review-kpi span { display: block; font-size: 10px; color: #607d8b; text-transform: uppercase; letter-spacing: .04em; margin-top: 2px; }
+    .review-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .review-table th, .review-table td { border: 1px solid #1a2e3f; padding: 7px 10px; text-align: left; vertical-align: top; }
+    .review-table th { background: #0d2230; color: #b0c4ce; font-size: 11px; }
+    .review-table tr:nth-child(even) td { background: #0a1620; }
+    .review-table code { color: #4db6ac; background: #001a13; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+    .review-table .rv-id { font-weight: 700; color: #cfd8dc; white-space: nowrap; }
+    .rv-done { color: #4db6ac; font-weight: 700; white-space: nowrap; }
+    .rv-open { color: #ffb74d; font-weight: 700; white-space: nowrap; }
+    .review-table a { color: #4db6ac; cursor: pointer; text-decoration: none; }
+    .review-table a:hover { text-decoration: underline; }
     .backlog-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 10px;
@@ -3198,6 +3215,36 @@
       <span>Delft-FEWS</span><span>SOBEK</span><span>D-FLOW FM</span><span>OpenDA</span>
       <span>RTC-Tools</span><span>iMOD</span><span>KNMI'23</span><span>SFINCS</span>
     </div>
+  </div>
+
+  <!-- ── Acties na review (rapportage) ──────────────────────────────────────── -->
+  <div class="roadmap-section">
+    <div class="roadmap-section-title">Acties na review (T. van Balsen) — status</div>
+    <p class="review-lead">De review was enthousiast maar legde één structureel risico bloot: voor een vakgenoot was de <strong style="color:#cfd8dc">herkomst</strong> van data en schematisatie onzichtbaar en niets tegen metingen <strong style="color:#cfd8dc">gevalideerd</strong>. De leidende as van de opvolging is daarom <strong style="color:#cfd8dc">vertrouwen, niet cosmetica</strong>: eerst herkomst zichtbaar maken, dan skill tegen metingen, dan interpretatie aan de kaart. Volledige backlog: <a href="/docs/BACKLOG_WaterLab_review_TvB" target="_blank" rel="noopener">docs/BACKLOG_WaterLab_review_TvB ↗</a>.</p>
+
+    <div class="review-kpis">
+      <div class="review-kpi"><b style="color:#4db6ac">10</b><span>afgehandeld</span></div>
+      <div class="review-kpi"><b style="color:#ffb74d">1</b><span>open (geblokkeerd)</span></div>
+      <div class="review-kpi"><b style="color:#90a4ae">3</b><span>prioriteits-assen</span></div>
+    </div>
+
+    <table class="review-table">
+      <thead><tr><th>ID</th><th>Actie</th><th>Status</th><th>Waar te zien</th></tr></thead>
+      <tbody>
+        <tr><td class="rv-id">WL-VIS-2</td><td>Eerlijke grafieklabels — elke serie gemeten / gesimuleerd / verwacht + eenheid, gescheiden assen</td><td class="rv-done">✓ klaar</td><td>alle grafieken</td></tr>
+        <tr><td class="rv-id">WL-GOV-1</td><td>Canonieke "wat dit wél/niet bewijst"-grens</td><td class="rv-done">✓ klaar</td><td><a onclick="switchYear('intro')">landing</a> · <a href="/docs/WL-GOV-1_wel_niet" target="_blank" rel="noopener">doc ↗</a></td></tr>
+        <tr><td class="rv-id">WL-PROV-1</td><td>Aftepelbare herkomst-keten per proef (databron → randvoorwaarde → modelstap → output → AI-duiding)</td><td class="rv-done">✓ klaar</td><td><a onclick="switchYear('pocs')">POC's-tab</a></td></tr>
+        <tr><td class="rv-id">WL-PROV-2</td><td>Herkomst van schematisatie & instroom-randvoorwaarden per run</td><td class="rv-done">✓ klaar</td><td><a href="/docs/WL-PROV-2_schematisatie" target="_blank" rel="noopener">doc ↗</a></td></tr>
+        <tr><td class="rv-id">WL-VAL-1</td><td>Gesimuleerd vs gemeten per punt + skill-score (NSE/KGE/r/bias), eerlijke "niet te valideren"-matrix</td><td class="rv-done">✓ klaar</td><td><a onclick="switchYear('validatie')">Validatie-tab</a> · <code>/api/validation</code></td></tr>
+        <tr><td class="rv-id">WL-VAL-2</td><td>Hindcast-terugblik — uitgegeven verwachting vs realisatie, fout per horizon</td><td class="rv-done">✓ klaar</td><td><a onclick="switchYear('validatie')">Validatie-tab</a></td></tr>
+        <tr><td class="rv-id">WL-VIS-1</td><td>Elk netwerkpunt klikbaar → detail (debiet, rivierdiepte, hoger/lager dan normaal) + tooltip</td><td class="rv-done">✓ klaar</td><td>kaart <a onclick="switchYear('2021')">Jul 2021</a></td></tr>
+        <tr><td class="rv-id">WL-COMM-1</td><td>Site-herinrichting: redeneerlijn-schil (waardestromen × informatiefuncties)</td><td class="rv-done">✓ klaar</td><td><a onclick="switchYear('intro')">landing</a></td></tr>
+        <tr><td class="rv-id">WL-CHAT-1</td><td>Bevraagbare uitleg-chatbot, gegrond in de PROV-bronnen, achter login + budget</td><td class="rv-done">✓ klaar</td><td><a onclick="switchYear('chat')">Vraag het-tab</a></td></tr>
+        <tr><td class="rv-id">WL-DEMO-1</td><td>Rondleiding afgestemd op het herkomst- & validatieverhaal (~4 min)</td><td class="rv-done">✓ klaar</td><td><code>DEMO.md</code></td></tr>
+        <tr><td class="rv-id">+ extra</td><td>Labelcorrectie: wflow <code>h_river</code> = rivierdiepte, niet m+NAP (bijvangst VAL-1) · docs-viewer <code>/docs/{naam}</code></td><td class="rv-done">✓ klaar</td><td>grafieken · docs</td></tr>
+        <tr><td class="rv-id">WL-FC-1</td><td>Statistisch model vervangen door wflow SBM nowcast</td><td class="rv-open">⏳ open</td><td>geblokkeerd op voorverwarmde Julia-sysimage (<code>build_sysimage.jl</code>); bewuste PO-noot</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <!-- ── 6 uitgewerkte POCs ──────────────────────────────────────────────── -->
