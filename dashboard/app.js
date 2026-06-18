@@ -68,6 +68,20 @@ let overlay     = null;
 let loadAbortController = null;
 let validationLoaded = false;   // WL-VAL-1: skill-data 6u server-cached, één keer per sessie laden
 let hindcastLoaded   = false;   // WL-VAL-2: hindcast idem (top-level state i.v.m. hash-deeplink TDZ)
+let stationTs        = {};      // WL-VIS-1: per station de geladen tijdreeks (kampen/westervoort)
+let selectedStation  = null;    // WL-VIS-1: welk netwerkpunt is aangeklikt
+
+// WL-VIS-1 · netwerkpunten met data (= waar wflow een uitspraak over doet)
+const STATIONS = {
+  Kampen: {
+    coords: [5.921, 52.555], color: [244, 67, 54],
+    role: "Uitstroompunt van de IJssel naar het Ketelmeer/IJsselmeer. wflow doet hier een uitspraak over debiet (m³/s) en rivierwaterdiepte (m).",
+  },
+  Westervoort: {
+    coords: [6.154, 51.987], color: [255, 152, 0],
+    role: "Instroompunt: de IJssel-tak net na de Pannerdense Kop — de bovenstroomse randvoorwaarde van het model (zie WL-PROV-2).",
+  },
+};
 
 // ── kaart ─────────────────────────────────────────────────────────────────────
 
@@ -85,7 +99,12 @@ try {
   });
 
   map.on("load", () => {
-    overlay = new deck.MapboxOverlay({ layers: [] });
+    overlay = new deck.MapboxOverlay({
+      layers: [],
+      pickingRadius: 8,
+      onClick: handleDeckClick,
+      getTooltip: deckTooltip,
+    });
     map.addControl(overlay);
     loadYear("1995");
   });
@@ -365,8 +384,10 @@ async function loadYear(year) {
       } catch (_) {}
     }
 
+    stationTs = { kampen: tsK, westervoort: tsW };   // WL-VIS-1
     renderKpis(kpis, tsW, cfg);
     renderChart(tsK, tsW, days, cfg, measured);
+    if (selectedStation) showStationDetail(selectedStation);   // ander event → ververs detail
     await loadDay(0);
 
     badge.textContent = cfg.alertText;
@@ -487,6 +508,7 @@ function renderChart(tsK, tsW, days, cfg, measured) {
 
 function updateChartCursor(dayIso) {
   Plotly.relayout("chart", { "shapes[0].x0": dayIso, "shapes[0].x1": dayIso });
+  refreshStationCursor();   // WL-VIS-1: schuif de cursor + ververs "hoger/lager dan normaal"
 }
 
 // ── dag laden ─────────────────────────────────────────────────────────────────
@@ -545,17 +567,123 @@ function renderDeckLayers() {
       }),
       new ScatterplotLayer({
         id:   "stations",
-        data: [
-          { name: "Kampen",      coords: [5.921, 52.555], color: [244, 67, 54] },
-          { name: "Westervoort", coords: [6.154, 51.987], color: [255, 152, 0] },
-        ],
-        getPosition:  d => d.coords,
-        getFillColor: d => d.color,
-        getRadius:    800,
-        pickable:     true,
+        data: Object.entries(STATIONS).map(([name, s]) => ({ name, coords: s.coords, color: s.color })),
+        getPosition:   d => d.coords,
+        getFillColor:  d => (d.name === selectedStation ? [79, 195, 247] : d.color),
+        getLineColor:  [255, 255, 255],
+        getLineWidth:  2,
+        lineWidthMinPixels: 2,
+        stroked:       true,
+        getRadius:     d => (d.name === selectedStation ? 1100 : 850),
+        radiusMinPixels: 7,
+        pickable:      true,
       }),
     ],
   });
+}
+
+// ── WL-VIS-1 · klikbare netwerkpunten + tooltip ────────────────────────────────
+const _TOOLTIP_STYLE = {
+  background: "#07131e", color: "#cfd8dc", fontSize: "11px",
+  maxWidth: "240px", padding: "8px 10px", border: "1px solid #1a3a5c",
+  borderRadius: "6px", lineHeight: "1.5",
+};
+
+function deckTooltip(info) {
+  if (!info || !info.object) return null;
+  if (info.layer && info.layer.id === "stations") {
+    const s = STATIONS[info.object.name] || {};
+    return { html: `<b>${info.object.name}</b><br>${s.role || ""}<br><i>Klik voor de detailgrafiek.</i>`,
+             style: _TOOLTIP_STYLE };
+  }
+  const q = info.object.q;          // river-q cel
+  if (q == null) return null;
+  const h = info.object.h;
+  return { html: `<b>Riviercel (wflow ~1 km)</b><br>Debiet: ${Math.round(q)} m³/s` +
+                 (h != null ? `<br>Rivierdiepte: ${h.toFixed(1)} m` : "") +
+                 `<br><i>Eén rastercel waarover het model rekent.</i>`,
+           style: _TOOLTIP_STYLE };
+}
+
+function handleDeckClick(info) {
+  if (info && info.layer && info.layer.id === "stations" && info.object) {
+    showStationDetail(info.object.name);
+    return true;
+  }
+  return false;
+}
+
+function _stationSeries(name) {
+  const ts = stationTs[name.toLowerCase()];
+  if (!ts) return null;
+  return { dates: ts.dates || [], q: ts.q || [], h: ts.h_nap || ts.h || [] };
+}
+
+function _normalBadge(q) {
+  const n = q.length;
+  if (!n) return { html: "", pct: 0 };
+  const mean = q.reduce((a, b) => a + b, 0) / n;
+  const i = Math.min(dayIdx, n - 1);
+  const cur = q[i];
+  const pct = mean ? Math.round((cur - mean) / mean * 100) : 0;
+  const up = pct >= 0;
+  return {
+    html: `<span class="${up ? "sd-high" : "sd-low"}">${up ? "↑" : "↓"} ${Math.abs(pct)}% ` +
+          `${up ? "boven" : "onder"} normaal</span> ` +
+          `<span style="color:#607d8b">· debiet nu ${Math.round(cur)} m³/s · normaal = gemiddelde over deze periode (${Math.round(mean)} m³/s)</span>`,
+    pct,
+  };
+}
+
+function showStationDetail(name) {
+  const host = document.getElementById("station-detail");
+  const ser = _stationSeries(name);
+  if (!host || !ser) return;
+  selectedStation = name;
+  host.style.display = "block";
+  document.getElementById("sd-title").textContent = `${name} — wat gebeurt hier?`;
+  document.getElementById("sd-role").textContent = (STATIONS[name] || {}).role || "";
+  document.getElementById("sd-badge").innerHTML = _normalBadge(ser.q).html;
+  renderStationDetailChart(ser);
+  renderDeckLayers();   // markeer het gekozen punt
+}
+
+function renderStationDetailChart(ser) {
+  const curDate = ser.dates[Math.min(dayIdx, ser.dates.length - 1)];
+  const traces = [
+    { x: ser.dates, y: ser.q, type: "scatter", mode: "lines",
+      name: "Debiet (m³/s)", line: { color: "#4db6ac", width: 2 }, yaxis: "y" },
+    { x: ser.dates, y: ser.h, type: "scatter", mode: "lines",
+      name: "Rivierdiepte (m)", line: { color: "#4caf50", width: 1.5, dash: "dot" }, yaxis: "y2" },
+  ];
+  Plotly.react("station-detail-chart", traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a", font: { color: "#e0e0e0", size: 10 },
+    margin: { t: 6, b: 28, l: 48, r: 48 }, legend: { orientation: "h", y: -0.3, font: { size: 9 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: { title: "m³/s", gridcolor: "#1a3a5c", titlefont: { color: "#4db6ac" }, tickfont: { color: "#4db6ac" } },
+    yaxis2: { title: "m", overlaying: "y", side: "right", gridcolor: "rgba(0,0,0,0)",
+              titlefont: { color: "#4caf50" }, tickfont: { color: "#4caf50" } },
+    shapes: curDate ? [{ type: "line", x0: curDate, x1: curDate, yref: "paper", y0: 0, y1: 1,
+                         line: { color: "#4fc3f7", width: 1, dash: "dot" } }] : [],
+  }, { responsive: true, displayModeBar: false });
+}
+
+function hideStationDetail() {
+  selectedStation = null;
+  const host = document.getElementById("station-detail");
+  if (host) host.style.display = "none";
+  renderDeckLayers();   // deselecteer de bol
+}
+
+function refreshStationCursor() {
+  if (!selectedStation) return;
+  const ser = _stationSeries(selectedStation);
+  if (!ser) return;
+  const badge = document.getElementById("sd-badge");
+  if (badge) badge.innerHTML = _normalBadge(ser.q).html;
+  const curDate = ser.dates[Math.min(dayIdx, ser.dates.length - 1)];
+  if (curDate) Plotly.relayout("station-detail-chart",
+    { "shapes[0].x0": curDate, "shapes[0].x1": curDate });
 }
 
 // ── slider & play ─────────────────────────────────────────────────────────────

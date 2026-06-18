@@ -74,6 +74,21 @@
     /* ── grafiek ── */
     #chart-container { padding: 10px 16px; }
     #chart { width: 100%; height: 190px; }
+    /* WL-VIS-1 · klikbaar netwerkpunt + detail */
+    #vis1-hint { padding: 8px 16px 0; font-size: 11.5px; color: #607d8b; }
+    #vis1-hint strong { color: #4fc3f7; }
+    .vis1-btn { background: #0d2230; border: 1px solid #1a4a6a; color: #4fc3f7; border-radius: 5px; font-size: 11px; font-weight: 600; padding: 2px 9px; margin-left: 4px; cursor: pointer; }
+    .vis1-btn:hover { background: #123047; }
+    #station-detail { margin: 10px 16px 0; background: #07131e; border: 1px solid #1a3a5c; border-radius: 8px; padding: 10px 12px; }
+    #station-detail .sd-head { display: flex; align-items: center; gap: .6rem; }
+    #station-detail #sd-title { font-size: 13px; font-weight: 700; color: #e0e0e0; }
+    #station-detail .sd-close { margin-left: auto; background: none; border: none; color: #607d8b; font-size: 14px; cursor: pointer; }
+    #station-detail .sd-close:hover { color: #cfd8dc; }
+    #station-detail .sd-role { font-size: 11px; color: #78909c; line-height: 1.5; margin: 4px 0 6px; }
+    #station-detail .sd-badge { font-size: 12px; margin-bottom: 6px; }
+    #station-detail .sd-badge .sd-high { color: #ef5350; font-weight: 700; }
+    #station-detail .sd-badge .sd-low  { color: #4db6ac; font-weight: 700; }
+    #station-detail-chart { width: 100%; height: 180px; }
 
     /* ── info panel ── */
     #info-panel {
@@ -806,6 +821,23 @@
       <input id="day-slider" type="range" min="0" max="30" value="0" step="1">
       <span id="day-label">1 jan 1995</span>
     </div>
+  </div>
+
+  <div id="vis1-hint">💡 Klik op een <strong>bol</strong> op de kaart — of kies een punt — voor detail: debiet, rivierdiepte en of het hoger of lager dan normaal is.
+    <span id="vis1-buttons">
+      <button class="vis1-btn" onclick="showStationDetail('Kampen')">Kampen</button>
+      <button class="vis1-btn" onclick="showStationDetail('Westervoort')">Westervoort</button>
+    </span>
+  </div>
+
+  <div id="station-detail" style="display:none;">
+    <div class="sd-head">
+      <span id="sd-title">Kampen — wat gebeurt hier?</span>
+      <button class="sd-close" onclick="hideStationDetail()" title="Sluiten">✕</button>
+    </div>
+    <div id="sd-role" class="sd-role"></div>
+    <div id="sd-badge" class="sd-badge"></div>
+    <div id="station-detail-chart"></div>
   </div>
 
   <div id="chart-container">
@@ -3565,7 +3597,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=50"></script>
+<script src="/static/app.js?v=51"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {
