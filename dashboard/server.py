@@ -539,6 +539,18 @@ def get_grondwater_reservoir():
         return JSONResponse({"available": False, "error": str(e)})
 
 
+# WL-VAL-1 — gesimuleerd vs gemeten per punt, met skill-score (NSE/KGE/bias).
+# Eerlijk: alleen waar een onafhankelijke meting bestaat; de rest komt als
+# "available: false" met reden terug (geen verzonnen getallen).
+@app.get("/api/validation")
+def get_validation():
+    from dashboard.validation import build_validation
+    try:
+        return JSONResponse(build_validation())
+    except Exception as e:
+        return JSONResponse({"available": False, "error": str(e)})
+
+
 @app.get("/api/fews/data")
 def get_fews_data(location: str = "KAMPEN", period: str = "1995"):
     sim_raw = get_wflow_timeseries(location, "Q.sim", period)

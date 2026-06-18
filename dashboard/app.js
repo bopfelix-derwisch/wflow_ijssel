@@ -66,6 +66,7 @@ let playTimer   = null;
 let riverData   = [];
 let overlay     = null;
 let loadAbortController = null;
+let validationLoaded = false;   // WL-VAL-1: skill-data 6u server-cached, één keer per sessie laden
 
 // ── kaart ─────────────────────────────────────────────────────────────────────
 
@@ -177,7 +178,7 @@ function switchYear(year) {
     [infoPnl, uitlegPnl, forecastPnl, ensemblePnl, introPnl].forEach(p => {
       if (p) p.classList.remove("visible");
     });
-    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel","grondwater-panel","handleiding-panel"].forEach(id => {
+    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel","grondwater-panel","validatie-panel","handleiding-panel"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove("visible");
     });
@@ -266,6 +267,17 @@ function switchYear(year) {
     document.getElementById("alert-badge").style.background = "#00838f";
     document.body.className = "";
     loadGrondwater();
+    return;
+  }
+
+  if (year === "validatie") {
+    hideAll();
+    document.getElementById("validatie-panel").classList.add("visible");
+    banner.textContent = "Validatie · gesimuleerd vs gemeten per punt · skill-score (NSE · KGE · r · bias)";
+    document.getElementById("alert-badge").textContent = "🎯 Validatie";
+    document.getElementById("alert-badge").style.background = "#00695c";
+    document.body.className = "";
+    loadValidation();
     return;
   }
 
@@ -585,6 +597,103 @@ const ALERT_LABELS = {
   verhoogd:  { text: "Verhoogd",  color: "#f44336" },
   hoog:      { text: "HOOG",      color: "#b71c1c" },
 };
+
+// ── WL-VAL-1 · validatie ───────────────────────────────────────────────────
+async function loadValidation() {
+  if (validationLoaded) return;          // 6u server-cache; één keer per sessie volstaat
+  const cards = document.getElementById("val-cards");
+  const matrix = document.getElementById("val-matrix-body");
+  const wait = document.getElementById("val-unavailable");
+  wait.style.display = "block";
+  try {
+    const d = await fetch(`${API}/api/validation`).then(r => r.json());
+    wait.style.display = "none";
+    document.getElementById("val-disclaimer").textContent =
+      `${d.disclaimer || ""}  ·  gegenereerd ${d.generated_at || "—"} · ${d.n_validated || 0} punt(en) met meting.`;
+    cards.innerHTML = "";
+    matrix.innerHTML = "";
+    (d.points || []).forEach(p => {
+      if (p.available) cards.appendChild(renderValidationCard(p));
+      else matrix.insertAdjacentHTML("beforeend",
+        `<tr><td><strong style="color:#b0bec5">${p.label}</strong></td>` +
+        `<td class="vx">✗ geen meting</td><td style="color:#8aa1ae">${p.reason}</td></tr>`);
+    });
+    validationLoaded = true;
+  } catch (err) {
+    wait.textContent = "Validatie niet beschikbaar.";
+    console.warn("validation load failed:", err);
+  }
+}
+
+function valClass(metric, v) {
+  if (v === null || v === undefined) return "val-neutral";
+  if (metric === "nse" || metric === "kge" || metric === "r")
+    return v >= 0.5 ? "val-good" : (v >= 0 ? "val-mid" : "val-bad");
+  return "val-neutral";
+}
+
+function scoreBox(label, value, cls, suffix) {
+  const shown = (value === null || value === undefined) ? "—" : value + (suffix || "");
+  return `<div class="val-score"><div class="vs-label">${label}</div>` +
+         `<div class="vs-val ${cls || "val-neutral"}">${shown}</div></div>`;
+}
+
+function renderValidationCard(p) {
+  const card = document.createElement("div");
+  card.className = "val-card";
+  const sc = p.scores || {};
+  const anom = p.mode === "anomaly";
+
+  let boxes = scoreBox("NSE", sc.nse, valClass("nse", sc.nse))
+            + scoreBox("KGE", sc.kge, valClass("kge", sc.kge))
+            + scoreBox("Pearson r", sc.r, valClass("r", sc.r));
+  if (anom) {
+    boxes += scoreBox("Datum-offset", p.datum_offset, "val-bad", " m")
+           + scoreBox("Amplitude", sc.amplitude_ratio, "val-bad", "×")
+           + scoreBox("RMSE", sc.rmse, "val-neutral", " m");
+  } else {
+    boxes += scoreBox("Bias", sc.bias, "val-neutral", " " + (p.unit || ""))
+           + scoreBox("pBias", sc.pbias, "val-neutral", " %")
+           + scoreBox("RMSE", sc.rmse, "val-neutral", " " + (p.unit || ""));
+  }
+  boxes += scoreBox("n dagen", sc.n, "val-neutral");
+
+  const chartId = `val-chart-${p.id}`;
+  card.innerHTML =
+    `<div class="val-card-head">` +
+      `<h3>${p.label}</h3>` +
+      `<span class="val-mode ${anom ? "anomaly" : "absolute"}">${anom ? "dynamiek (geanomaliseerd)" : "absoluut"}</span>` +
+      `<span class="val-period">${p.period || ""}</span>` +
+    `</div>` +
+    `<div class="val-body">` +
+      `<div class="val-scores">${boxes}</div>` +
+      `<div id="${chartId}" class="val-chart"></div>` +
+      `<p class="val-note">${p.note || ""}</p>` +
+    `</div>`;
+
+  // grafiek na invoegen in DOM
+  setTimeout(() => renderValidationChart(chartId, p), 0);
+  return card;
+}
+
+function renderValidationChart(id, p) {
+  const s = p.series; if (!s) return;
+  const yTitle = (p.mode === "anomaly") ? (p.anomaly_unit || "afwijking") : (p.unit || "");
+  const traces = [
+    { x: s.dates, y: s.obs, type: "scatter", mode: "lines",
+      name: p.obs_label || "Gemeten", line: { color: "#4caf50", width: 2 } },
+    { x: s.dates, y: s.sim, type: "scatter", mode: "lines",
+      name: p.sim_label || "Gesimuleerd", line: { color: "#4db6ac", width: 2, dash: "dash" } },
+  ];
+  Plotly.react(id, traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a",
+    font: { color: "#e0e0e0", size: 11 },
+    margin: { t: 8, b: 34, l: 56, r: 14 },
+    legend: { orientation: "h", y: -0.25, font: { size: 10 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: { title: yTitle, gridcolor: "#1a3a5c" },
+  }, { responsive: true, displayModeBar: false });
+}
 
 async function loadForecast() {
   const badge = document.getElementById("alert-badge");

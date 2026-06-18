@@ -494,6 +494,30 @@
     #roadmap-panel.visible { display: block; }
     .year-tab.active-roadmap { background: #4a148c; border-color: #ce93d8; color: #fff; }
     .year-tab.active-pocs    { background: #00695c; border-color: #4db6ac; color: #fff; }
+    /* ── WL-VAL-1 · Validatie-tab ── */
+    #validatie-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #validatie-panel.visible { display: block; }
+    .year-tab.active-validatie { background: #00695c; border-color: #4db6ac; color: #fff; }
+    .val-doc { max-width: 940px; margin: 0 auto; }
+    .val-card { background:#07111c; border:1px solid #1a2e3f; border-radius:10px; margin-bottom:1.4rem; overflow:hidden; }
+    .val-card-head { padding:.9rem 1.2rem; border-bottom:1px solid #1a2e3f; display:flex; align-items:center; gap:.7rem; flex-wrap:wrap; }
+    .val-card-head h3 { margin:0; font-size:1.02rem; color:#e0e0e0; font-weight:700; }
+    .val-mode { font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:9px; }
+    .val-mode.absolute { background:#00251a; color:#4db6ac; border:1px solid #00695c; }
+    .val-mode.anomaly  { background:#1a1200; color:#ffcc80; border:1px solid #e65100; }
+    .val-period { margin-left:auto; font-size:11px; color:#546e7a; }
+    .val-body { padding:1rem 1.2rem; }
+    .val-scores { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:.8rem; }
+    .val-score { background:#0a1620; border:1px solid #14283a; border-radius:7px; padding:7px 12px; min-width:78px; }
+    .val-score .vs-label { font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:#546e7a; }
+    .val-score .vs-val { font-size:1.05rem; font-weight:800; margin-top:2px; }
+    .val-good { color:#4db6ac; } .val-mid { color:#ffb74d; } .val-bad { color:#ef5350; } .val-neutral { color:#90a4ae; }
+    .val-chart { width:100%; height:240px; }
+    .val-note { font-size:11.5px; color:#78909c; line-height:1.6; margin:.6rem 0 0; padding-left:.8rem; border-left:3px solid #1a3a5c; }
+    .val-matrix { width:100%; border-collapse:collapse; margin:.4rem 0 0; font-size:12px; }
+    .val-matrix th, .val-matrix td { border:1px solid #1a2e3f; padding:7px 10px; text-align:left; vertical-align:top; }
+    .val-matrix th { background:#0d2230; color:#b0c4ce; font-size:11px; }
+    .val-matrix td.vx { color:#ef5350; font-weight:700; white-space:nowrap; }
     .poc-status-badge {
       display: inline-block; padding: 2px 8px; border-radius: 10px;
       font-size: 10px; font-weight: 600; letter-spacing: .4px; margin-bottom: .4rem;
@@ -740,6 +764,7 @@
     <button class="year-tab" data-year="arch">Platform Visie</button>
     <button class="year-tab" data-year="fews">FEWS</button>
     <button class="year-tab" data-year="grondwater">Grondwater</button>
+    <button class="year-tab" data-year="validatie">Validatie</button>
     <button class="year-tab" data-year="roadmap">Roadmap</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
   </div>
@@ -1912,6 +1937,23 @@
   </div>
 </div><!-- /#grondwater-panel -->
 
+<div id="validatie-panel">
+  <div class="val-doc">
+    <div class="info-section" style="margin-bottom:10px">
+      <h2 style="color:#4db6ac">🎯 Validatie — gesimuleerd vs. gemeten (WL-VAL-1)</h2>
+      <p style="color:#90a4ae; font-size:13px; margin:6px 0 0;">Hoe goed is het model écht? Per netwerkpunt leggen we simulatie en meting naast elkaar met een objectieve <strong>skill-score</strong> (NSE, KGE, Pearson r, bias). Eerlijk principe: een score <em>alleen</em> waar een onafhankelijke meting bestaat — de rest staat met reden in de matrix onderaan, geen verzonnen getallen. De scores zijn ook een API-veld: <code>/api/validation</code>.</p>
+      <p id="val-disclaimer" style="color:#607d8b; font-size:11.5px; margin:8px 0 0;"></p>
+    </div>
+    <div id="val-unavailable" style="display:none; color:#607d8b; padding:1rem 0;">Validatie laden… (eerste keer ~10–20 s: RWS-meetreeks ophalen).</div>
+    <div id="val-cards"></div>
+    <div class="info-section" style="margin:10px 0 8px"><h2>Niet (zelfstandig) te valideren — en waarom</h2></div>
+    <table class="val-matrix"><thead><tr><th>Punt / run</th><th>Status</th><th>Reden</th></tr></thead>
+      <tbody id="val-matrix-body"></tbody>
+    </table>
+    <p style="color:#607d8b; font-size:11px; margin-top:12px;">Skill-metrieken: <code>dashboard/validation.py</code> (getest, <code>tests/test_validation.py</code>). NSE/KGE: 1 = perfect, 0 = niet beter dan het gemiddelde, &lt;0 = slechter. Bij waterpeil staat de simulatie op een ander referentievlak → alleen de <em>dynamiek</em> (geanomaliseerd) wordt getoetst, met het datum-offset apart.</p>
+  </div>
+</div><!-- /#validatie-panel -->
+
 <div id="handleiding-panel">
 
   <div class="info-section">
@@ -1930,6 +1972,7 @@
       <tr><td><strong>Ensemble AI · Multimodel</strong></td><td>wflow-ensemble (5 neerslagscenario's) en de Ribasim→LLM→wflow pipeline.</td></tr>
       <tr><td><strong>Jan 1995 · Zomer 2018 · Jul 2021</strong></td><td>Historische wflow-simulaties (hoogwater/droogte-events).</td></tr>
       <tr><td><strong>Grondwater</strong></td><td>Proef 9: gemeten grondwater (BRO) vs IJssel-peil + lag-correlatie + AI-duiding.</td></tr>
+      <tr><td><strong>Validatie</strong></td><td>Gesimuleerd vs gemeten per punt met skill-score (NSE/KGE/r/bias) + eerlijke "niet te valideren"-matrix. API: <code>/api/validation</code>.</td></tr>
       <tr><td><strong>FEWS</strong></td><td>Waterlab als FEWS PI REST-service (API-explorer).</td></tr>
       <tr><td><strong>Platform Visie · Roadmap · Info</strong></td><td>Architectuurvisie, backlog en analyse-achtergrond.</td></tr>
     </table>
@@ -3499,7 +3542,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=46"></script>
+<script src="/static/app.js?v=48"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {
