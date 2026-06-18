@@ -353,6 +353,49 @@
     }
     .wn-pos code { color: #4db6ac; background:#001a13; padding:1px 5px; border-radius:3px; font-size:11px; }
     @media (max-width: 700px) { .wel-niet { grid-template-columns: 1fr; margin: 1.2rem 1rem 0; } .wn-pos { margin: .7rem 1rem 0; } }
+
+    /* ══ WL-COMM-1 · redeneerlijn (waardestromen × informatiefuncties) — plaat-stijl ══ */
+    .redeneerlijn {
+      margin: 1.6rem 2.5rem; padding: 1.4rem 1.6rem; max-width: 1100px;
+      background: #0E2841; border: 1px solid #156082; border-radius: 12px;
+    }
+    .rl-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #4E87A0; }
+    .rl-title { font-family: Georgia, Cambria, "Times New Roman", serif; font-size: 1.5rem; color: #D7E7EE; margin: .25rem 0 .4rem; font-weight: 600; }
+    .rl-sub { font-size: 12.5px; color: #9db8c6; line-height: 1.65; margin: 0 0 1.1rem; max-width: 780px; }
+    .rl-matrix { width: 100%; border-collapse: separate; border-spacing: 3px; }
+    .rl-matrix th { font-size: 9.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #4E87A0; padding: 0 4px 6px; text-align: center; vertical-align: bottom; }
+    .rl-matrix th.rl-corner { text-align: left; color: #6f93a4; }
+    .rl-row { cursor: pointer; }
+    .rl-row .rl-streamcell {
+      background: #12344f; border-left: 4px solid #C55A11; border-radius: 6px;
+      padding: 8px 12px; min-width: 190px;
+    }
+    .rl-row:hover .rl-streamcell { background: #16415f; }
+    .rl-w { font-family: Georgia, Cambria, serif; font-weight: 700; color: #C55A11; font-size: 13px; margin-right: 6px; }
+    .rl-streamcell .rl-name { font-weight: 700; color: #D7E7EE; font-size: 13px; }
+    .rl-streamcell .rl-proef { display: block; font-size: 10.5px; color: #7fa1b2; margin-top: 2px; }
+    .rl-cell { width: 64px; height: 30px; text-align: center; border-radius: 5px; background: #0b2030; }
+    .rl-cell.on  { background: #156082; }
+    .rl-cell.on::after  { content: "●"; color: #D7E7EE; font-size: 11px; }
+    .rl-cell.off::after { content: "·"; color: #2c4a5e; font-size: 14px; }
+    .rl-links { margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .rl-links a { font-size: 10.5px; color: #4E87A0; cursor: pointer; text-decoration: none; }
+    .rl-links a:hover { color: #8fd0e6; text-decoration: underline; }
+    .rl-links a.rl-go { color: #D7E7EE; font-weight: 700; }
+    .rl-platform {
+      margin-top: 1rem; padding: 10px 14px; border-radius: 8px;
+      background: #12344f; border: 1px dashed #4E87A0;
+      display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+    }
+    .rl-platform .rl-plat-label { font-size: 9.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #C55A11; }
+    .rl-platform .rl-plat-txt { font-size: 12px; color: #9db8c6; flex: 1; min-width: 200px; }
+    .rl-platform button { background: #0E2841; border: 1px solid #4E87A0; color: #8fd0e6; border-radius: 6px; font-size: 11px; font-weight: 600; padding: 3px 11px; cursor: pointer; }
+    .rl-platform button:hover { background: #16415f; }
+    .rl-foot { font-size: 10.5px; color: #6f93a4; margin: .9rem 0 0; }
+    @media (max-width: 820px) {
+      .redeneerlijn { margin: 1.2rem 1rem; padding: 1rem; overflow-x: auto; }
+      .rl-matrix { min-width: 640px; }
+    }
     .intro-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -2213,6 +2256,60 @@
       <span>wflow SBM</span><span>Ribasim</span><span>Julia</span><span>ERA5-Land</span>
       <span>Claude API</span><span>Qwen2.5-32B</span><span>FastAPI</span><span>MapLibre GL</span><span>ARM64 Jetson</span>
     </div>
+  </div>
+
+  <!-- ══ WL-COMM-1 · redeneerlijn: waardestromen × informatiefuncties (plaat-stijl) ══ -->
+  <div class="redeneerlijn">
+    <div class="rl-eyebrow">De redeneerlijn · waarde eerst</div>
+    <div class="rl-title">Van waardestroom naar bewijs</div>
+    <p class="rl-sub">Kies een <strong style="color:#bcd6e2">waardestroom</strong>. Je ziet welke <strong style="color:#bcd6e2">informatiefuncties</strong> ze raakt — innemen, schematiseren, rekenen, duiden, samenstellen, ontsluiten, valideren — en komt dan bij de proef die het aantoont. De negen proeven blijven eronder staan als techniek; hier staat de waarde voorop.</p>
+
+    <table class="rl-matrix">
+      <thead>
+        <tr>
+          <th class="rl-corner">Waardestroom</th>
+          <th>innemen</th><th>schemati&shy;seren</th><th>rekenen</th><th>duiden</th><th>samen&shy;stellen</th><th>ontsluiten</th><th>valideren</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="rl-row" onclick="switchYear('forecast')">
+          <td class="rl-streamcell"><span class="rl-w">W1</span><span class="rl-name">Verwachting</span>
+            <span class="rl-proef">Proef 1 · live 14-daagse + AI</span>
+            <span class="rl-links"><a class="rl-go" onclick="event.stopPropagation();switchYear('forecast')">bekijk →</a><a onclick="event.stopPropagation();switchYear('pocs')">herkomst</a><a onclick="event.stopPropagation();switchYear('validatie')">skill</a></span>
+          </td>
+          <td class="rl-cell on"></td><td class="rl-cell off"></td><td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell on"></td>
+        </tr>
+        <tr class="rl-row" onclick="switchYear('ensemble')">
+          <td class="rl-streamcell"><span class="rl-w">W2</span><span class="rl-name">Historisch &amp; ensemble</span>
+            <span class="rl-proef">Proef 2 · 4 · 5 · 6 · wflow SBM</span>
+            <span class="rl-links"><a class="rl-go" onclick="event.stopPropagation();switchYear('ensemble')">bekijk →</a><a onclick="event.stopPropagation();switchYear('pocs')">herkomst</a><a onclick="event.stopPropagation();switchYear('validatie')">skill</a></span>
+          </td>
+          <td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell off"></td><td class="rl-cell on"></td><td class="rl-cell on"></td>
+        </tr>
+        <tr class="rl-row" onclick="switchYear('multimodel')">
+          <td class="rl-streamcell"><span class="rl-w">W4</span><span class="rl-name">Multimodel</span>
+            <span class="rl-proef">Proef 3 · Ribasim → AI → wflow</span>
+            <span class="rl-links"><a class="rl-go" onclick="event.stopPropagation();switchYear('multimodel')">bekijk →</a><a onclick="event.stopPropagation();switchYear('pocs')">herkomst</a></span>
+          </td>
+          <td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell off"></td><td class="rl-cell off"></td>
+        </tr>
+        <tr class="rl-row" onclick="switchYear('grondwater')">
+          <td class="rl-streamcell"><span class="rl-w">W5</span><span class="rl-name">Grondwater &amp; validatie</span>
+            <span class="rl-proef">Proef 9 · BRO + reservoir</span>
+            <span class="rl-links"><a class="rl-go" onclick="event.stopPropagation();switchYear('grondwater')">bekijk →</a><a onclick="event.stopPropagation();switchYear('pocs')">herkomst</a><a onclick="event.stopPropagation();switchYear('validatie')">skill</a></span>
+          </td>
+          <td class="rl-cell on"></td><td class="rl-cell off"></td><td class="rl-cell on"></td><td class="rl-cell on"></td><td class="rl-cell off"></td><td class="rl-cell on"></td><td class="rl-cell on"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="rl-platform">
+      <span class="rl-plat-label">Dwars · platform / interop</span>
+      <span class="rl-plat-txt">FEWS PI REST en GraphQL zijn géén waardestroom maar een <em>dwarse</em> ontsluitingslaag: dezelfde data, elke client (dashboard, FEWS, app) is verwisselbaar — geen tweede datapad.</span>
+      <button onclick="switchYear('fews')">FEWS →</button>
+      <button onclick="window.open('/graphql','_blank')">GraphQL →</button>
+    </div>
+    <p class="rl-foot">● = de waardestroom raakt deze informatiefunctie. De schil is een client op dezelfde API's; de proeven, FEWS en GraphQL blijven onveranderd bereikbaar via de tabs hierboven.</p>
   </div>
 
   <!-- ══ WL-GOV-1 · wat dit wél/niet bewijst (canoniek: docs/WL-GOV-1_wel_niet.md) ══ -->
