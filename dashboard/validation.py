@@ -163,8 +163,9 @@ def _kampen_peil_2021() -> dict:
         "obs_label": "Gemeten · RWS WATHTE (dynamiek)",
         "mode": "anomaly",
         "anomaly_unit": "m t.o.v. gemiddelde",
-        "note": ("Het gesimuleerde wflow-rivierpeil staat op een ander referentievlak dan de RWS-meting "
-                 "(datum-offset, zie hieronder) — de absolute waarde is dus onvergelijkbaar. Daarom toetsen "
+        "note": ("De gesimuleerde reeks is wflow river_water__depth (rivierwaterdiepte, m boven de bedding), "
+                 "geen waterpeil in m+NAP — een ander referentievlak dan de RWS-meting "
+                 "(datum-offset, zie hieronder), dus de absolute waarde is onvergelijkbaar. Daarom toetsen "
                  "we alleen de dynamiek (stijgen/dalen), beide t.o.v. hun eigen gemiddelde. Kampen ligt "
                  "bovendien aan het Ketelmeer: het IJsselmeerpeil als benedenrand wordt door de "
                  "kinematic-wave routing niet gevangen — een bescheiden score is hier eerlijk."),

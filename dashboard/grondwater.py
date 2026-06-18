@@ -45,7 +45,12 @@ _ctx_cache: dict = {}
 # ── IJssel-signaal (bestaande wflow-reeks op schijf) ─────────────────────────
 
 def _river_signal(period: str, start: str, end: str) -> dict:
-    """IJssel Kampen reeks uit wflow output: {dates, h (m+NAP), q (m³/s)}, geclipt."""
+    """IJssel Kampen reeks uit wflow output: {dates, h, q (m³/s)}, geclipt.
+
+    LET OP: h = wflow river_water__depth (rivierwaterdiepte in m boven de bedding),
+    GÉÉN waterpeil in m+NAP. De lag-correlatie is schaal-invariant, dus dit verandert
+    de r-waarden niet; alleen de eenheid-labels moeten 'rivierdiepte (m)' zijn.
+    """
     path = PERIOD_DIRS.get(period, PERIOD_DIRS.get("2018")) / "timeseries_kampen.json"
     d = json.loads(path.read_text())
     dates, h, q = d.get("dates", []), d.get("h", []), d.get("q", [])
@@ -102,8 +107,8 @@ onzekerheid van een puur data-gedreven toets."""
 def _interpret(summary: dict) -> str:
     lines = [
         f"Droogte-event: {summary['event']} (IJssel bij Kampen, {summary['window']}).",
-        f"IJssel-peil daalde van {summary['river_h_first']} naar {summary['river_h_last']} m+NAP.",
-        "Grondwater-monitoringputten (BRO GLD), met lag-correlatie rivierpeil → grondwater:",
+        f"IJssel-stand (wflow rivierdiepte) daalde van {summary['river_h_first']} naar {summary['river_h_last']} m.",
+        "Grondwater-monitoringputten (BRO GLD), met lag-correlatie IJssel-stand → grondwater:",
     ]
     for w in summary["wells"]:
         if w.get("r") is not None:

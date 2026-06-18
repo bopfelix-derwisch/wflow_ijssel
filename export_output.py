@@ -46,6 +46,10 @@ def extract_timeseries(ds: xr.Dataset, lon: float, lat: float) -> dict:
     q_vals = ds["q_river"].isel(lon=xi, lat=yi).values.tolist()
     h_vals = ds["h_river"].isel(lon=xi, lat=yi).values.tolist()
 
+    # NB: "h_nap" is een poging tot waterpeil = river_water__depth + bedhoogte,
+    # maar bankfull_elevation ontbreekt in de staticmaps → bankfull=0, dus in de
+    # praktijk is dit gewoon rivierwaterdiepte (m), GÉÉN m+NAP. Dashboard-labels
+    # tonen daarom "rivierdiepte (m)". Zie WL-VAL-1.
     bankfull = 0.0
     if "bankfull_elevation" in ds:
         bankfull = float(ds["bankfull_elevation"].isel(lon=xi, lat=yi))

@@ -45,6 +45,7 @@ def extract_timeseries(ds: xr.Dataset, lon: float, lat: float) -> dict:
     q_vals = ds["q_river"].isel(lon=xi, lat=yi).values.tolist()
     h_vals = ds["h_river"].isel(lon=xi, lat=yi).values.tolist()
     dates  = [str(t)[:10] for t in ds["time"].values]
+    # NB: "h_nap" bevat river_water__depth (rivierwaterdiepte, m), GÉÉN m+NAP. Zie WL-VAL-1.
     return {"dates": dates, "q": q_vals, "h_nap": h_vals}
 
 

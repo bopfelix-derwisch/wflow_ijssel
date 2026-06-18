@@ -412,7 +412,7 @@ function renderChart(tsK, tsW, days, cfg, measured) {
     {
       x: tsK.dates, y: tsK.h_nap,
       type: "scatter", mode: "lines",
-      name: "Gesimuleerd · waterpeil Kampen (m+NAP)",
+      name: "Gesimuleerd · rivierdiepte Kampen (m)",
       line: { color: "#4caf50", width: 2, dash: "dot" },
       yaxis: "y2",
     },
@@ -463,7 +463,7 @@ function renderChart(tsK, tsW, days, cfg, measured) {
       tickfont:  { color: `rgb(${r},${g},${b})` },
     },
     yaxis2: {
-      title: "Waterpeil (m+NAP)", overlaying: "y", side: "right",
+      title: "Rivierdiepte (m)", overlaying: "y", side: "right",
       titlefont: { color: "#4caf50" }, tickfont: { color: "#4caf50" },
       gridcolor: "rgba(0,0,0,0)",
       position: hasLobith ? 0.85 : 1.0,
@@ -1062,7 +1062,7 @@ function renderGrondwaterChart(d) {
   }));
   traces.push({
     x: d.river.dates, y: d.river.h, type: "scatter", mode: "lines",
-    name: "IJssel-peil Kampen", line: { color: "#ef5350", width: 2.5, dash: "dash" }, yaxis: "y2",
+    name: "IJssel-stand Kampen (wflow rivierdiepte, m)", line: { color: "#ef5350", width: 2.5, dash: "dash" }, yaxis: "y2",
   });
   Plotly.react("grondwater-chart", traces, {
     paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a",
@@ -1071,7 +1071,7 @@ function renderGrondwaterChart(d) {
     xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
     yaxis: { title: "Grondwaterstand (m)", gridcolor: "#1a3a5c",
              titlefont: { color: "#4dd0e1" }, tickfont: { color: "#4dd0e1" } },
-    yaxis2: { title: "IJssel-peil (m+NAP)", overlaying: "y", side: "right", showgrid: false,
+    yaxis2: { title: "IJssel-rivierdiepte (m)", overlaying: "y", side: "right", showgrid: false,
               titlefont: { color: "#ef5350" }, tickfont: { color: "#ef5350" } },
   }, { responsive: true, displayModeBar: false });
 }
