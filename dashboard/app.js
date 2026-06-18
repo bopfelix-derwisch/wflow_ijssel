@@ -70,6 +70,8 @@ let validationLoaded = false;   // WL-VAL-1: skill-data 6u server-cached, één 
 let hindcastLoaded   = false;   // WL-VAL-2: hindcast idem (top-level state i.v.m. hash-deeplink TDZ)
 let stationTs        = {};      // WL-VIS-1: per station de geladen tijdreeks (kampen/westervoort)
 let selectedStation  = null;    // WL-VIS-1: welk netwerkpunt is aangeklikt
+let chatToken        = null;    // WL-CHAT-1: sessie-token (top-level state i.v.m. hash-deeplink TDZ)
+let chatHistory      = [];      // WL-CHAT-1: gespreksgeschiedenis (voor context)
 
 // WL-VIS-1 · netwerkpunten met data (= waar wflow een uitspraak over doet)
 const STATIONS = {
@@ -198,7 +200,7 @@ function switchYear(year) {
     [infoPnl, uitlegPnl, forecastPnl, ensemblePnl, introPnl].forEach(p => {
       if (p) p.classList.remove("visible");
     });
-    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel","grondwater-panel","validatie-panel","handleiding-panel"].forEach(id => {
+    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel","grondwater-panel","validatie-panel","chat-panel","handleiding-panel"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove("visible");
     });
@@ -287,6 +289,17 @@ function switchYear(year) {
     document.getElementById("alert-badge").style.background = "#00838f";
     document.body.className = "";
     loadGrondwater();
+    return;
+  }
+
+  if (year === "chat") {
+    hideAll();
+    document.getElementById("chat-panel").classList.add("visible");
+    banner.textContent = "Vraag het · uitleg-assistent · gegrond in de eigen herkomst-/uitleg-bronnen";
+    document.getElementById("alert-badge").textContent = "💬 Vraag het";
+    document.getElementById("alert-badge").style.background = "#00695c";
+    document.body.className = "";
+    initChat();
     return;
   }
 
@@ -889,6 +902,104 @@ function renderValidationChart(id, p) {
     xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
     yaxis: { title: yTitle, gridcolor: "#1a3a5c" },
   }, { responsive: true, displayModeBar: false });
+}
+
+// ── WL-CHAT-1 · uitleg-chat ────────────────────────────────────────────────
+function initChat() {
+  if (!chatToken) chatToken = localStorage.getItem("wl_chat_token");
+  const loggedIn = !!chatToken;
+  document.getElementById("chat-login").style.display = loggedIn ? "none" : "block";
+  document.getElementById("chat-ui").style.display = loggedIn ? "block" : "none";
+  if (loggedIn && !document.getElementById("chat-messages").children.length) {
+    chatAddNote("Stel een vraag over Waterlab — bijvoorbeeld “waarom is het Kampen-peil niet te valideren?” of “wat doet Proef 9?”");
+  }
+}
+
+async function chatLogin() {
+  const pw = document.getElementById("chat-pw").value;
+  const msg = document.getElementById("chat-login-msg");
+  msg.textContent = "Inloggen…";
+  try {
+    const r = await fetch(`${API}/api/chat/login`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { msg.textContent = d.reason || "Inloggen mislukt."; return; }
+    chatToken = d.token;
+    localStorage.setItem("wl_chat_token", chatToken);
+    msg.textContent = "";
+    document.getElementById("chat-pw").value = "";
+    initChat();
+  } catch (e) { msg.textContent = "Inloggen mislukt — server niet bereikbaar."; }
+}
+
+function chatAddMessage(role, text, sources) {
+  const box = document.getElementById("chat-messages");
+  const el = document.createElement("div");
+  el.className = "chat-msg " + role;
+  el.textContent = text;
+  if (role === "bot" && sources && sources.length) {
+    const src = document.createElement("div");
+    src.className = "chat-src";
+    src.appendChild(document.createTextNode("Lees verder: "));
+    sources.forEach(s => {
+      const a = document.createElement("a");
+      a.textContent = s.label;
+      if (s.doc) { a.href = "/docs/" + s.doc; a.target = "_blank"; a.rel = "noopener"; }
+      else { a.onclick = () => switchYear(s.tab); }
+      src.appendChild(a);
+    });
+    el.appendChild(src);
+  }
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+
+function chatAddNote(text) {
+  const box = document.getElementById("chat-messages");
+  const el = document.createElement("div");
+  el.className = "chat-msg note";
+  el.textContent = text;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function chatSend() {
+  const input = document.getElementById("chat-input");
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = "";
+  chatAddMessage("user", q);
+  chatHistory.push({ role: "user", content: q });
+  const btn = document.getElementById("chat-send");
+  btn.disabled = true;
+  const thinking = chatAddMessage("bot", "…");
+  try {
+    const r = await fetch(`${API}/api/chat`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: chatToken, question: q, history: chatHistory.slice(0, -1) }),
+    });
+    const d = await r.json();
+    thinking.remove();
+    if (r.status === 401) {
+      chatToken = null; localStorage.removeItem("wl_chat_token");
+      chatAddNote("Sessie verlopen — log opnieuw in."); initChat(); return;
+    }
+    if (!d.ok) { chatAddNote(d.reason || "Er ging iets mis."); return; }
+    chatAddMessage("bot", d.answer, d.sources);
+    chatHistory.push({ role: "assistant", content: d.answer });
+    if (d.remaining != null)
+      document.getElementById("chat-budget").textContent =
+        `Nog ${d.remaining} vragen in deze sessie.`;
+  } catch (e) {
+    thinking.remove();
+    chatAddNote("De assistent is even niet bereikbaar.");
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
 }
 
 async function loadForecast() {

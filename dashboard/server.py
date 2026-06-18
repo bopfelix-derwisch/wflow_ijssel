@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 import anthropic as _anthropic
-from fastapi import FastAPI, HTTPException
+from fastapi import Body, FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -560,6 +560,28 @@ def get_validation_hindcast():
         return JSONResponse(build_hindcast())
     except Exception as e:
         return JSONResponse({"available": False, "error": str(e)})
+
+
+# WL-CHAT-1 — uitleg-chatbot, gegrond in de PROV-bronnen, achter login + budget.
+@app.post("/api/chat/login")
+def post_chat_login(payload: dict = Body(...)):
+    from dashboard.chat import login
+    token = login(str(payload.get("password", "")))
+    if token is None:
+        return JSONResponse({"ok": False, "reason": "Onjuist wachtwoord."}, status_code=401)
+    return JSONResponse({"ok": True, "token": token})
+
+
+@app.post("/api/chat")
+def post_chat(payload: dict = Body(...)):
+    from dashboard.chat import answer
+    res = answer(str(payload.get("token", "")),
+                 str(payload.get("question", "")),
+                 payload.get("history") or [])
+    if not res.get("ok"):
+        status = 401 if res.get("code") == "auth" else (429 if res.get("code") == "budget" else 200)
+        return JSONResponse(res, status_code=status)
+    return JSONResponse(res)
 
 
 @app.get("/api/fews/data")

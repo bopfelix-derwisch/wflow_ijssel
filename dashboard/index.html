@@ -551,6 +551,23 @@
     #roadmap-panel:not(.visible) { display: none; }
     #roadmap-panel.visible { display: block; }
     .year-tab.active-roadmap { background: #4a148c; border-color: #ce93d8; color: #fff; }
+    /* ── WL-CHAT-1 · uitleg-chat ── */
+    #chat-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #chat-panel.visible { display: block; }
+    .year-tab.active-chat { background: #00695c; border-color: #4db6ac; color: #fff; }
+    .chat-doc { max-width: 820px; margin: 0 auto; }
+    #chat-messages { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 12px; min-height: 120px; }
+    .chat-msg { max-width: 88%; padding: 9px 13px; border-radius: 10px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+    .chat-msg.user { align-self: flex-end; background: #123047; color: #dceaf2; border: 1px solid #1a4a6a; }
+    .chat-msg.bot  { align-self: flex-start; background: #07131e; color: #c2d0d8; border: 1px solid #1a2e3f; }
+    .chat-msg.bot .chat-src { margin-top: 8px; padding-top: 7px; border-top: 1px solid #14283a; font-size: 10.5px; color: #607d8b; }
+    .chat-msg.bot .chat-src a { color: #4db6ac; cursor: pointer; text-decoration: none; margin-right: 8px; }
+    .chat-msg.bot .chat-src a:hover { text-decoration: underline; }
+    .chat-msg.note { align-self: center; background: none; color: #607d8b; font-size: 11.5px; font-style: italic; }
+    #chat-inputbar { display: flex; gap: 8px; }
+    #chat-input { flex: 1; background: #0a1620; border: 1px solid #1a3a5c; color: #e0e0e0; border-radius: 8px; padding: 9px 12px; font-size: 13px; }
+    #chat-send { background: #00695c; border: 1px solid #4db6ac; color: #fff; border-radius: 8px; font-weight: 600; font-size: 13px; padding: 0 16px; cursor: pointer; }
+    #chat-send:disabled { opacity: .5; cursor: default; }
     .year-tab.active-pocs    { background: #00695c; border-color: #4db6ac; color: #fff; }
     /* ── WL-VAL-1 · Validatie-tab ── */
     #validatie-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
@@ -811,6 +828,7 @@
   <div id="year-tabs">
     <button class="year-tab active-intro" data-year="intro">Waterlab</button>
     <button class="year-tab" data-year="handleiding">Handleiding</button>
+    <button class="year-tab" data-year="chat">💬 Vraag het</button>
     <button class="year-tab" data-year="uitleg">Rijn &amp; IJssel</button>
     <button class="year-tab" data-year="pocs">POC's</button>
     <button class="year-tab" data-year="forecast">Verwachting</button>
@@ -2052,6 +2070,35 @@
   </div>
 </div><!-- /#validatie-panel -->
 
+<div id="chat-panel">
+  <div class="chat-doc">
+    <div class="info-section" style="margin-bottom:10px">
+      <h2 style="color:#4db6ac">💬 Vraag het — uitleg-assistent (WL-CHAT-1)</h2>
+      <p style="color:#90a4ae; font-size:13px; margin:6px 0 0;">Stel een vraag over Waterlab: de inrichting, de proeven, de herkomst van de data of de skill van de modellen. De assistent (Claude Haiku) antwoordt <strong>uitsluitend op basis van de eigen herkomst- en uitleg-bronnen</strong> (WL-PROV/GOV + handleiding) — staat het er niet in, dan zegt hij dat eerlijk. Achter login en met een budget per sessie i.v.m. tokenkosten.</p>
+    </div>
+
+    <div id="chat-login">
+      <p style="color:#90a4ae; font-size:13px;">Toegang vereist een wachtwoord (tokenkosten-beheersing).</p>
+      <div style="display:flex; gap:8px; max-width:360px; align-items:center;">
+        <input id="chat-pw" type="password" placeholder="wachtwoord" onkeydown="if(event.key==='Enter')chatLogin()"
+               style="flex:1; background:#0a1620; border:1px solid #1a3a5c; color:#e0e0e0; border-radius:6px; padding:7px 10px; font-size:13px;">
+        <button class="poc-goto" style="color:#4db6ac; border-color:#00695c;" onclick="chatLogin()">Inloggen</button>
+      </div>
+      <p id="chat-login-msg" style="color:#ef5350; font-size:12px; margin-top:8px; min-height:1em;"></p>
+    </div>
+
+    <div id="chat-ui" style="display:none;">
+      <div id="chat-messages"></div>
+      <div id="chat-inputbar">
+        <input id="chat-input" type="text" placeholder="Stel je vraag over Waterlab…" maxlength="1000"
+               onkeydown="if(event.key==='Enter')chatSend()">
+        <button id="chat-send" onclick="chatSend()">Vraag</button>
+      </div>
+      <p id="chat-budget" style="color:#607d8b; font-size:11px; margin:6px 0 0;"></p>
+    </div>
+  </div>
+</div><!-- /#chat-panel -->
+
 <div id="handleiding-panel">
 
   <div class="info-section">
@@ -2071,6 +2118,7 @@
       <tr><td><strong>Jan 1995 · Zomer 2018 · Jul 2021</strong></td><td>Historische wflow-simulaties (hoogwater/droogte-events).</td></tr>
       <tr><td><strong>Grondwater</strong></td><td>Proef 9: gemeten grondwater (BRO) vs IJssel-peil + lag-correlatie + AI-duiding.</td></tr>
       <tr><td><strong>Validatie</strong></td><td>Gesimuleerd vs gemeten per punt met skill-score (NSE/KGE/r/bias) + eerlijke "niet te valideren"-matrix. API: <code>/api/validation</code>.</td></tr>
+      <tr><td><strong>Vraag het</strong></td><td>Uitleg-chatbot (Claude Haiku), gegrond in de eigen herkomst-/uitleg-bronnen — geen vrije generatie. Achter login + budget per sessie.</td></tr>
       <tr><td><strong>FEWS</strong></td><td>Waterlab als FEWS PI REST-service (API-explorer).</td></tr>
       <tr><td><strong>Platform Visie · Roadmap · Info</strong></td><td>Architectuurvisie, backlog en analyse-achtergrond.</td></tr>
     </table>
@@ -3694,7 +3742,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=51"></script>
+<script src="/static/app.js?v=52"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {
