@@ -2,7 +2,7 @@
 import pytest
 
 from dashboard.validation import (
-    nse, kge, bias, pbias, rmse, pearson_r, skill_scores, align,
+    nse, kge, bias, pbias, rmse, pearson_r, skill_scores, align, horizon_skill,
 )
 
 
@@ -57,3 +57,17 @@ def test_skill_scores_shape_and_nan_to_none():
     assert set(sc) == {"n", "r", "nse", "kge", "bias", "pbias", "rmse"}
     assert sc["nse"] is None
     assert sc["r"] is None
+
+
+def test_horizon_skill_aggregates_per_leadtime():
+    preds = [[10.0, 10.0], [20.0, 20.0]]
+    obs   = [[12.0,  8.0], [18.0, 25.0]]
+    lows  = [[ 8.0,  8.0], [15.0, 15.0]]
+    highs = [[12.0, 12.0], [25.0, 25.0]]
+    r = horizon_skill(preds, obs, lows, highs)
+    assert r["horizon"] == [1, 2]
+    assert r["bias"] == [0.0, -1.5]          # (−2,+2)→0 ; (+2,−5)→−1.5
+    assert r["mae"] == [2.0, 3.5]
+    assert r["rmse"] == [2.0, 3.8]           # sqrt(14.5)≈3.81
+    assert r["coverage"] == [100, 100]       # alle realisaties binnen band
+    assert r["n"] == [2, 2]

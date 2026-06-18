@@ -551,6 +551,17 @@ def get_validation():
         return JSONResponse({"available": False, "error": str(e)})
 
 
+# WL-VAL-2 — hindcast-terugblik: uitgegeven verwachting vs realisatie, fout per
+# horizon. Output van WL-VAL-1 (zelfde RWS-meting + skill-functies), geen 2e datapad.
+@app.get("/api/validation/hindcast")
+def get_validation_hindcast():
+    from dashboard.validation import build_hindcast
+    try:
+        return JSONResponse(build_hindcast())
+    except Exception as e:
+        return JSONResponse({"available": False, "error": str(e)})
+
+
 @app.get("/api/fews/data")
 def get_fews_data(location: str = "KAMPEN", period: str = "1995"):
     sim_raw = get_wflow_timeseries(location, "Q.sim", period)

@@ -125,6 +125,37 @@ def anomaly_scores(sim, obs):
     return sc, round(offset, 2), [round(float(v), 3) for v in sa], [round(float(v), 3) for v in oa]
 
 
+def horizon_skill(preds, obs, lows, highs):
+    """Aggregeer hindcast-fouten per lead-time (horizon).
+
+    preds/obs/lows/highs zijn lijsten-van-lijsten [uitgifte-datum][horizon], alle
+    met dezelfde horizon-lengte H. Per horizon j: bias/mae/rmse over alle uitgiftes
+    + dekking (% realisaties binnen de onzekerheidsband).
+    """
+    out = {"horizon": [], "bias": [], "mae": [], "rmse": [], "coverage": [], "n": []}
+    H = len(preds[0]) if preds else 0
+    for j in range(H):
+        errs, cov, tot = [], 0, 0
+        for i in range(len(preds)):
+            p, o = preds[i][j], obs[i][j]
+            if p is None or o is None or p != p or o != o:
+                continue
+            errs.append(p - o)
+            tot += 1
+            if lows[i][j] <= o <= highs[i][j]:
+                cov += 1
+        if not errs:
+            continue
+        e = np.asarray(errs, dtype=float)
+        out["horizon"].append(j + 1)
+        out["bias"].append(round(float(e.mean()), 1))
+        out["mae"].append(round(float(np.abs(e).mean()), 1))
+        out["rmse"].append(round(float(np.sqrt(np.mean(e ** 2))), 1))
+        out["coverage"].append(round(100.0 * cov / tot))
+        out["n"].append(tot)
+    return out
+
+
 def align(sim_dates, sim_vals, obs_dates, obs_vals):
     """Lijn sim/meting uit op gemeenschappelijke datums; drop paren met een NaN."""
     obs_map = {d: v for d, v in zip(obs_dates, obs_vals)}
@@ -250,6 +281,106 @@ def _not_validatable() -> list:
 
 _CACHE = {"t": 0.0, "data": None}
 _TTL = 6 * 3600
+
+
+def hindcast_unc(h: int) -> float:
+    """Onzekerheidsbreedte van de live verwachting op lead-time h (zelfde formule)."""
+    return 0.18 + 0.04 * h
+
+
+def _pick_example(obs: list) -> int:
+    """Kies de uitgifte-datum met de grootste gerealiseerde beweging (meest leerzaam)."""
+    best, best_idx = -1.0, 0
+    for i, o in enumerate(obs):
+        vals = [v for v in o if v is not None and v == v]
+        if len(vals) < 2:
+            continue
+        move = abs(vals[-1] - vals[0])
+        if move > best:
+            best, best_idx = move, i
+    return best_idx
+
+
+_HC_CACHE = {"t": 0.0, "data": None}
+_HC_TTL = 6 * 3600
+HINDCAST_H = 14
+
+
+def build_hindcast(days_back: int = 75, force: bool = False) -> dict:
+    """WL-VAL-2 — terugblik: uitgegeven verwachting vs realisatie, fout per horizon.
+
+    Het forecast-model voorspelt de Westervoort-afvoer puur als recessie (van de
+    laatste meting naar het seizoensgemiddelde) — exact reconstrueerbaar voor elke
+    uitgifte-datum. De realisatie is de RWS-meting Westervoort: dezelfde bron en
+    skill-functies als WL-VAL-1, geen tweede datapad. De Kampen-routing + neerslag-
+    term valt buiten beeld omdat er geen gemeten Kampen-afvoer is (zie WL-VAL-1).
+    """
+    now = time.time()
+    if not force and _HC_CACHE["data"] and now - _HC_CACHE["t"] < _HC_TTL:
+        return _HC_CACHE["data"]
+
+    base = {
+        "point": "Westervoort", "variable": "debiet", "unit": "m³/s",
+        "horizon_days": HINDCAST_H,
+        "method": ("Hindcast van de Westervoort-afvoerverwachting (de recessie die de live "
+                   "verwachting uitgeeft) tegen de RWS-meting — dezelfde bron als WL-VAL-1, "
+                   "geen tweede waarheid. De band is de onzekerheid uit de live verwachting "
+                   "(±(18 + 4·dag)%)."),
+    }
+    try:
+        from datetime import timedelta
+        from dashboard.forecast import _rws_daily, _recession
+        end = date.today()
+        start = end - timedelta(days=days_back)
+        s = _rws_daily("westervoort", "Q", "m3/s", start, end)
+    except Exception as e:  # pragma: no cover
+        logger.warning("hindcast RWS-fetch faalde: %s", e)
+        s = None
+    if s is None or len(s) < HINDCAST_H + 7:
+        return {**base, "available": False,
+                "reason": "RWS-meetreeks Westervoort onvoldoende voor een hindcast — probeer later opnieuw."}
+
+    import pandas as pd
+    idx = pd.date_range(start, end, freq="D")
+    s = s.reindex(idx).interpolate(limit=5).bfill().ffill()
+    dates = [d.strftime("%Y-%m-%d") for d in idx]
+    vals = [float(v) for v in s.values]
+
+    preds, obs, lows, highs, issues = [], [], [], [], []
+    for i in range(0, len(vals) - HINDCAST_H):
+        q0 = vals[i]
+        pr = _recession(q0, HINDCAST_H, idx[i].month)
+        pl = [round(float(pr[j]) * (1 - hindcast_unc(j + 1)), 1) for j in range(HINDCAST_H)]
+        ph = [round(float(pr[j]) * (1 + hindcast_unc(j + 1)), 1) for j in range(HINDCAST_H)]
+        preds.append([round(float(x), 1) for x in pr])
+        obs.append([vals[i + 1 + j] for j in range(HINDCAST_H)])
+        lows.append(pl); highs.append(ph); issues.append(dates[i])
+
+    if not preds:
+        return {**base, "available": False, "reason": "Te weinig dagen voor een hindcast."}
+
+    skill = horizon_skill(preds, obs, lows, highs)
+    ex = _pick_example(obs)
+    example = {
+        "issue_date": issues[ex],
+        "dates": [dates[ex + 1 + j] for j in range(HINDCAST_H)],
+        "pred": preds[ex], "low": lows[ex], "high": highs[ex], "obs": obs[ex],
+    }
+
+    def _at(h):
+        return skill["rmse"][skill["horizon"].index(h)] if h in skill["horizon"] else None
+    cov = skill["coverage"]
+    summary = {
+        "rmse_day7": _at(7), "rmse_day14": _at(14),
+        "mean_coverage": round(sum(cov) / len(cov)) if cov else None,
+    }
+    data = {**base, "available": True,
+            "generated_at": time.strftime("%Y-%m-%d %H:%M"),
+            "window": f"{dates[0]} → {dates[-1]}",
+            "n_forecasts": len(preds),
+            "per_horizon": skill, "example": example, "summary": summary}
+    _HC_CACHE.update(t=now, data=data)
+    return data
 
 
 def build_validation(force: bool = False) -> dict:

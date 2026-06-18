@@ -67,6 +67,7 @@ let riverData   = [];
 let overlay     = null;
 let loadAbortController = null;
 let validationLoaded = false;   // WL-VAL-1: skill-data 6u server-cached, één keer per sessie laden
+let hindcastLoaded   = false;   // WL-VAL-2: hindcast idem (top-level state i.v.m. hash-deeplink TDZ)
 
 // ── kaart ─────────────────────────────────────────────────────────────────────
 
@@ -623,6 +624,73 @@ async function loadValidation() {
     wait.textContent = "Validatie niet beschikbaar.";
     console.warn("validation load failed:", err);
   }
+  loadHindcast();   // WL-VAL-2 — aparte (tragere) fetch; grafieken erboven staan al
+}
+
+async function loadHindcast() {
+  if (hindcastLoaded) return;
+  const wait = document.getElementById("hindcast-unavailable");
+  const content = document.getElementById("hindcast-content");
+  wait.style.display = "block";
+  try {
+    const d = await fetch(`${API}/api/validation/hindcast`).then(r => r.json());
+    if (!d.available) {
+      wait.textContent = d.reason || "Hindcast niet beschikbaar.";
+      return;
+    }
+    const s = d.summary || {};
+    document.getElementById("hindcast-summary").innerHTML =
+      `Over <strong>${d.n_forecasts}</strong> uitgegeven verwachtingen (${d.window}): ` +
+      `fout (RMSE) op dag 7 ≈ <strong>${s.rmse_day7} ${d.unit}</strong>, dag 14 ≈ <strong>${s.rmse_day14} ${d.unit}</strong>. ` +
+      `De onzekerheidsband ving gemiddeld <strong>${s.mean_coverage}%</strong> van de realisaties. ${d.method}`;
+    document.getElementById("hindcast-window").textContent = d.window;
+    document.getElementById("hindcast-ex-title").textContent =
+      `Voorbeeld — verwachting uitgegeven op ${d.example.issue_date}, over de realisatie`;
+    renderHindcastExample(d.example, d.unit);
+    renderHindcastHorizon(d.per_horizon, d.unit);
+    wait.style.display = "none";
+    content.style.display = "block";
+    hindcastLoaded = true;
+  } catch (err) {
+    wait.textContent = "Hindcast niet beschikbaar.";
+    console.warn("hindcast load failed:", err);
+  }
+}
+
+function renderHindcastExample(ex, unit) {
+  const traces = [
+    { x: ex.dates, y: ex.low, type: "scatter", mode: "lines", line: { width: 0 },
+      showlegend: false, hoverinfo: "skip" },
+    { x: ex.dates, y: ex.high, type: "scatter", mode: "lines", line: { width: 0 },
+      fill: "tonexty", fillcolor: "rgba(77,182,172,0.15)", name: "Onzekerheidsband", hoverinfo: "skip" },
+    { x: ex.dates, y: ex.pred, type: "scatter", mode: "lines",
+      name: "Verwachting (uitgegeven)", line: { color: "#4db6ac", width: 2, dash: "dash" } },
+    { x: ex.dates, y: ex.obs, type: "scatter", mode: "lines+markers",
+      name: "Realisatie (RWS gemeten)", line: { color: "#4caf50", width: 2 }, marker: { size: 4 } },
+  ];
+  Plotly.react("hindcast-example-chart", traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a",
+    font: { color: "#e0e0e0", size: 11 }, margin: { t: 8, b: 34, l: 56, r: 14 },
+    legend: { orientation: "h", y: -0.25, font: { size: 10 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: { title: `Debiet (${unit})`, gridcolor: "#1a3a5c" },
+  }, { responsive: true, displayModeBar: false });
+}
+
+function renderHindcastHorizon(ph, unit) {
+  const traces = [
+    { x: ph.horizon, y: ph.rmse, type: "scatter", mode: "lines+markers",
+      name: "RMSE", line: { color: "#ef5350", width: 2 } },
+    { x: ph.horizon, y: ph.bias, type: "scatter", mode: "lines+markers",
+      name: "Bias", line: { color: "#ffb74d", width: 2 } },
+  ];
+  Plotly.react("hindcast-horizon-chart", traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a",
+    font: { color: "#e0e0e0", size: 11 }, margin: { t: 8, b: 38, l: 56, r: 14 },
+    legend: { orientation: "h", y: -0.32, font: { size: 10 } },
+    xaxis: { title: "Lead-time (dagen vooruit)", gridcolor: "#1a3a5c", dtick: 1 },
+    yaxis: { title: `Fout (${unit})`, gridcolor: "#1a3a5c", zeroline: true, zerolinecolor: "#37474f" },
+  }, { responsive: true, displayModeBar: false });
 }
 
 function valClass(metric, v) {

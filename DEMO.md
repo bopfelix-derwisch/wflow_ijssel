@@ -40,12 +40,24 @@ op de Veluwe-flank volgen de rivier later. Qwen draait lokaal voor de duiding."
 grondwatertrend per put. De eerste weken liggen al vast door reeds-gemeten afvoer; de
 stippellijn is vandaag, het gearceerde deel is de 14-daagse verwachting."
 
-### 4 · De negen proeven  ·  `#pocs`  (~20 s)
+### 4 · Validatie — hoe goed is het écht?  ·  `#validatie`  (~40 s) ⭐⭐
+**Tonen:** de Validatie-tab — per punt de skill-score, dan de hindcast eronder.
+**Zeggen:** "Niet alleen *'het ziet er plausibel uit'* — hoe goed ís het, objectief? Per punt
+leggen we simulatie naast meting met een skill-score: NSE, KGE, bias. Eerlijk: alleen waar een
+onafhankelijke meting bestaat; de rest staat mét reden in de matrix. Bij Kampen blijkt het
+gesimuleerde peil kwantitatief onbruikbaar — en dat zeggen we hardop in plaats van het te verbergen."
+**Scroll naar — onder:** de **Hindcast** ("leg de groene over de blauwe").
+**Zeggen:** "En de terugblik — letterlijk de wens uit de review: voor elke dag reconstrueren we
+de toen uitgegeven verwachting en leggen die over wat er werkelijk gebeurde. De fout groeit met de
+horizon — dag 14 zo'n 100 m³/s RMSE, met een systematische overschatting — maar de onzekerheidsband
+ving ~99% van de realisaties. Zelfde meetbron als de skill-score, geen tweede waarheid."
+
+### 5 · De negen proeven  ·  `#pocs`  (~20 s)
 **Tonen:** de POC-kaarten (scroll kort).
 **Zeggen:** "Negen proeven, elk langs drie lijnen — functioneel, technisch, opvolging.
 Van ensemble-AI en een multimodel-pipeline tot FEWS en grondwater."
 
-### 5 · Het platform — GraphQL  ·  `/graphql`  (~45 s) ⭐
+### 6 · Het platform — GraphQL  ·  `/graphql`  (~45 s) ⭐
 **Tonen:** GraphiQL; plak en run deze ene query:
 ```graphql
 {
@@ -63,7 +75,7 @@ Van ensemble-AI en een multimodel-pipeline tot FEWS en grondwater."
 grondwaterputten met hun reeks — het schema ís de domeingraaf. Read-only en gelimiteerd
 (diepte, tokens, 60 req/min)."
 
-### 6 · Interoperabel — FEWS  ·  `#fews`  (~15 s)
+### 7 · Interoperabel — FEWS  ·  `#fews`  (~15 s)
 **Tonen:** de FEWS PI REST-explorer.
 **Zeggen:** "Dezelfde data ook als Deltares PI REST 1.25 — elke FEWS-instantie kan Waterlab
 als externe bron aanroepen, zonder aanpassing."
@@ -79,7 +91,7 @@ operationeel voorspelsysteem**: deels statistisch i.p.v. fysisch, data-gedreven 
 ---
 
 ## Snelle flow (alleen de links, voor een vlotte demo)
-`#handleiding` → `#uitleg` → `#forecast` → `#grondwater` → `#pocs` → `/graphql` → `#fews`
+`#handleiding` → `#uitleg` → `#forecast` → `#grondwater` → `#validatie` → `#pocs` → `/graphql` → `#fews`
 
 ## Vooraf (zodat live calls direct laden)
 ```bash
@@ -87,4 +99,6 @@ B=http://localhost:8000
 curl -s -o /dev/null $B/api/forecast/intervention      # warmt Claude-interventie
 curl -s -o /dev/null $B/api/grondwater                 # warmt overlay + duiding
 curl -s -o /dev/null $B/api/grondwater/projection      # warmt vooruitblik
+curl -s -o /dev/null $B/api/validation                 # warmt skill-scores (RWS-fetch)
+curl -s -o /dev/null $B/api/validation/hindcast        # warmt hindcast (RWS-fetch)
 ```

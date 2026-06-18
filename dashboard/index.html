@@ -1946,6 +1946,29 @@
     </div>
     <div id="val-unavailable" style="display:none; color:#607d8b; padding:1rem 0;">Validatie laden… (eerste keer ~10–20 s: RWS-meetreeks ophalen).</div>
     <div id="val-cards"></div>
+
+    <div class="info-section" style="margin:14px 0 8px"><h2>Hindcast — hoe goed deden we? (WL-VAL-2)</h2>
+      <p style="color:#90a4ae; font-size:13px; margin:6px 0 0;">Terugblik: voor elke dag in het venster reconstrueren we de toen uitgegeven Westervoort-verwachting (de recessie die de live verwachting gebruikt) en leggen die over de gerealiseerde RWS-meting — <em>"leg de groene over de blauwe, wat was de fout?"</em> Zo zie je de fout per <strong>lead-time</strong> (dag 1–14) en of de onzekerheidsband klopt. Realisatie = RWS Westervoort: dezelfde bron als hierboven, geen tweede waarheid.</p>
+    </div>
+    <div id="hindcast-unavailable" style="display:none; color:#607d8b; font-size:12px; padding:8px 0;">Hindcast laden…</div>
+    <div id="hindcast-content" style="display:none;">
+      <p id="hindcast-summary" class="val-note" style="border-color:#00695c; font-size:12.5px;"></p>
+      <div class="val-card">
+        <div class="val-card-head"><h3 id="hindcast-ex-title">Voorbeeld — verwachting over realisatie</h3><span class="val-period" id="hindcast-window"></span></div>
+        <div class="val-body">
+          <div id="hindcast-example-chart" class="val-chart"></div>
+          <p class="val-note">Groen = de uitgegeven verwachting met onzekerheidsband; blauw = de werkelijk gemeten afvoer. Uitgifte-datum gekozen op de grootste gerealiseerde beweging (meest leerzaam).</p>
+        </div>
+      </div>
+      <div class="val-card">
+        <div class="val-card-head"><h3>Fout per lead-time (alle verwachtingen)</h3></div>
+        <div class="val-body">
+          <div id="hindcast-horizon-chart" class="val-chart"></div>
+          <p class="val-note">Bias (gemiddelde fout) en RMSE in m³/s, opgebouwd over alle uitgegeven verwachtingen, per voorspeldag. Positieve bias = de verwachting overschat; de fout groeit met de horizon.</p>
+        </div>
+      </div>
+    </div>
+
     <div class="info-section" style="margin:10px 0 8px"><h2>Niet (zelfstandig) te valideren — en waarom</h2></div>
     <table class="val-matrix"><thead><tr><th>Punt / run</th><th>Status</th><th>Reden</th></tr></thead>
       <tbody id="val-matrix-body"></tbody>
@@ -3542,7 +3565,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=49"></script>
+<script src="/static/app.js?v=50"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {
