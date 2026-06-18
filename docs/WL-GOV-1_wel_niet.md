@@ -1,6 +1,6 @@
 # WL-GOV-1 · Wat Waterlab wél en niet bewijst
 
-**Status:** canoniek · **Datum:** 2026-06-18 · **Backlog:** `docs/BACKLOG_WaterLab_review_TvB.md` (WL-GOV-1)
+**Status:** canoniek · **Datum:** 2026-06-18 · **Backlog:** `docs/BACKLOG_WaterLab_review.md` (WL-GOV-1)
 
 > **Dit is de single source.** Elke externe weergave van Waterlab — deck, `DEMO.md`,
 > dashboard-landing — gebruikt deze tekst, niet een eigen herformulering. Wijzig hier,

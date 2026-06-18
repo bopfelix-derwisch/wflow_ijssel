@@ -1,6 +1,6 @@
 # WL-PROV-2 · Herkomst van schematisatie en randvoorwaarden
 
-**Status:** canoniek · **Datum:** 2026-06-18 · **Backlog:** `docs/BACKLOG_WaterLab_review_TvB.md` (WL-PROV-2)
+**Status:** canoniek · **Datum:** 2026-06-18 · **Backlog:** `docs/BACKLOG_WaterLab_review.md` (WL-PROV-2)
 **Gelinkt vanaf:** WL-PROV-1 (de herkomst-keten per POC op de POC's-tab) · **Build-stappen:** `DRAAIBOEK.md`
 
 > Het scherpste inhoudelijke gat uit de review: *"waar komt die schematisatie vandaan?"*

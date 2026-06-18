@@ -1,7 +1,7 @@
-# WaterLab — Backlog (na review Thomas van Balsen)
+# WaterLab — Backlog (na review)
 
 **Versie:** 1.3 · **Datum:** 2026-06-18 · **Rol:** claude.ai = PO/Architect
-**Bron:** reviewsessie POC "Verwachting" (verslag + transcript T. van Balsen) + handover v1.0
+**Bron:** reviewsessie POC "Verwachting" (verslag + transcript) + handover v1.0
 **Definition of Done (geldt voor élke story):** PI REST 1.25 en dashboard nooit breken · kleine, additieve diffs · `LESSONS_LEARNED.md` lezen vóór wijziging · disclaimer "indicatief leerlab" blijft staan.
 
 ---
@@ -58,7 +58,7 @@ Daarom is de leidende as van deze backlog **vertrouwen**, niet cosmetica. Volgor
 
 #### WL-VAL-1 · Gesimuleerd vs. gemeten, per punt, met skill-score
 **Als PO wil ik** simulatie en meting structureel naast elkaar per netwerkpunt, met een objectieve score **zodat** ik kan zeggen *hoe goed* het model is i.p.v. dat het "plausibel" lijkt.
-**Waarom:** Thomas formuleerde dit zelf als zijn eigen epic — *"vanuit jouw rol: hoe goed zijn je modellen, vergelijk met metingen."* Validatie kreeg in de sessie expliciet prioriteit.
+**Waarom:** de reviewer formuleerde dit zelf als een eigen epic — *"vanuit jouw rol: hoe goed zijn je modellen, vergelijk met metingen."* Validatie kreeg in de sessie expliciet prioriteit.
 **Acceptatiecriteria:**
 - Per punt een overlay meting/simulatie + skill-metriek (NSE, KGE en bias) over een gekozen periode.
 - Werkt op de historische runs (1995/2018/2021) en op het live forecast-spoor.
@@ -66,7 +66,7 @@ Daarom is de leidende as van deze backlog **vertrouwen**, niet cosmetica. Volgor
 
 #### WL-VAL-2 · Maandelijkse hindcast-terugblik ("hoe goed deden we?")
 **Als PO wil ik** periodiek de verwachting van een datum over de gerealiseerde lijn leggen **zodat** ik per peildatum de voorspelfout zie en verbetering kan aantonen.
-**Waarom:** letterlijk Thomas' wens — *"elke maand een rapport, leg de groene over de blauwe, wat was de fout van 31 mei?"*
+**Waarom:** letterlijk de wens van de reviewer — *"elke maand een rapport, leg de groene over de blauwe, wat was de fout van 31 mei?"*
 **Acceptatiecriteria:**
 - Genereert per maand een rapport: uitgegeven verwachting vs. realisatie, met fout per horizon.
 - Is de *output* van WL-VAL-1, geen apart datapad (geen tweede waarheid bouwen).
@@ -115,7 +115,7 @@ Daarom is de leidende as van deze backlog **vertrouwen**, niet cosmetica. Volgor
 **Als PO wil ik** een chatbot waarmee een gebruiker de inrichting en werking kan bevragen **zodat** vragen als "wat is dit, hoe werkt dit?" zelf-bedienbaar worden.
 **PO-noot (sequencing, niet volgzaam):** dit komt *na* WL-PROV-1/2. Een chatbot bovenop ontraceerbare bronnen pleit de hallucinatie alleen welsprekender vrij — het werkelijke risico uit de review. De chatbot moet putten uit de provenance-laag, niet uit vrije generatie.
 **Acceptatiecriteria:**
-- Achter login (tokenkosten-beheersing — Thomas' eigen randvoorwaarde).
+- Achter login (tokenkosten-beheersing — een eigen randvoorwaarde van de reviewer).
 - Antwoorden zijn gegrond in WL-PROV-bronnen en linken terug naar de uitlegpagina.
 - Per gebruiker een token-budget/rate-limit (consistent met de bestaande 60 req/min-lijn).
 
