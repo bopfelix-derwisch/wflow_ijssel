@@ -8,7 +8,7 @@ from pathlib import Path
 
 import anthropic as _anthropic
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from dashboard.forecast import build_forecast
@@ -86,6 +86,71 @@ def _output_dir(year: str) -> Path:
 def index():
     return FileResponse(str(STATIC_DIR / "index.html"),
                         headers={"Cache-Control": "no-store"})
+
+
+# ── docs-viewer: markdown uit docs/ leesbaar op de site (WL-PROV-1/2, WL-GOV-1) ──
+DOCS_DIR     = ROOT / "docs"
+_DOC_NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")   # geen path-traversal
+_DOC_TITLES  = {
+    "WL-PROV-2_schematisatie": "WL-PROV-2 · Herkomst van schematisatie en randvoorwaarden",
+    "WL-GOV-1_wel_niet":       "WL-GOV-1 · Wat Waterlab wél en niet bewijst",
+}
+_DOC_PAGE = """<!doctype html><html lang="nl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__ — Waterlab</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#080c14; color:#c2d0d8; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+         line-height:1.65; margin:0; }
+  .wrap { max-width:860px; margin:0 auto; padding:1.5rem 1.4rem 4rem; }
+  .topbar { position:sticky; top:0; background:#07111c; border-bottom:1px solid #1a2e3f;
+            padding:.7rem 1.4rem; font-size:13px; }
+  .topbar a { color:#4db6ac; text-decoration:none; font-weight:600; }
+  .topbar a:hover { text-decoration:underline; }
+  .doc-src { color:#455a64; font-size:11px; margin:.3rem 0 1.6rem; }
+  h1 { font-size:1.5rem; color:#e0e0e0; border-bottom:1px solid #1a2e3f; padding-bottom:.5rem; }
+  h2 { font-size:1.15rem; color:#4db6ac; margin-top:2rem; }
+  h3 { font-size:1rem; color:#90caf9; }
+  a { color:#4db6ac; }
+  code { background:#001a13; color:#4db6ac; padding:1px 5px; border-radius:3px; font-size:.9em; }
+  pre { background:#0a1620; border:1px solid #14283a; border-radius:6px; padding:12px; overflow:auto; }
+  pre code { background:none; padding:0; color:#a7c0cc; }
+  blockquote { border-left:3px solid #c55a11; margin:1.2rem 0; padding:.4rem 0 .4rem 1rem;
+               color:#90a4ae; background:#0a1620; }
+  table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:13px; }
+  th, td { border:1px solid #1a2e3f; padding:6px 10px; text-align:left; vertical-align:top; }
+  th { background:#0d2230; color:#b0c4ce; }
+  tr:nth-child(even) td { background:#0a1620; }
+  strong { color:#cfd8dc; }
+  hr { border:none; border-top:1px solid #1a2e3f; margin:2rem 0; }
+</style></head><body>
+<div class="topbar"><a href="/#pocs">← Terug naar het dashboard</a></div>
+<div class="wrap">
+<p class="doc-src">Bron: <code>docs/__NAME__.md</code> · live uit de repo gerenderd</p>
+__BODY__
+</div></body></html>"""
+
+
+@app.get("/docs/{name}")
+def serve_doc(name: str):
+    if not _DOC_NAME_RE.match(name):
+        raise HTTPException(404, "Doc niet gevonden.")
+    path = DOCS_DIR / f"{name}.md"
+    if not path.is_file():
+        raise HTTPException(404, "Doc niet gevonden.")
+    text = path.read_text(encoding="utf-8")
+    try:
+        import markdown as _md
+        body = _md.markdown(text, extensions=["tables", "fenced_code", "sane_lists"])
+    except Exception:
+        import html as _h
+        body = "<pre>" + _h.escape(text) + "</pre>"
+    import html as _h
+    title = _DOC_TITLES.get(name, name)
+    page = (_DOC_PAGE.replace("__TITLE__", _h.escape(title))
+                     .replace("__NAME__", _h.escape(name))
+                     .replace("__BODY__", body))
+    return HTMLResponse(page, headers={"Cache-Control": "no-store"})
 
 
 # ── jaar-specifieke endpoints ────────────────────────────────────────────────

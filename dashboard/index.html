@@ -706,6 +706,11 @@
     font-size: 10.5px; color: #607d8b;
   }
   .prov-foot code { color: #4db6ac; background:#001a13; padding:1px 5px; border-radius:3px; font-size:10px; }
+  .prov-link {
+    color: #4db6ac; background:#001a13; padding:1px 5px; border-radius:3px;
+    font-size: 10px; text-decoration: none; font-family: monospace;
+  }
+  .prov-link:hover { text-decoration: underline; background:#002a20; }
   @media (max-width: 700px) {
     .poc-body { grid-template-columns: 1fr; }
     .poc-col { border-right: none; border-bottom: 1px solid #0e1e2a; }
@@ -1366,7 +1371,7 @@
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>P10/P25/P50/P75/P90 percentielband (NetCDF → tijdreeks). <code>/api/ensemble</code></p></div>
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><code>Qwen2.5-32B</code> lokaal (llama.cpp, Jetson AGX Orin) — ~45 s per interpretatie.</p></div>
       </div>
-      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <code>docs/WL-PROV-2_schematisatie.md</code> (WL-PROV-2)</div>
+      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <a class="prov-link" href="/docs/WL-PROV-2_schematisatie" target="_blank" rel="noopener">docs/WL-PROV-2_schematisatie.md ↗</a> (WL-PROV-2)</div>
     </details>
   </div>
 
@@ -1415,7 +1420,7 @@
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>Kritieke knoop-ID + droogtescenario's voor het geselecteerde deelbekken. <code>/api/multimodel</code></p></div>
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><code>Qwen2.5-32B</code> orchestrator (plain-text parsing + regex-fallback, geen function-calling).</p></div>
       </div>
-      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <code>docs/WL-PROV-2_schematisatie.md</code> (WL-PROV-2)</div>
+      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <a class="prov-link" href="/docs/WL-PROV-2_schematisatie" target="_blank" rel="noopener">docs/WL-PROV-2_schematisatie.md ↗</a> (WL-PROV-2)</div>
     </details>
   </div>
 
@@ -1441,7 +1446,7 @@
         <div class="poc-col-label" style="color:#4fc3f7;">Technisch</div>
         <p><strong>Model:</strong> wflow SBM (kinematische golfrouting), ~800×800m raster, IJssel-bekken ~8.000 km². Cold start — geen spin-up voorafgaand aan de event­periode.</p>
         <p><strong>Forcing:</strong> ERA5-Land reanalyse (neerslag, temperatuur, verdamping). Tijdstap: 1 dag. Dekking: nov 1994 t/m feb 1995 (90 tijdstappen).</p>
-        <p><strong>Instroom:</strong> bovenstroomse randconditie bij Westervoort — <em>gesynthetiseerd</em> uit het RIZA/RWS-archief (piek ~3 120 m³/s; RWS Waterinfo heeft geen data vóór ~2000), niet uit ERA5. Naast de cold start de voornaamste onzekerheid. Zie <code>docs/WL-PROV-2_schematisatie.md</code>.</p>
+        <p><strong>Instroom:</strong> bovenstroomse randconditie bij Westervoort — <em>gesynthetiseerd</em> uit het RIZA/RWS-archief (piek ~3 120 m³/s; RWS Waterinfo heeft geen data vóór ~2000), niet uit ERA5. Naast de cold start de voornaamste onzekerheid. Zie <a class="prov-link" href="/docs/WL-PROV-2_schematisatie" target="_blank" rel="noopener">docs/WL-PROV-2_schematisatie.md ↗</a>.</p>
         <p><strong>Output:</strong> NetCDF → GeoJSON per dag (riviercellen + debiet). MapLibre GL JS rendert de 3D-extrusie met Plotly.js tijdreeks naast de kaart.</p>
       </div>
       <div class="poc-col">
@@ -1463,7 +1468,7 @@
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>NetCDF → GeoJSON per dag (riviercellen + debiet Kampen) voor de 3D-kaart. <code>/fews … period=1995</code></p></div>
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><span class="prov-na">Geen — historische simulatie zonder AI-stap.</span></p></div>
       </div>
-      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <code>docs/WL-PROV-2_schematisatie.md</code> (WL-PROV-2)</div>
+      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <a class="prov-link" href="/docs/WL-PROV-2_schematisatie" target="_blank" rel="noopener">docs/WL-PROV-2_schematisatie.md ↗</a> (WL-PROV-2)</div>
     </details>
   </div>
 
@@ -1511,7 +1516,7 @@
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>Debiet Kampen (sluipend laagwaterverloop). <code>/fews … period=2018</code></p></div>
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><span class="prov-na">Geen — historische simulatie.</span></p></div>
       </div>
-      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <code>docs/WL-PROV-2_schematisatie.md</code> (WL-PROV-2)</div>
+      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <a class="prov-link" href="/docs/WL-PROV-2_schematisatie" target="_blank" rel="noopener">docs/WL-PROV-2_schematisatie.md ↗</a> (WL-PROV-2)</div>
     </details>
   </div>
 
@@ -1559,7 +1564,7 @@
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">4</span> Output</div><p>Debiet Kampen + Nash-Sutcliffe vs gemeten — run (b) merkbaar hoger dan run (a). <code>/fews … period=2021</code></p></div>
         <div class="prov-step"><div class="prov-step-label"><span class="prov-n">5</span> AI-duiding</div><p><span class="prov-na">Geen — validatie-experiment zonder AI-stap.</span></p></div>
       </div>
-      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <code>docs/WL-PROV-2_schematisatie.md</code> (WL-PROV-2)</div>
+      <div class="prov-foot">📐 Schematisatie, netwerk &amp; instroom-randvoorwaarde per run: <a class="prov-link" href="/docs/WL-PROV-2_schematisatie" target="_blank" rel="noopener">docs/WL-PROV-2_schematisatie.md ↗</a> (WL-PROV-2)</div>
     </details>
   </div>
 
@@ -2132,7 +2137,7 @@
       </ul>
     </div>
   </div>
-  <p class="wn-pos">Positionering: het <strong style="color:#78909c">innovatie-/leersegment</strong> van de waardeketenring, niet de operationele keten. Uitkomsten zijn indicatief — voor operationele beslissingen: <code>waterinfo.rws.nl</code>.</p>
+  <p class="wn-pos">Positionering: het <strong style="color:#78909c">innovatie-/leersegment</strong> van de waardeketenring, niet de operationele keten. Uitkomsten zijn indicatief — voor operationele beslissingen: <code>waterinfo.rws.nl</code>. · <a href="/docs/WL-GOV-1_wel_niet" target="_blank" rel="noopener" style="color:#4db6ac; text-decoration:none; font-weight:600;">volledige wél/niet-tekst ↗</a></p>
 
   <!-- Proeven grid -->
   <div class="intro-grid">
