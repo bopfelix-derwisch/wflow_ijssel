@@ -72,6 +72,10 @@ let stationTs        = {};      // WL-VIS-1: per station de geladen tijdreeks (k
 let selectedStation  = null;    // WL-VIS-1: welk netwerkpunt is aangeklikt
 let chatToken        = null;    // WL-CHAT-1: sessie-token (top-level state i.v.m. hash-deeplink TDZ)
 let chatHistory      = [];      // WL-CHAT-1: gespreksgeschiedenis (voor context)
+let currentFewsRun   = null;    // POC via FEWS: actieve run (top-level i.v.m. hash-deeplink TDZ)
+let fewsRunInit      = false;   // eerste-load-guard voor de FEWS-run-tab
+const FEWS_PI_BASE   = "/fews/rest/fewspiservice/v1";
+const FEWS_RUN_LABELS = { "1995": "Hoogwater 1995", "2018": "Droogte 2018", "2021": "Hoogwater 2021" };
 
 // WL-VIS-1 · netwerkpunten met data (= waar wflow een uitspraak over doet)
 const STATIONS = {
@@ -200,7 +204,7 @@ function switchYear(year) {
     [infoPnl, uitlegPnl, forecastPnl, ensemblePnl, introPnl].forEach(p => {
       if (p) p.classList.remove("visible");
     });
-    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","pocs-panel","grondwater-panel","validatie-panel","chat-panel","handleiding-panel"].forEach(id => {
+    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","fewsrun-panel","pocs-panel","grondwater-panel","validatie-panel","chat-panel","handleiding-panel"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove("visible");
     });
@@ -278,6 +282,17 @@ function switchYear(year) {
     document.getElementById("alert-badge").style.background = "#004d40";
     document.body.className = "";
     loadFewsChart();
+    return;
+  }
+
+  if (year === "fewsrun") {
+    hideAll();
+    document.getElementById("fewsrun-panel").classList.add("visible");
+    banner.textContent = "POC via FEWS · een proef gedraaid als FEWS-client · PI REST 1.25";
+    document.getElementById("alert-badge").textContent = "🔌 POC via FEWS";
+    document.getElementById("alert-badge").style.background = "#004d40";
+    document.body.className = "";
+    initFewsRun();
     return;
   }
 
@@ -902,6 +917,88 @@ function renderValidationChart(id, p) {
     xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
     yaxis: { title: yTitle, gridcolor: "#1a3a5c" },
   }, { responsive: true, displayModeBar: false });
+}
+
+// ── POC via FEWS · draai een proef als FEWS-client ─────────────────────────
+function initFewsRun() {
+  if (!fewsRunInit) { fewsRunInit = true; loadFewsRun("2021"); }
+}
+
+function _frSetStep(step, val, url) {
+  const v = document.getElementById("fr-s-" + step);
+  if (v) { v.textContent = "✓ " + val; v.className = "fr-step-val"; }
+  const u = document.getElementById("fr-u-" + step);
+  if (u) u.textContent = url;
+}
+
+async function loadFewsRun(run) {
+  currentFewsRun = run;
+  document.querySelectorAll("#fr-runs .fr-run-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.run === run));
+  const unavail = document.getElementById("fr-unavailable");
+  unavail.style.display = "none";
+  ["filters", "locations", "parameters", "timeseries"].forEach(s => {
+    const v = document.getElementById("fr-s-" + s);
+    if (v) { v.textContent = "…"; v.className = "fr-step-val pending"; }
+    const u = document.getElementById("fr-u-" + s);
+    if (u) u.textContent = "";
+  });
+  try {
+    // 1–3: discovery — echt de FEWS-bron ontdekken
+    const fUrl = `${FEWS_PI_BASE}/filters`;
+    const f = await fetch(fUrl).then(r => r.json());
+    _frSetStep("filters", `${f.filters.length} filter(s)`, fUrl);
+    const lUrl = `${FEWS_PI_BASE}/locations`;
+    const l = await fetch(lUrl).then(r => r.json());
+    _frSetStep("locations", `${l.locations.length} locaties`, lUrl);
+    const pUrl = `${FEWS_PI_BASE}/parameters`;
+    const p = await fetch(pUrl).then(r => r.json());
+    _frSetStep("parameters", `${p.parameters.length} parameters`, pUrl);
+    // 4: de tijdreeks binnenhalen als PI JSON
+    const tsUrl = `${FEWS_PI_BASE}/timeseries?locationIds=KAMPEN,WESTERVOORT&parameterIds=Q.sim&period=${run}`;
+    const ts = await fetch(tsUrl).then(r => r.json());
+    const nEv = (ts.timeSeries || []).reduce((a, s) => a + (s.events ? s.events.length : 0), 0);
+    _frSetStep("timeseries", `${(ts.timeSeries || []).length} reeks(en) · ${nEv} events`, tsUrl);
+    if (!ts.timeSeries || !ts.timeSeries.length) throw new Error("geen reeksen");
+    renderFewsRunChart(ts, run);
+    renderFewsRunHeaders(ts);
+  } catch (e) {
+    unavail.textContent = "Deze run is niet via FEWS beschikbaar — is de wflow-simulatie voor deze periode aanwezig?";
+    unavail.style.display = "block";
+    Plotly.purge("fr-chart");
+    document.getElementById("fr-headers").innerHTML = "";
+    console.warn("fewsrun failed:", e);
+  }
+}
+
+function renderFewsRunChart(ts, run) {
+  const colors = { KAMPEN: "#4db6ac", WESTERVOORT: "#ff9800" };
+  const traces = ts.timeSeries.map(s => ({
+    x: s.events.map(e => e.date),
+    y: s.events.map(e => parseFloat(e.value)),
+    type: "scatter", mode: "lines",
+    name: `${s.header.locationId} · ${s.header.parameterId} (${s.header.units})`,
+    line: { color: colors[s.header.locationId] || "#90caf9", width: 2 },
+  }));
+  document.getElementById("fr-chart-title").textContent =
+    `Resultaat — ${FEWS_RUN_LABELS[run] || run} · Q.sim uit PI JSON (via FEWS)`;
+  Plotly.react("fr-chart", traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a", font: { color: "#e0e0e0", size: 11 },
+    margin: { t: 8, b: 36, l: 58, r: 14 }, legend: { orientation: "h", y: -0.22, font: { size: 10 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: { title: "Debiet (m³/s)", gridcolor: "#1a3a5c" },
+  }, { responsive: true, displayModeBar: false });
+}
+
+function renderFewsRunHeaders(ts) {
+  const rows = ts.timeSeries.map(s => {
+    const h = s.header;
+    return `<tr><td><code>${h.locationId}</code></td><td><code>${h.parameterId}</code></td>` +
+           `<td>${h.units}</td><td>${h.startDate.date} → ${h.endDate.date}</td><td>${s.events.length}</td></tr>`;
+  }).join("");
+  document.getElementById("fr-headers").innerHTML =
+    `<table><thead><tr><th>locationId</th><th>parameterId</th><th>units</th>` +
+    `<th>periode (PI header)</th><th>events</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 // ── WL-CHAT-1 · uitleg-chat ────────────────────────────────────────────────

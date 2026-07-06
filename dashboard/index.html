@@ -477,6 +477,29 @@
     #fews-panel:not(.visible) { display: none; }
     #fews-panel.visible { display: block; }
     .year-tab.active-fews { background: #004d40; border-color: #4db6ac; color: #fff; }
+    .year-tab.active-fewsrun { background: #004d40; border-color: #4db6ac; color: #fff; }
+    /* ── POC via FEWS (FEWS-client-modus) ── */
+    #fewsrun-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #fewsrun-panel.visible { display: block; }
+    .fr-doc { max-width: 900px; margin: 0 auto; }
+    .fr-runs { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+    .fr-run-btn { background: #001a15; border: 1px solid #00695c; color: #4db6ac; border-radius: 8px; font-size: 12px; font-weight: 600; padding: 6px 14px; cursor: pointer; }
+    .fr-run-btn:hover { background: #002820; }
+    .fr-run-btn.active { background: #004d40; border-color: #4db6ac; color: #fff; }
+    .fr-pipe { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin: 6px 0 14px; }
+    .fr-step { flex: 1 1 150px; min-width: 140px; background: #07131e; border: 1px solid #14283a; border-radius: 6px; border-left: 3px solid #00695c; padding: 8px 11px; }
+    .fr-step .fr-step-label { font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #546e7a; margin-bottom: 4px; }
+    .fr-step .fr-step-val { font-size: 12px; color: #cfd8dc; font-weight: 700; }
+    .fr-step .fr-step-val.pending { color: #607d8b; font-weight: 400; }
+    .fr-step .fr-step-url { font-size: 9.5px; color: #4db6ac; margin-top: 3px; word-break: break-all; }
+    .fr-sep { align-self: center; color: #2e4756; font-size: 15px; flex: 0 0 auto; }
+    #fr-chart { width: 100%; height: 300px; }
+    .fr-headers { margin-top: 8px; }
+    .fr-headers table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+    .fr-headers th, .fr-headers td { border: 1px solid #1a2e3f; padding: 5px 9px; text-align: left; }
+    .fr-headers th { background: #0d2230; color: #b0c4ce; }
+    .fr-headers code { color: #4db6ac; background: #001a13; padding: 1px 4px; border-radius: 3px; font-size: 11px; }
+    #fr-unavailable { display: none; color: #ef5350; font-size: 12px; padding: 8px 0; }
     .fews-header { padding: 2rem 2rem 1rem; }
     .fews-header h2 { color: #4db6ac; margin: .5rem 0; font-size: 1.3rem; }
     .fews-header p  { color: #90a4ae; font-size: 13px; margin: 0; }
@@ -856,6 +879,7 @@
     <button class="year-tab" data-year="2021">Jul 2021</button>
     <button class="year-tab" data-year="arch">Platform Visie</button>
     <button class="year-tab" data-year="fews">FEWS</button>
+    <button class="year-tab" data-year="fewsrun">POC via FEWS</button>
     <button class="year-tab" data-year="grondwater">Grondwater</button>
     <button class="year-tab" data-year="validatie">Validatie</button>
     <button class="year-tab" data-year="roadmap">Roadmap</button>
@@ -3774,6 +3798,38 @@
       </div>
 </div><!-- /fews-panel -->
 
+<div id="fewsrun-panel">
+  <div class="fr-doc">
+    <div class="info-section" style="margin-bottom:8px">
+      <h2 style="color:#4db6ac">🔌 POC via FEWS — draai een proef als FEWS-client</h2>
+      <p style="color:#90a4ae; font-size:13px; margin:6px 0 0;">Hier draaien we een bestaande proef <strong>volledig via de FEWS PI REST-interface</strong> (<code>/fews/rest/fewspiservice/v1/</code>) — niet via de interne API. Elke waarde die je hieronder ziet is opgehaald zoals een échte Delft-FEWS-instantie dat zou doen: eerst de bron ontdekken (filters → locations → parameters), dan de tijdreeks (<code>timeseries</code>) binnenhalen als PI JSON. Zo bewijst Waterlab dat het een verwisselbare FEWS-databron is — geen tweede datapad.</p>
+    </div>
+
+    <div class="fr-runs" id="fr-runs">
+      <button class="fr-run-btn" data-run="1995" onclick="loadFewsRun('1995')">Hoogwater 1995</button>
+      <button class="fr-run-btn" data-run="2018" onclick="loadFewsRun('2018')">Droogte 2018</button>
+      <button class="fr-run-btn" data-run="2021" onclick="loadFewsRun('2021')">Hoogwater 2021</button>
+    </div>
+
+    <div class="info-section" style="margin:4px 0 6px"><h2>De FEWS-handshake</h2></div>
+    <div class="fr-pipe" id="fr-pipe">
+      <div class="fr-step"><div class="fr-step-label">1 · filters</div><div class="fr-step-val pending" id="fr-s-filters">—</div><div class="fr-step-url" id="fr-u-filters"></div></div>
+      <div class="fr-sep">→</div>
+      <div class="fr-step"><div class="fr-step-label">2 · locations</div><div class="fr-step-val pending" id="fr-s-locations">—</div><div class="fr-step-url" id="fr-u-locations"></div></div>
+      <div class="fr-sep">→</div>
+      <div class="fr-step"><div class="fr-step-label">3 · parameters</div><div class="fr-step-val pending" id="fr-s-parameters">—</div><div class="fr-step-url" id="fr-u-parameters"></div></div>
+      <div class="fr-sep">→</div>
+      <div class="fr-step"><div class="fr-step-label">4 · timeseries</div><div class="fr-step-val pending" id="fr-s-timeseries">—</div><div class="fr-step-url" id="fr-u-timeseries"></div></div>
+    </div>
+
+    <div id="fr-unavailable"></div>
+    <div class="info-section" style="margin:8px 0 6px"><h2 id="fr-chart-title">Resultaat — Q.sim uit PI JSON</h2></div>
+    <div id="fr-chart"></div>
+    <div class="fr-headers" id="fr-headers"></div>
+    <p style="color:#607d8b; font-size:11px; margin-top:12px;">Bron: alle waarden via <code>/fews/rest/fewspiservice/v1/timeseries?parameterIds=Q.sim&amp;period=…</code> — dezelfde proef (wflow SBM 1995/2018/2021), maar binnengehaald als FEWS-client. De meet-parameters <code>Q.meting</code>/<code>H.meting</code> zijn via dezelfde interface beschikbaar, maar leveren live RWS-data (recent) — niet de event-periode — dus die overlayen we hier bewust niet.</p>
+  </div>
+</div><!-- /#fewsrun-panel -->
+
 <!-- Interactieve rondleiding -->
 <button id="tour-btn" onclick="tourStart()">▶ Rondleiding</button>
 <div id="tour-overlay">
@@ -3789,7 +3845,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=52"></script>
+<script src="/static/app.js?v=53"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {
