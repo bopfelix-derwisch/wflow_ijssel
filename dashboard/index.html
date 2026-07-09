@@ -606,6 +606,16 @@
     .as-kpi b { font-size: 1.15rem; font-weight: 800; }
     .as-kpi span { display: block; font-size: 10px; color: #607d8b; text-transform: uppercase; letter-spacing: .04em; margin-top: 2px; }
     .as-note { font-size: 12px; color: #78909c; line-height: 1.6; margin: .5rem 0 0; padding-left: .8rem; border-left: 3px solid #00695c; }
+    .as-leek { background: #0a1620; border: 1px solid #1a3a5c; border-radius: 8px; padding: 12px 16px; margin: 12px 0 4px; }
+    .as-leek h3 { margin: 0 0 .4rem; font-size: 13px; color: #4db6ac; }
+    .as-leek p { margin: 0 0 .5rem; font-size: 12.5px; color: #b0bec5; line-height: 1.65; }
+    .as-leek p:last-child { margin-bottom: 0; }
+    .as-leek b { color: #dceaf2; }
+    .as-leek .as-leek-key { display: flex; flex-wrap: wrap; gap: 14px; margin-top: .5rem; font-size: 11.5px; }
+    .as-leek .as-leek-key span::before { content: "▬ "; font-weight: 700; }
+    .as-leek .k-gem::before  { color: #4caf50; }
+    .as-leek .k-vrij::before { color: #ef5350; }
+    .as-leek .k-ass::before  { color: #4db6ac; }
     #as-live-chart, #as-horizon-chart { width: 100%; height: 260px; }
     #as-unavailable { display: none; color: #ef5350; font-size: 12px; padding: 8px 0; }
     .val-doc { max-width: 940px; margin: 0 auto; }
@@ -2130,6 +2140,20 @@
       <h2 style="color:#4db6ac">🛰 Data-assimilatie — de verwachting bijsturen met de meting (POC E)</h2>
       <p style="color:#90a4ae; font-size:13px; margin:6px 0 0;">De <a onclick="switchYear('validatie')" style="color:#4db6ac;cursor:pointer">hindcast</a> liet zien dat de Westervoort-verwachting <strong>systematisch overschat</strong>. Hier assimileren we de recente RWS-meting via een <strong>ensemble-Kalman-update</strong> (Ensemble Smoother, EnKF-familie) op de recessieparameters (recessiesnelheid τ + seizoensdoel), en corrigeren zo de verwachting. Onder de live-grafiek staat het bewijs: de fout per horizon <em>vrij vs geassimileerd</em>, gedraaid via dezelfde hindcast-machinerie. Getoetst bij Westervoort — dezelfde meetbron als de validatie, geen tweede datapad.</p>
     </div>
+
+    <div class="as-leek">
+      <h3>💡 In gewone taal — wat betekent dit?</h3>
+      <p>Het model schat hoe de rivierafvoer de komende twee weken <b>langzaam wegzakt</b> nadat de regen is gevallen. Maar het bleek dat het model dat <b>steevast te hoog inschat</b> — het denkt dat het water trager wegloopt dan in werkelijkheid.</p>
+      <p><b>Data-assimilatie</b> lost dat op: we laten het model eerst <b>de metingen van de afgelopen ~10 dagen bekijken</b> en zijn aannames daarop bijstellen, vóórdat het vooruit voorspelt. Vergelijk het met een hardloper die zijn eindtijd bijstelt op basis van hoe snel hij de eerste kilometers écht liep — in plaats van vast te houden aan de gok vooraf.</p>
+      <p>In de grafiek hieronder: de <b>groene lijn</b> is wat er echt gemeten is, de <b style="color:#ef5350">rode stippellijn</b> is de oude (ongecorrigeerde) verwachting die te hoog zit, en de <b style="color:#4db6ac">blauwgroene lijn</b> is de bijgestuurde verwachting — dichter bij de werkelijkheid. De schaduw eromheen is de eerlijke onzekerheid.</p>
+      <p>Onderaan staat het <b>bewijs</b>: als je dit voor elke dag in het verleden nadoet, is de fout van de bijgestuurde verwachting op elke voorspeldag kleiner. Kortom: <b>door de meting mee te nemen wordt de verwachting betrouwbaarder</b> — en het blijft eerlijk over hoe zeker het is.</p>
+      <div class="as-leek-key">
+        <span class="k-gem">gemeten (werkelijkheid)</span>
+        <span class="k-vrij">oude verwachting</span>
+        <span class="k-ass">bijgestuurde verwachting</span>
+      </div>
+    </div>
+
     <div id="as-unavailable"></div>
     <div id="as-content" style="display:none;">
       <div class="as-kpis" id="as-kpis"></div>
