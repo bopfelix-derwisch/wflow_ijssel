@@ -616,6 +616,15 @@
     .as-leek .k-gem::before  { color: #4caf50; }
     .as-leek .k-vrij::before { color: #ef5350; }
     .as-leek .k-ass::before  { color: #4db6ac; }
+    .as-math { background: #07131e; border: 1px solid #14283a; border-radius: 8px; padding: 14px 16px; margin: 16px 0 4px; }
+    .as-math h3 { margin: 0 0 .7rem; font-size: 13px; color: #4db6ac; }
+    .as-math .amrow { margin-bottom: .9rem; }
+    .as-math .amrow:last-child { margin-bottom: 0; }
+    .as-math .am-label { font-size: 11px; font-weight: 700; color: #90a4ae; margin-bottom: 4px; }
+    .as-math .am-eq { font-family: "Cambria Math", Georgia, "Times New Roman", serif; font-size: 15px; color: #dceaf2; background: #0a1620; border-left: 3px solid #00695c; padding: 7px 13px; border-radius: 0 5px 5px 0; overflow-x: auto; }
+    .as-math .am-eq sub, .as-math .am-eq sup { font-size: 70%; }
+    .as-math .am-where { font-size: 11px; color: #78909c; line-height: 1.6; margin-top: 5px; }
+    .as-math .am-where code { color: #4db6ac; background: #001a13; padding: 0 4px; border-radius: 3px; }
     #as-live-chart, #as-horizon-chart { width: 100%; height: 260px; }
     #as-unavailable { display: none; color: #ef5350; font-size: 12px; padding: 8px 0; }
     .val-doc { max-width: 940px; margin: 0 auto; }
@@ -2165,6 +2174,40 @@
       <div class="info-section" style="margin:16px 0 6px"><h2>De lus gesloten — fout per horizon (hindcast)</h2></div>
       <div id="as-horizon-chart"></div>
       <p class="as-note" id="as-horizon-note"></p>
+
+      <div class="as-math">
+        <h3>🧮 De belangrijkste formules</h3>
+
+        <div class="amrow">
+          <div class="am-label">1 · Fysisch model — lineair-reservoir-recessie (afvoer zakt weg na regen)</div>
+          <div class="am-eq">Q(t) = Q<sub>d</sub> + (Q<sub>0</sub> − Q<sub>d</sub>) · e<sup>−t/τ</sup> &nbsp;&nbsp;(ondergrens 80 m³/s)</div>
+          <div class="am-where"><code>Q<sub>0</sub></code> = laatste meting · <code>Q<sub>d</sub></code> = seizoensdoel (klimatologie) · <code>τ</code> = recessieconstante [dagen] — hoe traag het water wegzakt · <code>t</code> = dagen vooruit.</div>
+        </div>
+
+        <div class="amrow">
+          <div class="am-label">2 · Assimilatie — ensemble-Kalman-update van de parameters θ = (τ, Q<sub>d</sub>)</div>
+          <div class="am-eq">K = C<sub>θy</sub> · (C<sub>yy</sub> + R)<sup>−1</sup> &nbsp;;&nbsp; θ<sub>i</sub> ← θ<sub>i</sub> + K · (y + ε<sub>i</sub> − ŷ<sub>i</sub>)</div>
+          <div class="am-where"><code>K</code> = Kalman-gain · <code>C<sub>θy</sub></code> = kruiscovariantie parameters↔voorspelde meting · <code>C<sub>yy</sub></code> = ensemblecovariantie van de voorspelde meting · <code>y</code> = gemeten venster, <code>ŷ<sub>i</sub></code> = door lid <code>i</code> voorspeld venster · <code>i = 1…N</code> ensembleleden. De gain weegt: is de meting betrouwbaar (<code>R</code> klein) → grote correctie.</div>
+        </div>
+
+        <div class="amrow">
+          <div class="am-label">3 · Meetfout & observatieruis</div>
+          <div class="am-eq">R = diag( (0,08·y + 20)² ) &nbsp;;&nbsp; ε<sub>i</sub> ~ 𝒩(0, R)</div>
+          <div class="am-where">Meetonzekerheid ≈ 8% van de waarde + 20 m³/s vloer; geperturbeerde observaties <code>ε<sub>i</sub></code> maken de update statistisch zuiver (stochastische EnKF).</div>
+        </div>
+
+        <div class="amrow">
+          <div class="am-label">4 · Onzekerheidsband — model-error-inflatie (band eerlijk, gemiddelde ongemoeid)</div>
+          <div class="am-eq">σ<sub>h</sub> = Q̄<sub>h</sub> · (0,03 + 0,02·h)</div>
+          <div class="am-where">Parameteronzekerheid alléén is overconfident; deze met de horizon <code>h</code> groeiende storing rekt de band tot ~80% dekking, zonder het ensemblegemiddelde te verschuiven.</div>
+        </div>
+
+        <div class="amrow">
+          <div class="am-label">5 · Toets — fout per horizon (onderste grafiek)</div>
+          <div class="am-eq">RMSE<sub>h</sub> = √( ⟨ (Q̂<sub>i,h</sub> − Q<sub>i,h</sub>)² ⟩<sub>i</sub> )</div>
+          <div class="am-where">Wortel-gemiddelde-kwadratenfout per voorspeldag <code>h</code>, over alle gereconstrueerde verwachtingen <code>i</code>: <code>Q̂</code> = voorspeld, <code>Q</code> = gerealiseerd. Kleiner = beter — de assimilatie verlaagt deze op elke horizon.</div>
+        </div>
+      </div>
 
       <p style="color:#607d8b; font-size:11px; margin-top:12px;">Batch-ensemble-Kalman-update over het recente meetvenster; het gemiddelde blijft ongemoeid door de model-error-inflatie, dus de RMSE-winst komt van de assimilatie, niet van de band. Assimileert het <em>statistische</em> recessiemodel (niet wflow-physics — dat is POC C, geblokkeerd op de sysimage). Endpoint <code>/api/assimilation</code>.</p>
     </div>
