@@ -596,6 +596,18 @@
     #validatie-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
     #validatie-panel.visible { display: block; }
     .year-tab.active-validatie { background: #00695c; border-color: #4db6ac; color: #fff; }
+    .year-tab.active-assimilatie { background: #00695c; border-color: #4db6ac; color: #fff; }
+    /* ── POC E · data-assimilatie ── */
+    #assimilatie-panel { display: none; overflow-y: auto; padding: 20px 24px; max-height: calc(100vh - 52px); }
+    #assimilatie-panel.visible { display: block; }
+    .as-doc { max-width: 900px; margin: 0 auto; }
+    .as-kpis { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 14px; }
+    .as-kpi { background: #07111c; border: 1px solid #1a2e3f; border-radius: 8px; padding: 8px 14px; }
+    .as-kpi b { font-size: 1.15rem; font-weight: 800; }
+    .as-kpi span { display: block; font-size: 10px; color: #607d8b; text-transform: uppercase; letter-spacing: .04em; margin-top: 2px; }
+    .as-note { font-size: 12px; color: #78909c; line-height: 1.6; margin: .5rem 0 0; padding-left: .8rem; border-left: 3px solid #00695c; }
+    #as-live-chart, #as-horizon-chart { width: 100%; height: 260px; }
+    #as-unavailable { display: none; color: #ef5350; font-size: 12px; padding: 8px 0; }
     .val-doc { max-width: 940px; margin: 0 auto; }
     .val-card { background:#07111c; border:1px solid #1a2e3f; border-radius:10px; margin-bottom:1.4rem; overflow:hidden; }
     .val-card-head { padding:.9rem 1.2rem; border-bottom:1px solid #1a2e3f; display:flex; align-items:center; gap:.7rem; flex-wrap:wrap; }
@@ -882,6 +894,7 @@
     <button class="year-tab" data-year="fewsrun">POC via FEWS</button>
     <button class="year-tab" data-year="grondwater">Grondwater</button>
     <button class="year-tab" data-year="validatie">Validatie</button>
+    <button class="year-tab" data-year="assimilatie">Assimilatie</button>
     <button class="year-tab" data-year="roadmap">Roadmap</button>
     <button class="year-tab" data-year="info">Info &amp; Analyse</button>
   </div>
@@ -2110,6 +2123,29 @@
     <p style="color:#607d8b; font-size:11px; margin-top:12px;">Skill-metrieken: <code>dashboard/validation.py</code> (getest, <code>tests/test_validation.py</code>). NSE/KGE: 1 = perfect, 0 = niet beter dan het gemiddelde, &lt;0 = slechter. Bij waterpeil staat de simulatie op een ander referentievlak → alleen de <em>dynamiek</em> (geanomaliseerd) wordt getoetst, met het datum-offset apart.</p>
   </div>
 </div><!-- /#validatie-panel -->
+
+<div id="assimilatie-panel">
+  <div class="as-doc">
+    <div class="info-section" style="margin-bottom:8px">
+      <h2 style="color:#4db6ac">🛰 Data-assimilatie — de verwachting bijsturen met de meting (POC E)</h2>
+      <p style="color:#90a4ae; font-size:13px; margin:6px 0 0;">De <a onclick="switchYear('validatie')" style="color:#4db6ac;cursor:pointer">hindcast</a> liet zien dat de Westervoort-verwachting <strong>systematisch overschat</strong>. Hier assimileren we de recente RWS-meting via een <strong>ensemble-Kalman-update</strong> (Ensemble Smoother, EnKF-familie) op de recessieparameters (recessiesnelheid τ + seizoensdoel), en corrigeren zo de verwachting. Onder de live-grafiek staat het bewijs: de fout per horizon <em>vrij vs geassimileerd</em>, gedraaid via dezelfde hindcast-machinerie. Getoetst bij Westervoort — dezelfde meetbron als de validatie, geen tweede datapad.</p>
+    </div>
+    <div id="as-unavailable"></div>
+    <div id="as-content" style="display:none;">
+      <div class="as-kpis" id="as-kpis"></div>
+
+      <div class="info-section" style="margin:6px 0 6px"><h2>Live — vrije vs geassimileerde verwachting</h2></div>
+      <div id="as-live-chart"></div>
+      <p class="as-note" id="as-live-note"></p>
+
+      <div class="info-section" style="margin:16px 0 6px"><h2>De lus gesloten — fout per horizon (hindcast)</h2></div>
+      <div id="as-horizon-chart"></div>
+      <p class="as-note" id="as-horizon-note"></p>
+
+      <p style="color:#607d8b; font-size:11px; margin-top:12px;">Batch-ensemble-Kalman-update over het recente meetvenster; het gemiddelde blijft ongemoeid door de model-error-inflatie, dus de RMSE-winst komt van de assimilatie, niet van de band. Assimileert het <em>statistische</em> recessiemodel (niet wflow-physics — dat is POC C, geblokkeerd op de sysimage). Endpoint <code>/api/assimilation</code>.</p>
+    </div>
+  </div>
+</div><!-- /#assimilatie-panel -->
 
 <div id="chat-panel">
   <div class="chat-doc">
@@ -3848,7 +3884,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=53"></script>
+<script src="/static/app.js?v=54"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {

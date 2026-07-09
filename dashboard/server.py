@@ -562,6 +562,17 @@ def get_validation_hindcast():
         return JSONResponse({"available": False, "error": str(e)})
 
 
+# POC E — data-assimilatie (EnKF-familie): corrigeert de recessie met de recente RWS-meting
+# en vergelijkt vrij vs geassimileerd per horizon (sluit de WL-VAL-2-lus).
+@app.get("/api/assimilation")
+def get_assimilation():
+    from dashboard.assimilation import build_assimilation
+    try:
+        return JSONResponse(build_assimilation())
+    except Exception as e:
+        return JSONResponse({"available": False, "error": str(e)})
+
+
 # WL-CHAT-1 — uitleg-chatbot, gegrond in de PROV-bronnen, achter login + budget.
 @app.post("/api/chat/login")
 def post_chat_login(payload: dict = Body(...)):

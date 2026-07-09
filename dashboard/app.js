@@ -76,6 +76,7 @@ let currentFewsRun   = null;    // POC via FEWS: actieve run (top-level i.v.m. h
 let fewsRunInit      = false;   // eerste-load-guard voor de FEWS-run-tab
 const FEWS_PI_BASE   = "/fews/rest/fewspiservice/v1";
 const FEWS_RUN_LABELS = { "1995": "Hoogwater 1995", "2018": "Droogte 2018", "2021": "Hoogwater 2021" };
+let assimilationLoaded = false;   // POC E: 6u server-cache, één keer per sessie laden (TDZ-veilig)
 
 // WL-VIS-1 · netwerkpunten met data (= waar wflow een uitspraak over doet)
 const STATIONS = {
@@ -204,7 +205,7 @@ function switchYear(year) {
     [infoPnl, uitlegPnl, forecastPnl, ensemblePnl, introPnl].forEach(p => {
       if (p) p.classList.remove("visible");
     });
-    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","fewsrun-panel","pocs-panel","grondwater-panel","validatie-panel","chat-panel","handleiding-panel"].forEach(id => {
+    ["multimodel-panel","roadmap-panel","arch-panel","fews-panel","fewsrun-panel","pocs-panel","grondwater-panel","validatie-panel","assimilatie-panel","chat-panel","handleiding-panel"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove("visible");
     });
@@ -315,6 +316,17 @@ function switchYear(year) {
     document.getElementById("alert-badge").style.background = "#00695c";
     document.body.className = "";
     initChat();
+    return;
+  }
+
+  if (year === "assimilatie") {
+    hideAll();
+    document.getElementById("assimilatie-panel").classList.add("visible");
+    banner.textContent = "Data-assimilatie · EnKF-update van de recessie met de RWS-meting · POC E";
+    document.getElementById("alert-badge").textContent = "🛰 Assimilatie";
+    document.getElementById("alert-badge").style.background = "#00695c";
+    document.body.className = "";
+    loadAssimilation();
     return;
   }
 
@@ -916,6 +928,82 @@ function renderValidationChart(id, p) {
     legend: { orientation: "h", y: -0.25, font: { size: 10 } },
     xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
     yaxis: { title: yTitle, gridcolor: "#1a3a5c" },
+  }, { responsive: true, displayModeBar: false });
+}
+
+// ── POC E · data-assimilatie (EnKF) ────────────────────────────────────────
+async function loadAssimilation() {
+  if (assimilationLoaded) return;
+  const wait = document.getElementById("as-unavailable");
+  const content = document.getElementById("as-content");
+  wait.style.display = "block"; wait.textContent = "Assimilatie laden… (eerste keer ~15–30 s: RWS-fetch + hindcast).";
+  try {
+    const d = await fetch(`${API}/api/assimilation`).then(r => r.json());
+    if (!d.available) { wait.textContent = d.reason || "Assimilatie niet beschikbaar."; return; }
+    const s = d.summary, lv = d.live;
+    const impr7 = Math.round((1 - s.rmse_assim_day7 / s.rmse_free_day7) * 100);
+    const impr14 = Math.round((1 - s.rmse_assim_day14 / s.rmse_free_day14) * 100);
+    document.getElementById("as-kpis").innerHTML =
+      asKpi(`−${impr14}%`, "RMSE dag 14 beter", "#4db6ac") +
+      asKpi(`−${impr7}%`, "RMSE dag 7 beter", "#4db6ac") +
+      asKpi(`${s.coverage_assim}%`, "band-dekking", "#90a4ae") +
+      asKpi(`${s.n_forecasts}`, "hindcast-verwachtingen", "#90a4ae");
+    renderAssimLiveChart(lv);
+    document.getElementById("as-live-note").innerHTML =
+      `De assimilatie paste de recessie aan: <strong>τ ${lv.tau_prior} → ${lv.tau_post}</strong> ` +
+      `en <strong>seizoensdoel ${lv.target_prior} → ${lv.target_post} m³/s</strong>. ` +
+      `Vrij verwacht dag 14 ${lv.free[lv.free.length-1]} m³/s; geassimileerd ${lv.mean[lv.mean.length-1]} m³/s ` +
+      `(band ${lv.p10[lv.p10.length-1]}–${lv.p90[lv.p90.length-1]}).`;
+    renderAssimHorizonChart(d.per_horizon_free, d.per_horizon_assim);
+    document.getElementById("as-horizon-note").innerHTML =
+      `Over ${s.n_forecasts} gereconstrueerde verwachtingen (${d.window}) daalt de RMSE op dag 7 van ` +
+      `<strong>${s.rmse_free_day7}</strong> naar <strong>${s.rmse_assim_day7} m³/s</strong> en op dag 14 van ` +
+      `<strong>${s.rmse_free_day14}</strong> naar <strong>${s.rmse_assim_day14} m³/s</strong>. De systematische ` +
+      `overschatting uit de hindcast is dus meetbaar kleiner geworden.`;
+    wait.style.display = "none"; content.style.display = "block";
+    assimilationLoaded = true;
+  } catch (e) {
+    wait.textContent = "Assimilatie niet beschikbaar.";
+    console.warn("assimilation load failed:", e);
+  }
+}
+
+function asKpi(val, label, color) {
+  return `<div class="as-kpi"><b style="color:${color}">${val}</b><span>${label}</span></div>`;
+}
+
+function renderAssimLiveChart(lv) {
+  const traces = [
+    { x: lv.fdates, y: lv.p10, type: "scatter", mode: "lines", line: { width: 0 }, showlegend: false, hoverinfo: "skip" },
+    { x: lv.fdates, y: lv.p90, type: "scatter", mode: "lines", line: { width: 0 }, fill: "tonexty",
+      fillcolor: "rgba(77,182,172,0.15)", name: "Ensembleband (geassimileerd)", hoverinfo: "skip" },
+    { x: lv.recent_dates, y: lv.recent_obs, type: "scatter", mode: "lines+markers",
+      name: "Gemeten (RWS Westervoort)", line: { color: "#4caf50", width: 2 }, marker: { size: 4 } },
+    { x: lv.fdates, y: lv.free, type: "scatter", mode: "lines",
+      name: "Vrije verwachting (recessie)", line: { color: "#ef5350", width: 2, dash: "dash" } },
+    { x: lv.fdates, y: lv.mean, type: "scatter", mode: "lines",
+      name: "Geassimileerd (EnKF)", line: { color: "#4db6ac", width: 2 } },
+  ];
+  Plotly.react("as-live-chart", traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a", font: { color: "#e0e0e0", size: 11 },
+    margin: { t: 8, b: 34, l: 56, r: 14 }, legend: { orientation: "h", y: -0.28, font: { size: 9 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: { title: "Debiet Westervoort (m³/s)", gridcolor: "#1a3a5c" },
+  }, { responsive: true, displayModeBar: false });
+}
+
+function renderAssimHorizonChart(free, assim) {
+  const traces = [
+    { x: free.horizon, y: free.rmse, type: "scatter", mode: "lines+markers",
+      name: "Vrij — RMSE", line: { color: "#ef5350", width: 2 } },
+    { x: assim.horizon, y: assim.rmse, type: "scatter", mode: "lines+markers",
+      name: "Geassimileerd — RMSE", line: { color: "#4db6ac", width: 2 } },
+  ];
+  Plotly.react("as-horizon-chart", traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a", font: { color: "#e0e0e0", size: 11 },
+    margin: { t: 8, b: 38, l: 56, r: 14 }, legend: { orientation: "h", y: -0.3, font: { size: 10 } },
+    xaxis: { title: "Lead-time (dagen vooruit)", gridcolor: "#1a3a5c", dtick: 1 },
+    yaxis: { title: "RMSE (m³/s)", gridcolor: "#1a3a5c" },
   }, { responsive: true, displayModeBar: false });
 }
 
