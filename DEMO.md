@@ -1,6 +1,6 @@
 # Waterlab — korte rondleiding (demo-flow)
 
-**Duur:** ~4 min · **Doel:** *show, not tell* — laten zien dat Waterlab niet "iets bij elkaar
+**Duur:** ~4½ min · **Doel:** *show, not tell* — laten zien dat Waterlab niet "iets bij elkaar
 dromt", maar dat elk getal **herleidbaar** is (herkomst) en **getoetst** tegen metingen
 (validatie). De rode draad is vertrouwen, niet cosmetica.
 
@@ -58,14 +58,22 @@ fout groeit met de horizon — dag 14 zo'n 100 m³/s RMSE, een systematische ove
 de onzekerheidsband ving ~99% van de realisaties. Zelfde meetbron als de skill-score, geen
 tweede waarheid."
 
-### 5 · Grondwater ↔ IJssel  ·  `#grondwater`  (~35 s) ⭐
+### 5 · Assimilatie — de verwachting bijsturen met de meting  ·  `#assimilatie`  (~30 s) ⭐⭐  — POC E
+**Tonen:** de Assimilatie-tab; speel het **"📽 Uitleg in 26 seconden"**-filmpje af.
+**Zeggen:** "Validatie liet de systematische overschatting zien — hier lossen we die op. We nemen
+de recente RWS-meting mee en sturen de verwachting bij met een ensemble-Kalman-update. Dit filmpje
+vat het samen: van overschatting (rood) naar een bijgestuurde, eerlijk-onzekere verwachting (blauwgroen)."
+**Wijs aan:** onder het filmpje het **bewijs** — de fout per voorspeldag daalt op elke horizon
+(dag 14: 82 → 60 m³/s). "De fout die validatie mat, is nu meetbaar kleiner — de lus is gesloten."
+
+### 6 · Grondwater ↔ IJssel  ·  `#grondwater`  (~35 s) ⭐
 **Tonen:** de overlay grondwater vs IJssel (zomer 2018) + de putten-tabel, dan de reservoir-fit.
 **Zeggen:** "Echte gemeten grondwaterstanden uit het BRO, gekoppeld aan de IJssel. Lag-correlatie
 tot r 0.94, vertragingen van dagen tot weken. Een lineair reservoirmodel voorspelt de absolute
 stand per put — **data-gedreven, geen MODFLOW-kwelmodel**, en de NSE per put staat erbij. Qwen
 draait lokaal voor de duiding."
 
-### 6 · Eén platform — GraphQL & FEWS  ·  `/graphql` → `#fews`  (~35 s) ⭐
+### 7 · Eén platform — GraphQL & FEWS  ·  `/graphql` → `#fews`  (~35 s) ⭐
 **Tonen:** GraphiQL; run de query; spring dan naar de FEWS-explorer.
 ```graphql
 { station(id: "kampen") {
@@ -90,7 +98,7 @@ geen operationeel systeem**. Voor operationele beslissingen: `waterinfo.rws.nl`.
 ---
 
 ## Snelle flow (alleen de links)
-`#intro` → `#uitleg` → `#forecast` → `#pocs` → `#validatie` → `#grondwater` → `/graphql` → `#fews`
+`#intro` → `#uitleg` → `#forecast` → `#pocs` → `#validatie` → `#assimilatie` → `#grondwater` → `/graphql` → `#fews`
 
 ## Vooraf (zodat live calls direct laden)
 ```bash
@@ -101,4 +109,5 @@ curl -s -o /dev/null $B/api/grondwater/projection      # warmt vooruitblik
 curl -s -o /dev/null $B/api/grondwater/reservoir       # warmt reservoir-fit (~1 min eerste keer)
 curl -s -o /dev/null $B/api/validation                 # warmt skill-scores (RWS-fetch)
 curl -s -o /dev/null $B/api/validation/hindcast        # warmt het hindcast-rapport (RWS-fetch)
+curl -s -o /dev/null $B/api/assimilation               # warmt de assimilatie + hindcast-vergelijking
 ```
