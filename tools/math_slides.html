@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8">
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] },
+    svg: { fontCache: 'none' },
+    startup: { typeset: true },
+  };
+</script>
+<script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+  html, body { margin: 0; background: #080c14; }
+  #stage { width: 1280px; height: 720px; position: relative; overflow: hidden; }
+  .slide {
+    position: absolute; inset: 0; box-sizing: border-box; padding: 52px 72px;
+    display: none; color: #c2d0d8; font-family: "Segoe UI", system-ui, sans-serif;
+  }
+  .slide.show { display: block; }
+  .eyebrow { font-size: 13px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: #4E87A0; }
+  h1 { font-family: Georgia, "Cambria", serif; font-weight: 600; color: #dceaf2; margin: .3rem 0 1.1rem; font-size: 33px; line-height: 1.15; }
+  p  { font-size: 20px; line-height: 1.55; color: #aebecb; margin: .5rem 0; max-width: 1050px; }
+  .mj { margin: 1.1rem 0; color: #eaf2f6; font-size: 26px; }
+  .mj.big { font-size: 30px; }
+  b, strong { color: #dceaf2; }
+  .teal { color: #4db6ac; } .green { color: #5abe64; } .red { color: #f05f5c; } .acc { color: #4fc3f7; } .amber { color: #ffb74d; }
+  .foot { position: absolute; left: 72px; bottom: 34px; font-size: 13px; color: #4E87A0; }
+  .pageno { position: absolute; right: 72px; bottom: 34px; font-size: 13px; color: #2e4756; }
+  .two { display: flex; gap: 34px; align-items: center; }
+  .note { font-size: 16px; color: #78909c; }
+  svg text { font-family: "Segoe UI", sans-serif; }
+  .card { background:#0a1620; border:1px solid #14283a; border-left:3px solid #00695c; border-radius:6px; padding:10px 16px; display:inline-block; }
+</style></head>
+<body>
+<div id="stage">
+
+  <!-- 0 -->
+  <section class="slide" data-i="0">
+    <div class="eyebrow">Waterlab · POC E</div>
+    <h1>De wiskunde achter de bijsturing</h1>
+    <p style="font-size:23px">Hoe data-assimilatie de IJssel-afvoerverwachting corrigeert — <b>stap voor stap</b>.</p>
+    <p class="note" style="margin-top:38px">Van de fysica van een leeglopend reservoir, via een ensemble en het Kalman-filter,<br>naar een betrouwbaarder én eerlijke verwachting.</p>
+    <div class="card" style="margin-top:40px; font-size:16px; color:#90a4ae">Voorkennis: 1e jaar TU — calculus (ODE, e-macht) · lineaire algebra (vectoren, matrices, covariantie) · kansrekening (Gauss)</div>
+  </section>
+
+  <!-- 1 -->
+  <section class="slide" data-i="1">
+    <div class="eyebrow">Deel 1 · De fysica</div>
+    <h1>Een stroomgebied dat leegloopt = een lineair reservoir</h1>
+    <div class="two">
+      <div style="flex:1">
+        <p>Na de regen zakt de afvoer weg. Model het als een vat met berging <b>S</b> waaruit de uitstroom <b>Q</b> <b>evenredig</b> is met de berging boven een basisniveau:</p>
+        <div class="mj">$$Q - Q_d = \frac{S - S_d}{\tau}, \qquad \frac{dS}{dt} = -\,(Q - Q_d)$$</div>
+        <p class="note"><b>τ</b> = bergingsconstante [dagen] · <b>Q<sub>d</sub></b> = basisafvoer (droogweer).</p>
+      </div>
+      <svg width="330" height="300" viewBox="0 0 330 300">
+        <rect x="70" y="40" width="150" height="180" rx="6" fill="none" stroke="#4E87A0" stroke-width="2"/>
+        <rect x="72" y="120" width="146" height="98" fill="#12344f"/>
+        <path d="M72,120 q37,-16 73,0 t73,0 v98 h-146 z" fill="#156082" opacity=".7"/>
+        <text x="145" y="175" fill="#dceaf2" font-size="26" text-anchor="middle">S</text>
+        <line x1="220" y1="200" x2="290" y2="200" stroke="#4db6ac" stroke-width="3"/>
+        <polygon points="288,195 300,200 288,205" fill="#4db6ac"/>
+        <text x="262" y="190" fill="#4db6ac" font-size="22" text-anchor="middle">Q</text>
+        <text x="145" y="255" fill="#78909c" font-size="16" text-anchor="middle">uitstroom ∝ berging</text>
+      </svg>
+    </div>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">1</div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide" data-i="2">
+    <div class="eyebrow">Deel 1 · De fysica</div>
+    <h1>Eén eerste-orde differentiaalvergelijking</h1>
+    <p>Combineer massabalans en de reservoir-relatie. De afvoer <b>ontspant</b> naar het basisniveau met tijdconstante <b>τ</b>:</p>
+    <div class="mj big">$$\frac{dQ}{dt} = -\,\frac{Q - Q_d}{\tau}$$</div>
+    <p>Dezelfde vorm als afkoeling (wet van Newton) of een ontladende condensator: de <b>verandering</b> is evenredig met de <b>afstand tot evenwicht</b> <span class="teal">(Q − Q<sub>d</sub>)</span>.</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">2</div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide" data-i="3">
+    <div class="eyebrow">Deel 1 · De fysica</div>
+    <h1>Oplossen → de recessieformule</h1>
+    <p>Scheiden van variabelen (of standaard lineaire ODE) met beginwaarde <b>Q(0) = Q<sub>0</sub></b> geeft een gesloten oplossing:</p>
+    <div class="mj big">$$Q(t) = Q_d + (Q_0 - Q_d)\,e^{-t/\tau}$$</div>
+    <p>Dit is <b>exact</b> de recessieformule in het model — de basis van elke verwachting. De verwachting hangt volledig af van twee parameters: <span class="teal">θ = (τ, Q<sub>d</sub>)</span>.</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">3</div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide" data-i="4">
+    <div class="eyebrow">Deel 1 · De fysica</div>
+    <h1>Wat de parameters betekenen</h1>
+    <div class="two">
+      <div style="flex:1.1">
+        <p><b>τ</b> — de <b>recessieconstante</b>: na <b>t = τ</b> is het overschot boven de basis gezakt tot <b>1/e ≈ 37%</b> (de <i>e-vouwtijd</i>). Groot τ = traag wegzakken.</p>
+        <p><b>Q<sub>d</sub></b> — het <b>asymptotische basisniveau</b> waar de curve naartoe kruipt.</p>
+        <p class="note">Kies je τ en Q<sub>d</sub> vast, dan ligt de hele verwachting vast — maar ze zijn onzeker.</p>
+      </div>
+      <svg width="440" height="300" viewBox="0 0 440 300">
+        <line x1="50" y1="250" x2="420" y2="250" stroke="#37474f" stroke-width="1.5"/>
+        <line x1="50" y1="30" x2="50" y2="250" stroke="#37474f" stroke-width="1.5"/>
+        <line x1="50" y1="210" x2="420" y2="210" stroke="#2e4756" stroke-width="1" stroke-dasharray="5,4"/>
+        <text x="60" y="205" fill="#78909c" font-size="15">Q_d</text>
+        <path d="M50,55 C120,120 200,175 290,200 C350,214 400,209 415,210" fill="none" stroke="#4db6ac" stroke-width="3"/>
+        <line x1="145" y1="55" x2="145" y2="250" stroke="#4fc3f7" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="150" y="70" fill="#4fc3f7" font-size="15">t = τ</text>
+        <circle cx="145" cy="112" r="4" fill="#4fc3f7"/>
+        <text x="158" y="112" fill="#4fc3f7" font-size="14">37% overschot</text>
+        <text x="60" y="52" fill="#78909c" font-size="15">Q_0</text>
+        <text x="410" y="270" fill="#78909c" font-size="14" text-anchor="end">tijd →</text>
+      </svg>
+    </div>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">4</div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide" data-i="5">
+    <div class="eyebrow">Deel 2 · Het probleem</div>
+    <h1>De parameters zijn onbekend — en een vaste gok mist</h1>
+    <p>We kennen <span class="teal">θ = (τ, Q<sub>d</sub>)</span> niet exact. Een vaste keuze (τ<sub>0</sub> = 10 d, Q<sub>d</sub> = klimatologie) bleek de afvoer <span class="red">systematisch te overschatten</span>: het water zakt sneller weg dan aangenomen.</p>
+    <p><b>Vraag:</b> kunnen we <span class="teal">θ</span> <b>schatten uit de recente metingen</b>, en zo de verwachting bijsturen? Dat is een <b>inversieprobleem</b> — en precies wat het Kalman-filter doet.</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">5</div>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide" data-i="6">
+    <div class="eyebrow">Deel 3 · Kalman, eerst in 1-D</div>
+    <h1>Twee onzekere schattingen combineren</h1>
+    <div class="two">
+      <div style="flex:1.1">
+        <p>Stel: een <span class="acc">verwachting</span> \(x_f\) met spreiding \(\sigma_f\), en een <span class="green">meting</span> \(y\) met spreiding \(\sigma_o\), beide Gaussisch. Hun <b>product</b> is opnieuw een Gauss — <b>smaller</b> dan beide:</p>
+        <div class="mj">$$\hat x = x_f + K\,(y - x_f)$$</div>
+        <p class="note"><b>y − x<sub>f</sub></b> = de <i>innovatie</i>: het verschil tussen meting en verwachting.</p>
+      </div>
+      <svg width="380" height="290" viewBox="0 0 380 290">
+        <line x1="20" y1="240" x2="360" y2="240" stroke="#37474f" stroke-width="1.5"/>
+        <path d="M20,240 C120,240 120,90 160,90 C200,90 200,240 300,240" fill="none" stroke="#4fc3f7" stroke-width="2.5"/>
+        <path d="M80,240 C200,240 200,110 240,110 C280,110 280,240 380,240" fill="none" stroke="#5abe64" stroke-width="2.5"/>
+        <path d="M120,240 C185,240 185,55 200,55 C215,55 215,240 285,240" fill="none" stroke="#4db6ac" stroke-width="3.5"/>
+        <text x="150" y="80" fill="#4fc3f7" font-size="15">verwachting</text>
+        <text x="250" y="100" fill="#5abe64" font-size="15">meting</text>
+        <text x="200" y="45" fill="#4db6ac" font-size="15" text-anchor="middle">gecombineerd</text>
+      </svg>
+    </div>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">6</div>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide" data-i="7">
+    <div class="eyebrow">Deel 3 · Kalman, eerst in 1-D</div>
+    <h1>De Kalman-gain: een gewogen gemiddelde</h1>
+    <div class="mj big">$$K = \frac{\sigma_f^{2}}{\sigma_f^{2} + \sigma_o^{2}} \;\in [0,1], \qquad \hat\sigma^{2} = (1-K)\,\sigma_f^{2}$$</div>
+    <p>De gain <b>K</b> weegt het vertrouwen af: teller = <b>modelonzekerheid</b>, noemer = <b>totale onzekerheid</b>. De posterior is altijd <b>zekerder</b> (\(\hat\sigma^2 < \sigma_f^2\)).</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">7</div>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide" data-i="8">
+    <div class="eyebrow">Deel 3 · Kalman, eerst in 1-D</div>
+    <h1>De twee uitersten — de intuïtie</h1>
+    <div class="mj">$$\sigma_o \to 0:\; K \to 1 \;\Rightarrow\; \hat x \to y \qquad\quad \sigma_o \to \infty:\; K \to 0 \;\Rightarrow\; \hat x \to x_f$$</div>
+    <p><span class="green">Perfecte meting</span> → volg de meting. <span class="red">Waardeloze meting</span> → houd de verwachting. Alles daartussen is een gewogen middenweg. <b>Dit principe schalen we nu op naar de parameters.</b></p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">8</div>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide" data-i="9">
+    <div class="eyebrow">Deel 4 · Ensemble & matrixvorm</div>
+    <h1>Onzekerheid als een ensemble</h1>
+    <div class="two">
+      <div style="flex:1.1">
+        <p>Voor \(\theta=(\tau,Q_d)\) is \(\sigma_f^2\) niet analytisch te bepalen. Daarom stellen we de onzekerheid voor met een <b>ensemble</b> van <b>N</b> steekproeven uit de prior:</p>
+        <div class="mj">$$\theta_i,\quad i = 1,\dots,N \;\;(N \approx 60)$$</div>
+        <p class="note">Een wolk van mogelijke parameters i.p.v. één getal.</p>
+      </div>
+      <svg width="340" height="280" viewBox="0 0 340 280">
+        <line x1="40" y1="240" x2="320" y2="240" stroke="#37474f" stroke-width="1.5"/>
+        <line x1="40" y1="20" x2="40" y2="240" stroke="#37474f" stroke-width="1.5"/>
+        <text x="325" y="255" fill="#78909c" font-size="15" text-anchor="end">τ →</text>
+        <text x="16" y="30" fill="#78909c" font-size="15">Q_d</text>
+        <g fill="#4db6ac" opacity=".85">
+          <circle cx="150" cy="120" r="4"/><circle cx="170" cy="140" r="4"/><circle cx="140" cy="150" r="4"/>
+          <circle cx="190" cy="110" r="4"/><circle cx="160" cy="100" r="4"/><circle cx="205" cy="135" r="4"/>
+          <circle cx="130" cy="128" r="4"/><circle cx="180" cy="160" r="4"/><circle cx="215" cy="115" r="4"/>
+          <circle cx="155" cy="170" r="4"/><circle cx="200" cy="160" r="4"/><circle cx="175" cy="125" r="4"/>
+          <circle cx="120" cy="145" r="4"/><circle cx="225" cy="150" r="4"/><circle cx="165" cy="185" r="4"/>
+        </g>
+      </svg>
+    </div>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">9</div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide" data-i="10">
+    <div class="eyebrow">Deel 4 · Ensemble & matrixvorm</div>
+    <h1>Elke gok voorspelt het recente verloop</h1>
+    <p>De <b>observatie-operator</b> \(h\) draait de recessie over de laatste <b>M</b> dagen (vanaf de anker-meting) voor elk lid:</p>
+    <div class="mj big">$$\hat y_i = h(\theta_i)$$</div>
+    <p>Nu hebben we <b>N paren</b> \((\theta_i,\;\hat y_i)\): parameter → voorspeld venster. Daaruit leert het ensemble hoe de parameters samenhangen met wat je meet.</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">10</div>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide" data-i="11">
+    <div class="eyebrow">Deel 4 · Ensemble & matrixvorm</div>
+    <h1>Covarianties — uit het ensemble geschat</h1>
+    <div class="mj">$$C_{\theta y} = \frac{1}{N-1}\sum_{i=1}^{N} (\theta_i - \bar\theta)(\hat y_i - \bar{\hat y})^{\!\top}$$</div>
+    <div class="mj">$$C_{yy} = \frac{1}{N-1}\sum_{i=1}^{N} (\hat y_i - \bar{\hat y})(\hat y_i - \bar{\hat y})^{\!\top}$$</div>
+    <p class="note"><b>C<sub>θy</sub></b> = kruiscovariantie parameter ↔ voorspelling (de <b>gevoeligheid</b>) · <b>C<sub>yy</sub></b> = spreiding van de voorspellingen · balkjes = ensemble-gemiddelden.</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">11</div>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide" data-i="12">
+    <div class="eyebrow">Deel 4 · Ensemble & matrixvorm</div>
+    <h1>De Kalman-gain — dezelfde vorm, nu een matrix</h1>
+    <div class="mj big">$$K = C_{\theta y}\,\bigl(C_{yy} + R\bigr)^{-1}$$</div>
+    <p>Vergelijk met 1-D: <span class="teal">teller</span> = samenhang parameter↔meting, <span class="acc">noemer</span> = totale onzekerheid (modelspreiding \(C_{yy}\) + meetfout \(R\)). De inverse is de matrix-versie van "delen door".</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">12</div>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide" data-i="13">
+    <div class="eyebrow">Deel 4 · Ensemble & matrixvorm</div>
+    <h1>De meetfout R</h1>
+    <div class="mj big">$$R = \mathrm{diag}\!\big((0{,}08\,y + 20)^2\big)$$</div>
+    <p>Meetonzekerheid ≈ <b>8% van de waarde + 20 m³/s</b> ondergrens. <b>Diagonaal</b> want de dagelijkse meetfouten worden onafhankelijk verondersteld. Klein R ⇒ grote gain ⇒ sterke correctie (net als 1-D).</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">13</div>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide" data-i="14">
+    <div class="eyebrow">Deel 4 · Ensemble & matrixvorm</div>
+    <h1>De update — trek elk lid naar de meting</h1>
+    <div class="mj big">$$\theta_i \leftarrow \theta_i + K\,\bigl(y + \varepsilon_i - \hat y_i\bigr), \qquad \varepsilon_i \sim \mathcal{N}(0, R)$$</div>
+    <p>Elk lid schuift op langs de innovatie \((y - \hat y_i)\), geschaald door de gain. De <b>geperturbeerde observaties</b> \(\varepsilon_i\) zorgen dat de posterior-<b>spreiding</b> statistisch klopt (stochastische EnKF). Resultaat: een <b>posterior-ensemble</b> van \(\theta\).</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">14</div>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide" data-i="15">
+    <div class="eyebrow">Deel 5 · Vooruit voorspellen</div>
+    <h1>Voorspel vooruit met de bijgestelde parameters</h1>
+    <p>Vanaf de meting van vandaag \(Q_0\), met elk posterior-lid \((\tau_i, Q_{d,i})\):</p>
+    <div class="mj">$$F_i(h) = Q_{d,i} + (Q_0 - Q_{d,i})\,e^{-h/\tau_i}, \qquad h = 1,\dots,14$$</div>
+    <p><b>Puntverwachting</b> = ensemble-gemiddelde \(\frac{1}{N}\sum_i F_i(h)\) · <b>onzekerheidsband</b> = P10–P90 over de leden.</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">15</div>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide" data-i="16">
+    <div class="eyebrow">Deel 5 · Vooruit voorspellen</div>
+    <h1>Een eerlijke band — model-error-inflatie</h1>
+    <p>Parameterspreiding <b>alléén</b> onderschat de totale fout (structurele modelfout ontbreekt) — de band zou overconfident zijn. Voeg een met de horizon groeiende storing toe, <b>zonder</b> het gemiddelde te verschuiven:</p>
+    <div class="mj big">$$\sigma_h = \bar Q_h\,(0{,}03 + 0{,}02\,h)$$</div>
+    <p class="note">Zo groeit de band eerlijk met de horizon → dekking ~80% (i.p.v. 21%).</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">16</div>
+  </section>
+
+  <!-- 17 -->
+  <section class="slide" data-i="17">
+    <div class="eyebrow">Deel 6 · Het bewijs</div>
+    <h1>Toetsen — de fout per horizon</h1>
+    <div class="mj big">$$\mathrm{RMSE}_h = \sqrt{\frac{1}{n}\sum_{i=1}^{n} \big(\hat Q_{i,h} - Q_{i,h}\big)^{2}}$$</div>
+    <p>Wortel-gemiddelde-kwadratenfout per voorspeldag \(h\), over alle \(n\) gereconstrueerde verwachtingen: \(\hat Q\) = voorspeld, \(Q\) = gerealiseerd. <b>Vrij vs geassimileerd</b> — de fout daalt op elke horizon <span class="teal">(dag 14: 82 → 60 m³/s)</span>.</p>
+    <div class="foot">De wiskunde achter de bijsturing</div><div class="pageno">17</div>
+  </section>
+
+  <!-- 18 -->
+  <section class="slide" data-i="18">
+    <div class="eyebrow">Samenvatting</div>
+    <h1>Van fysica en lineaire algebra naar een betere verwachting</h1>
+    <p style="font-size:21px; line-height:1.9">
+      <span class="teal">①</span> ODE van een lineair reservoir → <b>recessie</b> \(Q(t)=Q_d+(Q_0-Q_d)e^{-t/\tau}\)<br>
+      <span class="teal">②</span> Parameters \(\theta=(\tau,Q_d)\) onzeker → een <b>ensemble</b><br>
+      <span class="teal">③</span> <b>Kalman-update</b> \(K = C_{\theta y}(C_{yy}+R)^{-1}\) trekt \(\theta\) naar de meting<br>
+      <span class="teal">④</span> Vooruit voorspellen + <b>eerlijke band</b><br>
+      <span class="teal">⑤</span> Getoetst met <b>RMSE</b> per horizon — meetbaar beter
+    </p>
+    <div class="card" style="margin-top:24px; font-size:17px; color:#90a4ae">Zelfde meetbron als de validatie — geen tweede waarheid. Zie de <span class="teal">Assimilatie-tab</span> voor de live cijfers.</div>
+    <div class="foot">Waterlab · POC E · data-assimilatie (EnKF-familie)</div><div class="pageno">18</div>
+  </section>
+
+</div>
+<script>
+  function showSlide() {
+    var i = new URLSearchParams(location.search).get('s') || '0';
+    document.querySelectorAll('.slide').forEach(function (el) {
+      el.classList.toggle('show', el.dataset.i === String(i));
+    });
+  }
+  showSlide();
+  window.addEventListener('hashchange', showSlide);
+</script>
+</body></html>
