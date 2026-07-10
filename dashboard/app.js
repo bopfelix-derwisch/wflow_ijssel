@@ -77,6 +77,7 @@ let fewsRunInit      = false;   // eerste-load-guard voor de FEWS-run-tab
 const FEWS_PI_BASE   = "/fews/rest/fewspiservice/v1";
 const FEWS_RUN_LABELS = { "1995": "Hoogwater 1995", "2018": "Droogte 2018", "2021": "Hoogwater 2021" };
 let assimilationLoaded = false;   // POC E: 6u server-cache, één keer per sessie laden (TDZ-veilig)
+let sandboxLoaded      = false;   // POC E speeltuin: eerste-load-guard (TDZ-veilig)
 
 // WL-VIS-1 · netwerkpunten met data (= waar wflow een uitspraak over doet)
 const STATIONS = {
@@ -327,6 +328,7 @@ function switchYear(year) {
     document.getElementById("alert-badge").style.background = "#00695c";
     document.body.className = "";
     loadAssimilation();
+    if (!sandboxLoaded) { sandboxLoaded = true; loadSandbox(); }
     return;
   }
 
@@ -928,6 +930,54 @@ function renderValidationChart(id, p) {
     legend: { orientation: "h", y: -0.25, font: { size: 10 } },
     xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
     yaxis: { title: yTitle, gridcolor: "#1a3a5c" },
+  }, { responsive: true, displayModeBar: false });
+}
+
+// ── POC E · speeltuin (interactief model uit de video) ─────────────────────
+function sbUpd() {
+  ["tau0", "target", "N", "window"].forEach(k => {
+    document.getElementById("sb-" + k + "-v").textContent = document.getElementById("sb-" + k).value;
+  });
+  document.getElementById("sb-r-v").textContent = (+document.getElementById("sb-r").value).toFixed(2);
+  document.getElementById("sb-infl-v").textContent = (+document.getElementById("sb-infl").value).toFixed(2);
+}
+
+async function loadSandbox() {
+  sbUpd();
+  const g = id => document.getElementById(id).value;
+  const q = new URLSearchParams({
+    tau0: g("sb-tau0"), target0: g("sb-target"), N: g("sb-N"),
+    window: g("sb-window"), r_scale: g("sb-r"), infl_scale: g("sb-infl"),
+  });
+  const read = document.getElementById("sb-read");
+  try {
+    const d = await fetch(`${API}/api/assimilation/sandbox?` + q).then(r => r.json());
+    if (!d.available) { read.textContent = d.reason || "Speeltuin niet beschikbaar."; return; }
+    read.innerHTML =
+      `τ <b>${d.tau_prior} → ${d.tau_post}</b> · doel <b>${d.target_prior} → ${d.target_post} m³/s</b> · ` +
+      `RMSE dag 14 <b>${d.rmse_free_day14}</b> → <span class="g"><b>${d.rmse_assim_day14} m³/s</b></span> ` +
+      `<span style="color:#607d8b">(dag 7 ${d.rmse_free_day7} → ${d.rmse_assim_day7})</span>`;
+    renderSandboxChart(d);
+  } catch (e) { read.textContent = "Speeltuin niet beschikbaar."; }
+}
+
+function renderSandboxChart(d) {
+  const traces = [
+    { x: d.fdates, y: d.p10, type: "scatter", mode: "lines", line: { width: 0 }, showlegend: false, hoverinfo: "skip" },
+    { x: d.fdates, y: d.p90, type: "scatter", mode: "lines", line: { width: 0 }, fill: "tonexty",
+      fillcolor: "rgba(77,182,172,0.15)", name: "Ensembleband", hoverinfo: "skip" },
+    { x: d.recent_dates, y: d.recent_obs, type: "scatter", mode: "lines+markers",
+      name: "Gemeten (RWS)", line: { color: "#4caf50", width: 2 }, marker: { size: 4 } },
+    { x: d.fdates, y: d.free, type: "scatter", mode: "lines",
+      name: "Vrij", line: { color: "#ef5350", width: 2, dash: "dash" } },
+    { x: d.fdates, y: d.mean, type: "scatter", mode: "lines",
+      name: "Geassimileerd", line: { color: "#4db6ac", width: 2 } },
+  ];
+  Plotly.react("sb-chart", traces, {
+    paper_bgcolor: "#080c14", plot_bgcolor: "#0d1b2a", font: { color: "#e0e0e0", size: 11 },
+    margin: { t: 8, b: 34, l: 56, r: 14 }, legend: { orientation: "h", y: -0.25, font: { size: 9 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: { title: "Debiet Westervoort (m³/s)", gridcolor: "#1a3a5c" },
   }, { responsive: true, displayModeBar: false });
 }
 

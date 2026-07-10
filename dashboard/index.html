@@ -625,6 +625,18 @@
     .as-math .am-eq sub, .as-math .am-eq sup { font-size: 70%; }
     .as-math .am-where { font-size: 11px; color: #78909c; line-height: 1.6; margin-top: 5px; }
     .as-math .am-where code { color: #4db6ac; background: #001a13; padding: 0 4px; border-radius: 3px; }
+    /* speeltuin */
+    .sb-box { background: #07131e; border: 1px solid #14283a; border-radius: 8px; padding: 14px 16px; margin: 12px 0 4px; }
+    .sb-box h3 { margin: 0 0 .3rem; font-size: 13px; color: #4db6ac; }
+    .sb-intro { font-size: 12px; color: #78909c; line-height: 1.6; margin: 0 0 12px; }
+    .sb-intro a { color: #4db6ac; }
+    .sb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px 20px; margin-bottom: 10px; }
+    .sb-ctrl label { display: flex; justify-content: space-between; font-size: 11px; color: #90a4ae; margin-bottom: 3px; }
+    .sb-ctrl label b { color: #4db6ac; font-variant-numeric: tabular-nums; }
+    .sb-ctrl input[type=range] { width: 100%; accent-color: #4db6ac; }
+    .sb-read { font-size: 12.5px; color: #b0bec5; margin: 4px 0 8px; }
+    .sb-read b { color: #dceaf2; } .sb-read .g { color: #4db6ac; }
+    #sb-chart { width: 100%; height: 260px; }
     #as-live-chart, #as-horizon-chart { width: 100%; height: 260px; }
     #as-unavailable { display: none; color: #ef5350; font-size: 12px; padding: 8px 0; }
     .val-doc { max-width: 940px; margin: 0 auto; }
@@ -2178,6 +2190,22 @@
       Je browser kan deze video niet afspelen — <a href="/static/assimilatie_wiskunde.mp4" style="color:#4db6ac">download hem</a>.
     </video>
     <p style="color:#607d8b; font-size:11px; margin:6px 0 0;">Van de recessie-ODE via het ensemble-Kalman-filter tot de RMSE-toets — formules met MathJax, voorkennis 1e jaar TU. Deck: <code>tools/math_slides.html</code>, render: <code>tools/make_math_video.py</code>.</p>
+
+    <div class="info-section" style="margin:16px 0 6px"><h2>🎛 Speeltuin — draai het model zelf, live</h2></div>
+    <div class="sb-box">
+      <p class="sb-intro">Dit draait <b>exact het model uit de video</b> — zie <a href="https://github.com/bopfelix-derwisch/wflow_ijssel/blob/master/tools/enkf_from_scratch.py" target="_blank" rel="noopener">tools/enkf_from_scratch.py ↗</a>, een ~50-regels-versie recht uit de formules die de productie-code tot <b>machineprecisie</b> reproduceert. Sleep aan de knoppen en zie het effect op de verwachting en de fout.</p>
+      <div class="sb-grid">
+        <div class="sb-ctrl"><label>Prior recessie τ₀ [d] <b id="sb-tau0-v">10</b></label><input id="sb-tau0" type="range" min="3" max="30" step="1" value="10" oninput="sbUpd()" onchange="loadSandbox()"></div>
+        <div class="sb-ctrl"><label>Seizoensdoel Q<sub>d</sub> [m³/s] <b id="sb-target-v">240</b></label><input id="sb-target" type="range" min="80" max="500" step="10" value="240" oninput="sbUpd()" onchange="loadSandbox()"></div>
+        <div class="sb-ctrl"><label>Ensemble N <b id="sb-N-v">60</b></label><input id="sb-N" type="range" min="20" max="300" step="10" value="60" oninput="sbUpd()" onchange="loadSandbox()"></div>
+        <div class="sb-ctrl"><label>Venster M [d] <b id="sb-window-v">10</b></label><input id="sb-window" type="range" min="5" max="20" step="1" value="10" oninput="sbUpd()" onchange="loadSandbox()"></div>
+        <div class="sb-ctrl"><label>Meetfout × (R) <b id="sb-r-v">1.00</b></label><input id="sb-r" type="range" min="0.25" max="4" step="0.25" value="1" oninput="sbUpd()" onchange="loadSandbox()"></div>
+        <div class="sb-ctrl"><label>Band-inflatie × <b id="sb-infl-v">1.00</b></label><input id="sb-infl" type="range" min="0" max="3" step="0.25" value="1" oninput="sbUpd()" onchange="loadSandbox()"></div>
+      </div>
+      <p class="sb-read" id="sb-read">Laden…</p>
+      <div id="sb-chart"></div>
+      <p style="color:#607d8b; font-size:11px; margin:6px 0 0;">RMSE = snelle schatting over de laatste ~24 uitgifte-dagen (voor responsiviteit). <b>Meetfout klein ⇒ grotere gain ⇒ sterkere correctie</b> — precies de 1-D-intuïtie uit de video.</p>
+    </div>
 
     <div id="as-unavailable"></div>
     <div id="as-content" style="display:none;">
@@ -3967,7 +3995,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=54"></script>
+<script src="/static/app.js?v=55"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {

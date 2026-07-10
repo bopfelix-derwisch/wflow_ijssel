@@ -33,7 +33,7 @@ def recession_traj(q0, n, tau, target):
 
 
 def ensemble_assimilate(anchor, obs, q0, horizon=HORIZON, tau0=10.0, target0=240.0,
-                        N=N_ENS, seed=0):
+                        N=N_ENS, seed=0, r_scale=1.0, infl_scale=1.0):
     """Batch-ensemble-Kalman-update van (τ, doel) op het recente meetvenster, daarna
     vooruit-forecast vanaf q0.
 
@@ -54,8 +54,8 @@ def ensemble_assimilate(anchor, obs, q0, horizon=HORIZON, tau0=10.0, target0=240
     # voorspelde recente trajecten vanaf anchor  (N × M)
     Y = np.array([recession_traj(anchor, M, tau[i], target[i]) for i in range(N)])
 
-    # observatiefout R (diagonaal) + geperturbeerde observaties
-    r_diag = (0.08 * obs + 20.0) ** 2
+    # observatiefout R (diagonaal) + geperturbeerde observaties; r_scale = meetfout-multiplier
+    r_diag = ((0.08 * obs + 20.0) * r_scale) ** 2
     obs_pert = obs[None, :] + rng.normal(0.0, np.sqrt(r_diag), (N, M))
 
     # augmented state Θ = (τ, doel)  (N × 2)
@@ -79,7 +79,7 @@ def ensemble_assimilate(anchor, obs, q0, horizon=HORIZON, tau0=10.0, target0=240
     # de horizon groeiende, gemiddelde-blijft-gelijk storing toe zodat de band eerlijk is.
     F_mean = F.mean(0)
     h_idx = np.arange(1, horizon + 1)
-    add_sigma = F_mean * (0.03 + 0.02 * h_idx)
+    add_sigma = F_mean * (0.03 + 0.02 * h_idx) * infl_scale
     F = F_mean + (F - F_mean) + rng.normal(0.0, 1.0, (N, horizon)) * add_sigma
 
     return {
@@ -103,6 +103,34 @@ def _round(a, nd=1):
     return [round(float(v), nd) for v in a]
 
 
+_SERIES_CACHE = {"t": 0.0, "days": -1, "data": None}
+
+
+def _fetch_series(days_back: int):
+    """Gecachete dagelijkse RWS-Westervoort-reeks → (idx, dates, vals) of None."""
+    now = time.time()
+    c = _SERIES_CACHE
+    if c["data"] is not None and c["days"] == days_back and now - c["t"] < _TTL:
+        return c["data"]
+    try:
+        from dashboard.forecast import _rws_daily
+        import pandas as pd
+        end = date.today()
+        start = end - timedelta(days=days_back)
+        s = _rws_daily("westervoort", "Q", "m3/s", start, end)
+        if s is None or len(s) < WINDOW_M + HORIZON + 2:
+            return None
+        idx = pd.date_range(start, end, freq="D")
+        s = s.reindex(idx).interpolate(limit=5).bfill().ffill()
+        data = (idx, [d.strftime("%Y-%m-%d") for d in idx],
+                np.array([float(v) for v in s.values]))
+    except Exception as e:  # pragma: no cover
+        logger.warning("assimilatie RWS-fetch faalde: %s", e)
+        return None
+    _SERIES_CACHE.update(t=now, days=days_back, data=data)
+    return data
+
+
 def build_assimilation(days_back: int = 80, force: bool = False) -> dict:
     now = time.time()
     if not force and _CACHE["data"] and now - _CACHE["t"] < _TTL:
@@ -113,23 +141,13 @@ def build_assimilation(days_back: int = 80, force: bool = False) -> dict:
                        "(τ, seizoensdoel) op de laatste %d gemeten RWS-dagen bij Westervoort; daarna "
                        "vooruit-forecast. Realisatie = RWS-meting — zelfde bron als WL-VAL-1/2." % WINDOW_M)}
 
-    try:
-        from dashboard.forecast import _rws_daily, _seasonal_mean
-        end = date.today()
-        start = end - timedelta(days=days_back)
-        s = _rws_daily("westervoort", "Q", "m3/s", start, end)
-    except Exception as e:  # pragma: no cover
-        logger.warning("assimilatie RWS-fetch faalde: %s", e)
-        s = None
-    if s is None or len(s) < WINDOW_M + HORIZON + 2:
+    from dashboard.forecast import _seasonal_mean
+    import pandas as pd
+    res = _fetch_series(days_back)
+    if res is None:
         return {**base, "available": False,
                 "reason": "RWS-meetreeks Westervoort onvoldoende voor assimilatie — probeer later opnieuw."}
-
-    import pandas as pd
-    idx = pd.date_range(start, end, freq="D")
-    s = s.reindex(idx).interpolate(limit=5).bfill().ffill()
-    dates = [d.strftime("%Y-%m-%d") for d in idx]
-    vals = np.array([float(v) for v in s.values])
+    idx, dates, vals = res
     n = len(vals)
 
     # ── live: assimileer het meest recente venster, forecast vooruit ──
@@ -184,3 +202,61 @@ def build_assimilation(days_back: int = 80, force: bool = False) -> dict:
             "per_horizon_free": per_free, "per_horizon_assim": per_assim, "summary": summary}
     _CACHE.update(t=now, data=data)
     return data
+
+
+def build_sandbox(tau0=10.0, target0=None, N=60, window=WINDOW_M,
+                  r_scale=1.0, infl_scale=1.0, days_back=80) -> dict:
+    """Interactieve variant: draai het model uit de video met vrij te kiezen
+    parameters, en toon de live-forecast + een snelle vrij-vs-geassimileerd RMSE
+    (beperkte hindcast over de laatste ~24 uitgifte-dagen — snel genoeg voor sliders)."""
+    from dashboard.forecast import _seasonal_mean
+    import pandas as pd
+    res = _fetch_series(days_back)
+    if res is None:
+        return {"available": False, "reason": "RWS-reeks onvoldoende — probeer later opnieuw."}
+    idx, dates, vals = res
+    n = len(vals)
+
+    # begrenzingen (robuust tegen rare invoer)
+    window = int(max(5, min(20, window)))
+    N = int(max(20, min(400, N)))
+    tau0 = float(max(2.0, min(40.0, tau0)))
+    r_scale = float(max(0.1, min(6.0, r_scale)))
+    infl_scale = float(max(0.0, min(4.0, infl_scale)))
+    if target0 is None or target0 <= 0:
+        target0 = float(_seasonal_mean(idx[-1].month))
+    else:
+        target0 = float(max(20.0, min(600.0, target0)))
+
+    anchor = float(vals[n - 1 - window])
+    obs = vals[n - window:n]
+    q0 = float(vals[-1])
+    lv = ensemble_assimilate(anchor, obs, q0, HORIZON, tau0=tau0, target0=target0,
+                             N=N, seed=0, r_scale=r_scale, infl_scale=infl_scale)
+    fdates = [(idx[-1] + pd.Timedelta(days=i + 1)).strftime("%Y-%m-%d") for i in range(HORIZON)]
+
+    # snelle hindcast over de laatste ~24 uitgifte-dagen
+    fp, ap, obl = [], [], []
+    for i in range(max(window, n - HORIZON - 24), n - HORIZON):
+        a = float(vals[i - window]); ob = vals[i - window + 1:i + 1]; qi = float(vals[i])
+        realized = [float(vals[i + 1 + j]) for j in range(HORIZON)]
+        r = ensemble_assimilate(a, ob, qi, HORIZON, tau0=tau0, target0=target0,
+                                N=N, seed=i, r_scale=r_scale, infl_scale=infl_scale)
+        fp.append(r["free"]); ap.append(r["mean"]); obl.append(realized)
+
+    def _rmse_h(preds, h):
+        e = [P[h - 1] - O[h - 1] for P, O in zip(preds, obl)]
+        return round(float(np.sqrt(np.mean(np.square(e)))), 1) if e else None
+
+    return {
+        "available": True, "unit": "m³/s", "window": window, "N": N,
+        "recent_dates": dates[n - window:], "recent_obs": _round(obs),
+        "fdates": fdates,
+        "free": _round(lv["free"]), "mean": _round(lv["mean"]),
+        "p10": _round(lv["p10"]), "p90": _round(lv["p90"]),
+        "tau_prior": round(tau0, 1), "tau_post": round(lv["tau_post"], 1),
+        "target_prior": round(target0), "target_post": round(lv["target_post"]),
+        "r_scale": r_scale, "infl_scale": infl_scale, "n_forecasts": len(fp),
+        "rmse_free_day7": _rmse_h(fp, 7), "rmse_assim_day7": _rmse_h(ap, 7),
+        "rmse_free_day14": _rmse_h(fp, 14), "rmse_assim_day14": _rmse_h(ap, 14),
+    }

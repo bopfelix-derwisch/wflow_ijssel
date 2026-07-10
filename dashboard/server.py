@@ -573,6 +573,18 @@ def get_assimilation():
         return JSONResponse({"available": False, "error": str(e)})
 
 
+# POC E — interactieve speeltuin: draai het model met vrij te kiezen parameters.
+@app.get("/api/assimilation/sandbox")
+def get_assimilation_sandbox(tau0: float = 10.0, target0: float = 0.0, N: int = 60,
+                             window: int = 10, r_scale: float = 1.0, infl_scale: float = 1.0):
+    from dashboard.assimilation import build_sandbox
+    try:
+        return JSONResponse(build_sandbox(tau0=tau0, target0=(target0 or None), N=N,
+                                          window=window, r_scale=r_scale, infl_scale=infl_scale))
+    except Exception as e:
+        return JSONResponse({"available": False, "error": str(e)})
+
+
 # WL-CHAT-1 — uitleg-chatbot, gegrond in de PROV-bronnen, achter login + budget.
 @app.post("/api/chat/login")
 def post_chat_login(payload: dict = Body(...)):
