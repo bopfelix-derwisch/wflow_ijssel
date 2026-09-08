@@ -133,3 +133,46 @@ def test_fetch_daily_ontdekt_verkeerde_respons_volgorde(monkeypatch):
 
     with pytest.raises(ValueError):
         meteo.fetch_daily([52.0, 53.0], [6.0, 7.0], "2026-01-01", "2026-01-01")
+
+
+def test_fetch_daily_ontdekt_verwisseling_met_aangrenzend_bevragingspunt(monkeypatch):
+    """Regressietest (re-review): een verwisseling met het DICHTSTBIJZIJNDE
+    buurpunt (0,25° uit elkaar, diagonaal — dus elke as afzonderlijk maar
+    0,25° verschilt) moest bij tol=0,3 met een losse lat/lon-`of`-toets
+    onopgemerkt blijven. Met een Euclidische toets en tol=0,1° (ruim onder de
+    halve bevragingsstap van 0,125°) moet dit nu wel een ValueError geven."""
+    from wflow_ijssel.operational import meteo
+
+    # opgevraagd: (52.0, 6.0) dan (52.25, 6.25) — diagonale buren op het
+    # bevragingsraster (grid_points met step=0.25); respons komt omgedraaid terug
+    nep = [
+        {"latitude": 52.25, "longitude": 6.25, "daily": {
+            "time": ["2026-01-01"],
+            "precipitation_sum": [3.0],
+            "et0_fao_evapotranspiration": [0.7],
+            "temperature_2m_mean": [6.0]}},
+        {"latitude": 52.0, "longitude": 6.0, "daily": {
+            "time": ["2026-01-01"],
+            "precipitation_sum": [1.0],
+            "et0_fao_evapotranspiration": [0.5],
+            "temperature_2m_mean": [4.0]}},
+    ]
+    monkeypatch.setattr(meteo, "_get_json", lambda url, params: nep)
+
+    with pytest.raises(ValueError):
+        meteo.fetch_daily([52.0, 52.25], [6.0, 6.25], "2026-01-01", "2026-01-01")
+
+
+def test_fetch_daily_accepteert_kleine_snap_naar_roosterpunt_afwijking(monkeypatch):
+    """Een kleine afwijking (hier 0,05°) zoals Open-Meteo's snap naar zijn eigen
+    roosterpunt is legitiem en mag geen ValueError geven — anders slaat de
+    volgorde-toets te ver door de andere kant op."""
+    from wflow_ijssel.operational import meteo
+
+    nep = {"latitude": 52.05, "longitude": 6.0, "daily": {
+        "time": ["2026-01-01"], "precipitation_sum": [1.0],
+        "et0_fao_evapotranspiration": [0.5], "temperature_2m_mean": [4.0]}}
+    monkeypatch.setattr(meteo, "_get_json", lambda url, params: nep)
+
+    out = meteo.fetch_daily([52.0], [6.0], "2026-01-01", "2026-01-01")
+    assert out["precip"][0, 0] == 1.0

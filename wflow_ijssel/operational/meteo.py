@@ -22,6 +22,15 @@ FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
 DAILY_VARS = "precipitation_sum,et0_fao_evapotranspiration,temperature_2m_mean"
 
+# Tolerantie voor de respons-volgorde-toets in _check_response_order, in graden.
+# Moet ruim ONDER de halve bevragingsstap van grid_points() (standaard 0,25°,
+# dus halve stap 0,125°) blijven — anders wordt een verwisseling met het
+# dichtstbijzijnde buurpunt nooit opgemerkt (die ligt namelijk maar 0,25° weg).
+# Verander je de stap van grid_points(), controleer dan of deze constante nog
+# steeds kleiner is dan de helft daarvan. 0,1° is ruim genoeg voor Open-Meteo's
+# snap-naar-roosterpunt-afwijking (in de praktijk << 0,1°, zie de rooktest).
+RESPONS_TOLERANTIE_GRADEN = 0.1
+
 # Modelgrid van staticmaps-ijssel.nc / forcing-ijssel.nc — exact overnemen.
 # LET OP: y loopt AFLOPEND (noord → zuid). Een oplopende as spiegelt het
 # stroomgebied zonder dat wflow klaagt.
@@ -53,22 +62,30 @@ def _as_list(payload) -> list:
     return payload if isinstance(payload, list) else [payload]
 
 
-def _check_response_order(payload: list, lats, lons, tol: float = 0.3) -> None:
+def _check_response_order(payload: list, lats, lons,
+                           tol: float = RESPONS_TOLERANTIE_GRADEN) -> None:
     """Toets dat de respons dezelfde volgorde heeft als de opgevraagde punten.
 
     Open-Meteo snapt elk punt naar zijn eigen roosterpunt, dus de teruggegeven
     `latitude`/`longitude` wijken licht af van wat is opgevraagd — vandaar een
-    ruime tolerantie. Wijkt een punt verder af, dan is de volgorde vermoedelijk
-    veranderd en zou de koppeling tussen punt en waarde stil verkeerd lopen.
+    tolerantie. Die moet wel ruim onder de halve bevragingsstap blijven (zie
+    RESPONS_TOLERANTIE_GRADEN hierboven), anders detecteert deze toets een
+    verwisseling met het dichtstbijzijnde buurpunt niet. De afstand wordt
+    Euclidisch getoetst (niet lat/lon los met een `of`), anders glipt een
+    diagonale buur — die op elke as afzonderlijk binnen tolerantie valt — erdoor.
+    Wijkt een punt verder af, dan is de volgorde vermoedelijk veranderd en zou
+    de koppeling tussen punt en waarde stil verkeerd lopen.
     """
     for i, (loc, la, lo) in enumerate(zip(payload, lats, lons)):
         rla, rlo = loc.get("latitude"), loc.get("longitude")
         if rla is None or rlo is None:
             continue
-        if abs(float(rla) - float(la)) > tol or abs(float(rlo) - float(lo)) > tol:
+        afstand = ((float(rla) - float(la)) ** 2 + (float(rlo) - float(lo)) ** 2) ** 0.5
+        if afstand > tol:
             raise ValueError(
                 f"respons op index {i} komt niet overeen met het opgevraagde punt "
-                f"(opgevraagd {la:.4f},{lo:.4f}; gekregen {rla:.4f},{rlo:.4f}) — "
+                f"(opgevraagd {la:.4f},{lo:.4f}; gekregen {rla:.4f},{rlo:.4f}; "
+                f"afstand {afstand:.4f}° > tolerantie {tol}°) — "
                 "volgorde van de respons wijkt af van de opgevraagde punten")
 
 
