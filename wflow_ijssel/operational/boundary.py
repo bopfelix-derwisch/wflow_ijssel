@@ -103,24 +103,44 @@ def lobith_ratio(q_lobith: dict, q_westervoort: dict,
     return float(statistics.median(ratios))
 
 
-def _huidige_waarde(wes: dict, lob_meting: dict, today_str: str,
+def _kies_bron(d: str, measured: dict, lobith_meting: dict, rws: dict) -> "float | None":
+    """Kies de bronwaarde voor één datum `d` volgens de bronladder:
+    Westervoort-meting > Lobith-meting × ratio > Lobith-verwachting × ratio.
+
+    Geeft `None` als geen van de drie een waarde voor `d` heeft — dan is de
+    recessie aan de beurt. Dit is de ene plek waar de ladder staat
+    uitgeschreven; zowel `blend()` (voor de hele reeks) als `_huidige_waarde`
+    (voor alleen vandaag, als startpunt van de recessie) roepen 'm aan, zodat
+    de twee nooit uit elkaar kunnen lopen.
+    """
+    if d in measured:
+        return float(measured[d])
+    if d in lobith_meting:
+        return float(lobith_meting[d])
+    if d in rws:
+        return float(rws[d])
+    return None
+
+
+def _huidige_waarde(wes: dict, lob_meting: dict, rws_fc: dict, today_str: str,
                     seasonal_mean: float) -> float:
     """Bepaal de waarde voor vandaag (q0 voor de recessie) zónder de recessie
-    zelf te gebruiken: Westervoort-meting > Lobith-meting × ratio >
-    seizoensgemiddelde.
+    zelf te gebruiken: dezelfde bronladder als `blend()` (via `_kies_bron`),
+    met het seizoensgemiddelde als laatste terugval.
 
     Losstaand van `blend()` omdat er een volgorde-afhankelijkheid is: de
     recessie heeft q0 nodig, en de volledige (via `blend()` samengestelde)
     reeks heeft op haar beurt de recessie weer nodig. Deze functie doorbreekt
-    die cirkel door alleen de twee bronnen te raadplegen die geen recessie
+    die cirkel door alleen de bronnen te raadplegen die geen recessie
     vereisen — dezelfde die de nowcast-dag zelf al op een waarneming laten
     rusten in plaats van op een verouderde, kale Westervoort-meting van soms
-    ruim twee weken oud.
+    ruim twee weken oud, of (als ook de Lobith-meting toevallig een gat heeft
+    voor vandaag, bv. bij een tijdelijke RWS-rapportagevertraging) op de
+    Lobith-verwachting.
     """
-    if today_str in wes:
-        return float(wes[today_str])
-    if today_str in lob_meting:
-        return float(lob_meting[today_str])
+    v = _kies_bron(today_str, wes, lob_meting, rws_fc)
+    if v is not None:
+        return v
     return float(seasonal_mean)
 
 
@@ -129,9 +149,9 @@ def blend(measured: dict, lobith_meting: dict, rws: dict, recession: dict,
     """Stel de randvoorwaarde samen.
 
     Bronprioriteit per dag: Westervoort-meting > Lobith-meting (geschaald)
-    > Lobith-verwachting (geschaald) > recessie. Over `blend_days` na de
-    laatste dag met een Lobith-verwachting wordt lineair naar de recessie
-    gemengd, zodat de randvoorwaarde niet springt.
+    > Lobith-verwachting (geschaald) > recessie (zie `_kies_bron`). Over
+    `blend_days` na de laatste dag met een Lobith-verwachting wordt lineair
+    naar de recessie gemengd, zodat de randvoorwaarde niet springt.
     """
     if not dates:
         raise ValueError("dates mag niet leeg zijn")
@@ -139,14 +159,9 @@ def blend(measured: dict, lobith_meting: dict, rws: dict, recession: dict,
     last_rws = max((d for d in dates if d in rws), default=None)
     out = []
     for d in dates:
-        if d in measured:
-            out.append(float(measured[d]))
-            continue
-        if d in lobith_meting:
-            out.append(float(lobith_meting[d]))
-            continue
-        if d in rws:
-            out.append(float(rws[d]))
+        v = _kies_bron(d, measured, lobith_meting, rws)
+        if v is not None:
+            out.append(v)
             continue
 
         rec = float(recession[d])
@@ -162,8 +177,6 @@ def blend(measured: dict, lobith_meting: dict, rws: dict, recession: dict,
 
 def build_boundary(dates: list) -> dict:
     """Haal de bronnen op en stel de randvoorwaarde samen voor `dates`."""
-    from datetime import date, timedelta
-
     import numpy as np
 
     from dashboard import rws_client
@@ -198,7 +211,7 @@ def build_boundary(dates: list) -> dict:
     # Stap 1: bepaal q0 uit de bronnen die geen recessie nodig hebben (zie
     # `_huidige_waarde`) -- dit doorbreekt de volgorde-afhankelijkheid tussen
     # q0, recessie en blend().
-    q0 = _huidige_waarde(wes, lob_meting, today_str, _seasonal_mean(today.month))
+    q0 = _huidige_waarde(wes, lob_meting, rws_fc, today_str, _seasonal_mean(today.month))
 
     # Stap 2: nu q0 bekend is, de recessie berekenen en de volledige reeks
     # samenstellen.

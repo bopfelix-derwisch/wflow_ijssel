@@ -144,7 +144,7 @@ def test_q0_gebruikt_lobith_afgeleide_waarde_bij_een_verouderde_westervoort_meti
     meting -- anders start de recessie stelselmatig te laag."""
     wes = {"2026-08-25": 71.0}
     lob_meting = {"2026-09-08": 118.0}
-    q0 = _huidige_waarde(wes, lob_meting, "2026-09-08", seasonal_mean=200.0)
+    q0 = _huidige_waarde(wes, lob_meting, {}, "2026-09-08", seasonal_mean=200.0)
     assert q0 == pytest.approx(118.0)
     assert q0 != wes["2026-08-25"]
 
@@ -154,12 +154,26 @@ def test_q0_geeft_voorrang_aan_de_westervoort_meting_van_vandaag():
     Lobith-afgeleide waarde."""
     wes = {"2026-09-08": 100.0}
     lob_meting = {"2026-09-08": 999.0}
-    q0 = _huidige_waarde(wes, lob_meting, "2026-09-08", seasonal_mean=50.0)
+    q0 = _huidige_waarde(wes, lob_meting, {}, "2026-09-08", seasonal_mean=50.0)
     assert q0 == pytest.approx(100.0)
 
 
+def test_q0_gebruikt_lobith_verwachting_als_lobith_meting_vandaag_mist():
+    """Randgeval uit de review: de Lobith-meting mist toevallig de datum van
+    vandaag (bv. een tijdelijke RWS-rapportagevertraging), maar de
+    Lobith-verwachting dekt 'vandaag' wel met een nowcast-waarde. q0 moet die
+    verwachting gebruiken -- niet meteen naar het seizoensgemiddelde springen,
+    want de recessie levert 12 van de 17 dagen en heeft dus een zo goed
+    mogelijk startpunt nodig."""
+    wes = {}
+    lob_meting = {"2026-09-07": 120.0}  # mist vandaag
+    rws_fc = {"2026-09-08": 119.0}      # dekt vandaag wel
+    q0 = _huidige_waarde(wes, lob_meting, rws_fc, "2026-09-08", seasonal_mean=200.0)
+    assert q0 == pytest.approx(119.0)
+
+
 def test_q0_valt_terug_op_seizoensgemiddelde_zonder_actuele_bron():
-    """Ontbreken zowel de Westervoort-meting als de Lobith-afgeleide waarde
-    voor vandaag, dan is het seizoensgemiddelde de laatste terugval."""
-    q0 = _huidige_waarde({}, {}, "2026-09-08", seasonal_mean=200.0)
+    """Ontbreken meting, Lobith-afgeleide waarde én Lobith-verwachting voor
+    vandaag, dan is het seizoensgemiddelde de laatste terugval."""
+    q0 = _huidige_waarde({}, {}, {}, "2026-09-08", seasonal_mean=200.0)
     assert q0 == pytest.approx(200.0)
