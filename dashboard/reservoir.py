@@ -46,18 +46,11 @@ def _river_series(years: int = RIVER_YEARS) -> dict:
         return hit[1]
     out: dict = {}
     try:
-        import pandas as pd
-        import rws_waterinfo as rw
+        from dashboard import rws_client
         end = date.today()
         start = end - timedelta(days=365 * years)
-        df = rw.get_data([{"locatie_code": "kampen.ijssel", "compartiment_code": "OW",
-                           "grootheid_code": "WATHTE", "eenheid_code": "cm",
-                           "start_date": str(start), "end_date": str(end),
-                           "proces_type": "meting"}], return_df=True, parallel=False)
-        if df is not None and len(df):
-            df2 = df[["Tijdstip", "Meetwaarde.Waarde_Numeriek"]].copy()
-            df2["Tijdstip"] = pd.to_datetime(df2["Tijdstip"].str[:19])
-            daily = df2.set_index("Tijdstip")["Meetwaarde.Waarde_Numeriek"].resample("D").mean().dropna()
+        daily = rws_client.daily_series("kampen.ijssel", "WATHTE", "cm", start, end)
+        if daily is not None and len(daily):
             out = {ts.strftime("%Y-%m-%d"): float(v) / 100.0 for ts, v in daily.items()}  # cm → m
     except Exception as e:
         logger.warning("v2b river-fetch faalde: %s", e)

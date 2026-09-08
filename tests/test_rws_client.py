@@ -180,6 +180,26 @@ def test_daily_series_slaat_dag_zonder_echte_data_over(monkeypatch):
     assert volledig.isna().tolist() == [False, True, False]
 
 
+def test_river_series_gebruikt_client_en_rekent_cm_naar_meter(monkeypatch):
+    from dashboard import reservoir, rws_client
+
+    monkeypatch.setattr(rws_client, "daily_series", lambda *a, **k: pd.Series(
+        [-30.0, -25.0], index=pd.to_datetime(["2026-01-01", "2026-01-02"])))
+    reservoir._river_cache.clear()
+
+    out = reservoir._river_series(years=1)
+    assert out == {"2026-01-01": -0.30, "2026-01-02": -0.25}
+
+
+def test_river_series_leeg_bij_uitval(monkeypatch):
+    from dashboard import reservoir, rws_client
+
+    monkeypatch.setattr(rws_client, "daily_series", lambda *a, **k: None)
+    reservoir._river_cache.clear()
+
+    assert reservoir._river_series(years=1) == {}
+
+
 def test_forecast_rws_daily_delegeert_naar_client(monkeypatch):
     """forecast._rws_daily blijft bestaan (assimilation.py en validation.py
     importeren die naam) maar mag geen eigen fetch-logica meer hebben."""
