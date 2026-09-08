@@ -58,6 +58,18 @@ def test_to_model_grid_verwerpt_verkeerde_vorm():
         to_model_grid(np.zeros((3, 2)), lats, lons, MODEL_Y, MODEL_X)
 
 
+def test_to_model_grid_verwerpt_dubbele_coordinaat_met_ontbrekende_cel():
+    """Regressietest (code review): het aantal punten klopt met een 2x2-raster,
+    maar (1,1) komt tweemaal voor en (1,2) ontbreekt nooit. De oude check op
+    alleen aantallen liet dit door, waarna de niet-ingevulde cel in `field`
+    ongeïnitialiseerd geheugen bevatte — geen fout, gewoon stille rommel."""
+    lats = [1.0, 1.0, 2.0, 2.0]
+    lons = [1.0, 1.0, 1.0, 2.0]
+    values = np.zeros((4, 1))
+    with pytest.raises(ValueError):
+        to_model_grid(values, lats, lons, MODEL_Y, MODEL_X)
+
+
 def test_fetch_daily_leest_een_lijstrespons(monkeypatch):
     """Open-Meteo geeft bij meerdere punten een LIJST terug, bij één punt een object."""
     from wflow_ijssel.operational import meteo
@@ -96,3 +108,28 @@ def test_fetch_daily_vult_ontbrekende_waarden_met_nul(monkeypatch):
     assert out["precip"][0, 0] == 0.0
     assert out["pet"][0, 0] == 0.0
     assert out["temp"][0, 0] == 0.0
+
+
+def test_fetch_daily_ontdekt_verkeerde_respons_volgorde(monkeypatch):
+    """Regressietest (code review): als Open-Meteo de punten in een andere
+    volgorde teruggeeft dan opgevraagd, mag de punt-waarde-koppeling niet
+    stil verwisseld worden — dat moet een ValueError geven."""
+    from wflow_ijssel.operational import meteo
+
+    # opgevraagd: (52.0, 6.0) dan (53.0, 7.0); respons komt omgedraaid terug
+    nep = [
+        {"latitude": 53.0, "longitude": 7.0, "daily": {
+            "time": ["2026-01-01"],
+            "precipitation_sum": [3.0],
+            "et0_fao_evapotranspiration": [0.7],
+            "temperature_2m_mean": [6.0]}},
+        {"latitude": 52.0, "longitude": 6.0, "daily": {
+            "time": ["2026-01-01"],
+            "precipitation_sum": [1.0],
+            "et0_fao_evapotranspiration": [0.5],
+            "temperature_2m_mean": [4.0]}},
+    ]
+    monkeypatch.setattr(meteo, "_get_json", lambda url, params: nep)
+
+    with pytest.raises(ValueError):
+        meteo.fetch_daily([52.0, 53.0], [6.0, 7.0], "2026-01-01", "2026-01-01")

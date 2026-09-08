@@ -53,6 +53,25 @@ def _as_list(payload) -> list:
     return payload if isinstance(payload, list) else [payload]
 
 
+def _check_response_order(payload: list, lats, lons, tol: float = 0.3) -> None:
+    """Toets dat de respons dezelfde volgorde heeft als de opgevraagde punten.
+
+    Open-Meteo snapt elk punt naar zijn eigen roosterpunt, dus de teruggegeven
+    `latitude`/`longitude` wijken licht af van wat is opgevraagd — vandaar een
+    ruime tolerantie. Wijkt een punt verder af, dan is de volgorde vermoedelijk
+    veranderd en zou de koppeling tussen punt en waarde stil verkeerd lopen.
+    """
+    for i, (loc, la, lo) in enumerate(zip(payload, lats, lons)):
+        rla, rlo = loc.get("latitude"), loc.get("longitude")
+        if rla is None or rlo is None:
+            continue
+        if abs(float(rla) - float(la)) > tol or abs(float(rlo) - float(lo)) > tol:
+            raise ValueError(
+                f"respons op index {i} komt niet overeen met het opgevraagde punt "
+                f"(opgevraagd {la:.4f},{lo:.4f}; gekregen {rla:.4f},{rlo:.4f}) — "
+                "volgorde van de respons wijkt af van de opgevraagde punten")
+
+
 def fetch_daily(lats, lons, start: str, end: str, archive: bool = False) -> dict:
     """Daggegevens per punt. Retourneert arrays met vorm (n_punten, n_dagen)."""
     url = ARCHIVE_URL if archive else FORECAST_URL
@@ -65,6 +84,7 @@ def fetch_daily(lats, lons, start: str, end: str, archive: bool = False) -> dict
         "end_date": end,
     }
     payload = _as_list(_get_json(url, params))
+    _check_response_order(payload, lats, lons)
 
     dates = payload[0]["daily"]["time"]
     n_pts, n_days = len(payload), len(dates)
@@ -97,20 +117,35 @@ def to_model_grid(values, src_lats, src_lons, dst_y, dst_x) -> np.ndarray:
             f"values moet vorm (n_punten, n_dagen) hebben met n_punten={len(src_lats)}, "
             f"kreeg {values.shape}")
 
-    ulat = np.unique(np.asarray(src_lats, dtype=float))
-    ulon = np.unique(np.asarray(src_lons, dtype=float))
-    if len(ulat) * len(ulon) != len(src_lats):
-        raise ValueError("bronpunten vormen geen regelmatig lat/lon-raster")
+    lat_arr = np.asarray(src_lats, dtype=float)
+    lon_arr = np.asarray(src_lons, dtype=float)
+    ulat = np.unique(lat_arr)
+    ulon = np.unique(lon_arr)
+
+    # De aantallen-check (len(ulat)*len(ulon) == len(src_lats)) is nodig maar
+    # niet genoeg: een dubbele coördinaat plus een ontbrekende cel geeft
+    # hetzelfde aantal punten terwijl het raster toch onvolledig is. Toets
+    # daarom op de complete verzameling (lat, lon)-paren — dat vangt zowel
+    # duplicaten als gaten.
+    pairs = set(zip(lat_arr.tolist(), lon_arr.tolist()))
+    expected_pairs = {(la, lo) for la in ulat.tolist() for lo in ulon.tolist()}
+    if len(pairs) != len(lat_arr) or pairs != expected_pairs:
+        raise ValueError(
+            "bronpunten vormen geen regelmatig lat/lon-raster "
+            "(dubbele en/of ontbrekende coördinaten)")
 
     n_days = values.shape[1]
     out = np.empty((n_days, len(dst_y), len(dst_x)), dtype=float)
 
     # index van elk bronpunt in het (lat, lon)-raster
-    lat_idx = np.searchsorted(ulat, np.asarray(src_lats, dtype=float))
-    lon_idx = np.searchsorted(ulon, np.asarray(src_lons, dtype=float))
+    lat_idx = np.searchsorted(ulat, lat_arr)
+    lon_idx = np.searchsorted(ulon, lon_arr)
 
     for d in range(n_days):
-        field = np.empty((len(ulat), len(ulon)), dtype=float)
+        # np.nan i.p.v. np.empty: een cel die door een fout in de check heen
+        # glipt en dus nooit gevuld wordt, faalt zo luid (NaN in de output)
+        # in plaats van stil ongeïnitialiseerd geheugen door te geven.
+        field = np.full((len(ulat), len(ulon)), np.nan, dtype=float)
         field[lat_idx, lon_idx] = values[:, d]
         # interpoleer eerst over lengtegraad, dan over breedtegraad
         tmp = np.empty((len(ulat), len(dst_x)), dtype=float)
