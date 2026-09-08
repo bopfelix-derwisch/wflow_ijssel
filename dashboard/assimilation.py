@@ -118,6 +118,12 @@ def _fetch_series(days_back: int):
         end = date.today()
         start = end - timedelta(days=days_back)
         s = _rws_daily("westervoort", "Q", "m3/s", start, end)
+        # len(s) telt sinds de rws_client-refactor het aantal dágen mét een echte
+        # meting (dropna() na resamplen in rws_client.daily_series), niet meer het
+        # aantal kalenderdagen in het [start, end]-venster. Een RWS-gap van een
+        # paar dagen duwt de reeks dus eerder onder deze drempel dan vóór de
+        # refactor (toen ontbrekende dagen als NaN meetelden) — het resultaat is
+        # een nette `available: False` hieronder, geen crash of stille dataverdunning.
         if s is None or len(s) < WINDOW_M + HORIZON + 2:
             return None
         idx = pd.date_range(start, end, freq="D")
