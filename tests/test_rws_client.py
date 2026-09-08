@@ -75,3 +75,77 @@ def test_none_dataframe():
     clean, removed = filter_sentinels(None)
     assert clean is None
     assert removed == 0
+
+
+def test_daily_series_middelt_per_dag_zonder_sentinels(monkeypatch):
+    """Twee dagen, met op dag 1 een sentinel die het gemiddelde zou verzieken."""
+    from dashboard import rws_client
+
+    raw = pd.DataFrame({
+        TIME_COL: [
+            "2026-01-01T00:00:00.000+01:00",
+            "2026-01-01T00:15:00.000+01:00",
+            "2026-01-02T00:00:00.000+01:00",
+        ],
+        VALUE_COL: [10.0, 999999999.0, 30.0],
+        QUALITY_COL: ["00", QUALITY_MISSING, "00"],
+    })
+    monkeypatch.setattr(rws_client, "_RWS_OK", True)
+    monkeypatch.setattr(rws_client, "rw", type("F", (), {
+        "get_data": staticmethod(lambda *a, **k: raw)})())
+
+    s = rws_client.daily_series("x", "WATHTE", "cm", "2026-01-01", "2026-01-02")
+    assert list(s.values) == [10.0, 30.0]
+    assert [str(d.date()) for d in s.index] == ["2026-01-01", "2026-01-02"]
+
+
+def test_daily_series_geeft_none_bij_lege_respons(monkeypatch):
+    from dashboard import rws_client
+
+    monkeypatch.setattr(rws_client, "_RWS_OK", True)
+    monkeypatch.setattr(rws_client, "rw", type("F", (), {
+        "get_data": staticmethod(lambda *a, **k: pd.DataFrame())})())
+    assert rws_client.daily_series("x", "Q", "m3/s", "2026-01-01", "2026-01-02") is None
+
+
+def test_daily_series_geeft_none_als_alles_sentinel_is(monkeypatch):
+    from dashboard import rws_client
+
+    raw = pd.DataFrame({
+        TIME_COL: ["2026-01-01T00:00:00.000+01:00"],
+        VALUE_COL: [999999999.0],
+        QUALITY_COL: [QUALITY_MISSING],
+    })
+    monkeypatch.setattr(rws_client, "_RWS_OK", True)
+    monkeypatch.setattr(rws_client, "rw", type("F", (), {
+        "get_data": staticmethod(lambda *a, **k: raw)})())
+    assert rws_client.daily_series("x", "Q", "m3/s", "2026-01-01", "2026-01-02") is None
+
+
+def test_daily_series_slikt_uitzonderingen(monkeypatch):
+    from dashboard import rws_client
+
+    def boom(*a, **k):
+        raise RuntimeError("netwerk stuk")
+
+    monkeypatch.setattr(rws_client, "_RWS_OK", True)
+    monkeypatch.setattr(rws_client, "rw", type("F", (), {
+        "get_data": staticmethod(boom)})())
+    assert rws_client.daily_series("x", "Q", "m3/s", "2026-01-01", "2026-01-02") is None
+
+
+def test_forecast_rws_daily_delegeert_naar_client(monkeypatch):
+    """forecast._rws_daily blijft bestaan (assimilation.py en validation.py
+    importeren die naam) maar mag geen eigen fetch-logica meer hebben."""
+    from dashboard import forecast, rws_client
+
+    gezien = {}
+
+    def nep(locatie, grootheid, eenheid, start, end, proces_type="meting"):
+        gezien.update(locatie=locatie, proces_type=proces_type)
+        return pd.Series([1.0], index=pd.to_datetime(["2026-01-01"]))
+
+    monkeypatch.setattr(rws_client, "daily_series", nep)
+    out = forecast._rws_daily("westervoort", "Q", "m3/s", "2026-01-01", "2026-01-02")
+    assert gezien == {"locatie": "westervoort", "proces_type": "meting"}
+    assert list(out.values) == [1.0]
