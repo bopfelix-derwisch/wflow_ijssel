@@ -18,12 +18,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-try:
-    import rws_waterinfo as rw
-    _RWS_OK = True
-except ImportError:
-    _RWS_OK = False
-    logger.warning("rws_waterinfo niet geïnstalleerd — RWS-data niet beschikbaar")
+from dashboard import rws_client
 
 OPENMETEO_URL = "https://api.open-meteo.com/v1/forecast"
 
@@ -50,33 +45,12 @@ def _cache_set(data: dict) -> None:
 def _rws_daily(locatie: str, grootheid: str, eenheid: str,
                start: "date", end: "date",
                proces_type: str = "meting") -> pd.Series | None:
-    if not _RWS_OK:
-        return None
-    try:
-        df = rw.get_data(
-            [{
-                "locatie_code":     locatie,
-                "compartiment_code": "OW",
-                "grootheid_code":   grootheid,
-                "eenheid_code":     eenheid,
-                "start_date":       str(start),
-                "end_date":         str(end),
-                "proces_type":      proces_type,
-            }],
-            return_df=True,
-            parallel=False,
-        )
-        if df is None or len(df) == 0:
-            return None
-        df2 = df[["Tijdstip", "Meetwaarde.Waarde_Numeriek"]].copy()
-        df2["Tijdstip"] = pd.to_datetime(df2["Tijdstip"].str[:19])
-        df2 = df2.set_index("Tijdstip").sort_index()
-        daily = df2["Meetwaarde.Waarde_Numeriek"].resample("D").mean()
-        logger.info("RWS %s/%s/%s: %d dagwaarden", locatie, grootheid, proces_type, len(daily))
-        return daily.astype(float)
-    except Exception as e:
-        logger.warning("RWS %s/%s: %s", locatie, grootheid, e)
-        return None
+    """Dunne alias op rws_client.daily_series.
+
+    Blijft bestaan omdat assimilation.py en validation.py deze naam importeren.
+    Alle fetch- en filterlogica zit in dashboard/rws_client.py.
+    """
+    return rws_client.daily_series(locatie, grootheid, eenheid, start, end, proces_type)
 
 
 # ── Open-Meteo neerslag ───────────────────────────────────────────────────────

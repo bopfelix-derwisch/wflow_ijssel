@@ -15,6 +15,9 @@
 ## Valkuilen (project)
 - **wflow-data** staat onder `wflow_ijssel/data/output*/`, NIET `<root>/data/` → `DATA_ROOT` in `server.py` + `fews_poc/data_adapter.py`. (Geen top-level `data/` → historische tabs leeg.)
 - **`app.js` heeft `"use strict"`**: een verwijzing naar een niet-gedeclareerde var (bv. functieparam vs body-naam) gooit een ReferenceError → de héle grafiek rendert niet. Bump `app.js?v=NN` in `index.html` bij elke JS-wijziging.
+- **wflow negeert `starttime`/`endtime` uit de TOML** (gevolg van de ARM-JIT-patches): het rekenvenster komt uit de tijdas van het forcing-bestand. Venster sturen = forcing slicen. Zie `tools/arm_patches/README.md`.
+- **ARM-patches op Wflow/CFTime staan buiten git** (`~/.julia/packages/`). Draai `/usr/bin/python3 tools/arm_patches/verify_arm_patches.py` voordat je op de rekenkern vertrouwt; zonder de patches duurt een koude start uren.
+- **Alle RWS-verkeer via `dashboard/rws_client.py`** — die filtert de sentinel `999999999` (kwaliteitscode `99`). Voeg nooit een tweede `rw.get_data`-aanroep toe.
 - `dashboard/` is de **geserveerde** copy (single source); `wflow_ijssel/dashboard/` is verwijderd.
 - Grondwater/reservoir: **eerste call ~30–60 s** (meerjarige Open-Meteo/RWS-fetch), daarna 6 u cache.
 

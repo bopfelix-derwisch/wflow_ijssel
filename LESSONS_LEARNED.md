@@ -57,6 +57,14 @@ By reading `nctimes[1]` (already a concrete `DateTimeProlepticGregorian` from NC
 endtime = last(model.reader.dataset_times)
 ```
 
+**Gevolg voor operationeel gebruik (vastgesteld 2026-09-08):** omdat Fix A
+`nctimes[1]` als starttime neemt en Fix B `last(dataset_times)` als endtime,
+**negeert wflow de sleutels `starttime` en `endtime` uit de TOML volledig**.
+Het rekenvenster komt uitsluitend uit de tijdas van het forcing-bestand.
+Geverifieerd: een config met `starttime = 1994-12-15` en `endtime = 1994-12-25`
+leverde 61 dagstappen op, tot het einde van de forcing. Wie het venster wil
+sturen, moet de forcing slicen — niet de TOML aanpassen.
+
 #### Fix C — CFTime `Period` constructor: type-parameter instability
 
 Even after A and B, CFTime's internal `Period` constructor was not type-stable because `_factor(T)` and `_exponent(T)` returned raw integers (`Int64`), making `Period`'s return type dependent on runtime values.

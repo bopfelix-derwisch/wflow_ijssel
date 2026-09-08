@@ -8,3 +8,4 @@ wflow_build/
 .superpowers/
 ensemble_data/
 multimodel_data/
+*.so
