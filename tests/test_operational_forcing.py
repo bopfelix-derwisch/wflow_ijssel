@@ -110,3 +110,27 @@ def test_build_forcing_verwerpt_een_gatige_dagreeks(tmp_path, monkeypatch):
     _fake_meteo(monkeypatch, gatig)
     with pytest.raises(ValueError):
         build_forcing(tmp_path / "f.nc", "2026-09-01", "2026-09-05")
+
+
+def test_build_forcing_verwerpt_een_gat_gecompenseerd_door_een_duplicaat(tmp_path, monkeypatch):
+    """Tegenvoorbeeld uit de review: een gat op 09-03 dat exact gecompenseerd
+    wordt door een dubbel voorkomende 09-04. Begin, eind én aantal elementen
+    kloppen allemaal -- alleen een element-voor-element vergelijking met de
+    volledige kalenderreeks vangt dit. Zonder die vergelijking (alleen
+    begin/eind/aantal toetsen) schrijft build_forcing hier een kapotte NetCDF
+    weg: een niet-monotone tijd-as met een dubbele dag en een ontbrekende dag."""
+    gat_plus_duplicaat = ["2026-09-01", "2026-09-02", "2026-09-04", "2026-09-04", "2026-09-05"]
+    _fake_meteo(monkeypatch, gat_plus_duplicaat)
+    with pytest.raises(ValueError):
+        build_forcing(tmp_path / "f.nc", "2026-09-01", "2026-09-05")
+
+
+def test_check_dagreeks_sluit_aan_accepteert_de_juiste_reeks():
+    """Een normale, correcte reeks mag niet onterecht worden afgewezen. De
+    randen zijn beide inclusief (Open-Meteo's start_date/end_date zijn dat
+    ook), dus 01..05 levert precies 5 dagen op -- niet 4."""
+    from wflow_ijssel.operational.forcing import _check_dagreeks_sluit_aan
+
+    juist = ["2026-09-01", "2026-09-02", "2026-09-03", "2026-09-04", "2026-09-05"]
+    _check_dagreeks_sluit_aan(juist, "2026-09-01", "2026-09-05")  # mag niet raisen
+    assert len(juist) == 5

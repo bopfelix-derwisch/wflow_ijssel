@@ -70,29 +70,48 @@ def write_forcing(path, dates, precip, pet, temp, inflow_series) -> Path:
     return path
 
 
+def _check_dagreeks_sluit_aan(dates: list, start: str, end: str) -> None:
+    """Toets dat `dates` element-voor-element gelijk is aan `pd.date_range(start, end)`.
+
+    Begin/eind/aantal apart toetsen is NIET waterdicht: een reeks met een gat
+    dat toevallig gecompenseerd wordt door een dubbele dag (bv.
+    ['09-01','09-02','09-04','09-04','09-05'] voor het venster 09-01..09-05)
+    heeft de juiste randen én het juiste aantal elementen, maar is intern niet
+    monotoon en schrijft zo'n reeks een kapotte NetCDF (dubbele/niet-monotone
+    tijd-as, ontbrekende dag) stilzwijgend weg. Vandaar hier de volledige,
+    element-voor-element vergelijking met de complete verwachte kalenderreeks.
+
+    boundary.build_boundary ankert de recessie op date.today(), los van
+    `dates`; sluit de meteo-dagreeks niet exact aan op [start, end], dan
+    schuift de recessie-tak van de randvoorwaarde stil ten opzichte van de
+    neerslagvelden. Liever hier luid falen dan zo'n stille verschuiving.
+    """
+    verwacht = pd.date_range(start, end).strftime("%Y-%m-%d").tolist()
+    if dates == verwacht:
+        return
+
+    eerste_afwijking = next(
+        (i for i, (a, b) in enumerate(zip(dates, verwacht)) if a != b),
+        min(len(dates), len(verwacht)),
+    )
+    verwacht_op = verwacht[eerste_afwijking] if eerste_afwijking < len(verwacht) else "<geen dag meer>"
+    gekregen_op = dates[eerste_afwijking] if eerste_afwijking < len(dates) else "<geen dag meer>"
+    raise ValueError(
+        f"meteo-dagreeks sluit niet aan op het gevraagde venster [{start} .. {end}]: "
+        f"verwacht {verwacht} ({len(verwacht)} dagen), gekregen {dates!r} ({len(dates)} dagen); "
+        f"eerste afwijking op index {eerste_afwijking}: verwacht '{verwacht_op}', gekregen '{gekregen_op}'"
+    )
+
+
 def build_forcing(path, start: str, end: str) -> dict:
     """Haal meteo + randvoorwaarde op en schrijf de forcing voor [start, end]."""
-    from datetime import date
-
     from wflow_ijssel.operational import boundary, meteo
 
     lats, lons = meteo.grid_points()
     data = meteo.fetch_daily(lats, lons, start, end)
     dates = data["dates"]
 
-    # Harde aansluitcontrole: boundary.build_boundary ankert de recessie op
-    # date.today(), los van `dates`. Sluit de meteo-dagreeks niet exact aan op
-    # [start, end] (verschoven begin/eind, of een gat), dan schuift de
-    # recessie-tak van de randvoorwaarde stil ten opzichte van de neerslag-
-    # velden -- precies de fout die hier uitgesloten moet worden. Liever hier
-    # luid falen dan een stille dag-verschuiving in de forcing.
-    verwacht_aantal = (date.fromisoformat(end) - date.fromisoformat(start)).days + 1
-    if not dates or dates[0] != start or dates[-1] != end or len(dates) != verwacht_aantal:
-        raise ValueError(
-            f"meteo-dagreeks sluit niet aan op het gevraagde venster: "
-            f"gevraagd [{start} .. {end}] ({verwacht_aantal} dagen), "
-            f"gekregen {dates!r} ({len(dates)} dagen)"
-        )
+    _check_dagreeks_sluit_aan(dates, start, end)
 
     precip = meteo.to_model_grid(data["precip"], lats, lons, MODEL_Y, MODEL_X)
     pet = meteo.to_model_grid(data["pet"], lats, lons, MODEL_Y, MODEL_X)
