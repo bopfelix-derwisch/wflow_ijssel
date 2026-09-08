@@ -134,6 +134,52 @@ def test_daily_series_slikt_uitzonderingen(monkeypatch):
     assert rws_client.daily_series("x", "Q", "m3/s", "2026-01-01", "2026-01-02") is None
 
 
+def test_daily_series_geeft_none_als_rws_waterinfo_niet_geinstalleerd_is(monkeypatch):
+    """_RWS_OK=False (ontbrekende dependency) — geen fetch-poging, gewoon None."""
+    from dashboard import rws_client
+
+    def boom(*a, **k):
+        raise AssertionError("get_data mag niet aangeroepen worden als _RWS_OK=False")
+
+    monkeypatch.setattr(rws_client, "_RWS_OK", False)
+    monkeypatch.setattr(rws_client, "rw", type("F", (), {
+        "get_data": staticmethod(boom)})())
+    assert rws_client.daily_series("x", "Q", "m3/s", "2026-01-01", "2026-01-02") is None
+
+
+def test_daily_series_slaat_dag_zonder_echte_data_over(monkeypatch):
+    """Drie kalenderdagen, dag 2 bestaat alleen uit sentinelrijen.
+
+    `daily_series` telt dagen mét echte data (dropna na resample), dus de
+    reeks heeft lengte 2, niet 3 — dag 2 ontbreekt in de index. Wie de volle
+    periode nodig heeft (zoals forecast.py's reindex/interpolate/bfill-pad)
+    herindexeert zelf op de volledige datumreeks; die dag komt dan terug als
+    NaN. Dat is precies de eigenschap die dit vastlegt.
+    """
+    from dashboard import rws_client
+
+    raw = pd.DataFrame({
+        TIME_COL: [
+            "2026-01-01T00:00:00.000+01:00",
+            "2026-01-02T00:00:00.000+01:00",
+            "2026-01-02T00:15:00.000+01:00",
+            "2026-01-03T00:00:00.000+01:00",
+        ],
+        VALUE_COL: [10.0, 999999999.0, 999999999.0, 30.0],
+        QUALITY_COL: ["00", QUALITY_MISSING, QUALITY_MISSING, "00"],
+    })
+    monkeypatch.setattr(rws_client, "_RWS_OK", True)
+    monkeypatch.setattr(rws_client, "rw", type("F", (), {
+        "get_data": staticmethod(lambda *a, **k: raw)})())
+
+    s = rws_client.daily_series("x", "WATHTE", "cm", "2026-01-01", "2026-01-03")
+    assert len(s) == 2
+    assert [str(d.date()) for d in s.index] == ["2026-01-01", "2026-01-03"]
+
+    volledig = s.reindex(pd.date_range("2026-01-01", "2026-01-03", freq="D"))
+    assert volledig.isna().tolist() == [False, True, False]
+
+
 def test_forecast_rws_daily_delegeert_naar_client(monkeypatch):
     """forecast._rws_daily blijft bestaan (assimilation.py en validation.py
     importeren die naam) maar mag geen eigen fetch-logica meer hebben."""

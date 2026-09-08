@@ -59,6 +59,16 @@ def daily_series(locatie: str, grootheid: str, eenheid: str,
 
     Retourneert None bij uitval, lege respons of als er na filtering niets
     overblijft — nooit een reeks met sentinelwaarden erin.
+
+    Let op de semantiek van `len()` op het resultaat: door de `dropna()` na
+    het resamplen telt de lengte het aantal kalenderdagen mét echte data, niet
+    het aantal kalenderdagen in de aangevraagde periode. Een dag die volledig
+    uit sentinelrijen bestaat, valt dus uit de reeks in plaats van als NaN te
+    blijven staan. Aanroepers die op lengte drempelen (bv. "minstens N dagen
+    data") krijgen daardoor een strengere, want telling-gebaseerde in plaats
+    van span-gebaseerde, drempel. Wie de volledige periode nodig heeft
+    (bv. voor `reindex`/`interpolate`/`bfill`) moet zelf herindexeren op de
+    gewenste datumreeks — de ontbrekende dag verschijnt dan weer als NaN.
     """
     if not _RWS_OK:
         return None
