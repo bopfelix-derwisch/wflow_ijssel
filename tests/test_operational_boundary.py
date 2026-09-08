@@ -3,7 +3,7 @@ import datetime
 
 import pytest
 
-from wflow_ijssel.operational.boundary import blend, lobith_ratio
+from wflow_ijssel.operational.boundary import _huidige_waarde, blend, lobith_ratio
 
 
 DATES = [f"2026-09-{d:02d}" for d in range(1, 11)]
@@ -136,3 +136,30 @@ def test_lobith_ratio_valt_terug_op_volledige_historie_bij_te_weinig_recente_ove
     # binnen het venster is er te weinig overlap (5 < 20); de terugval gebruikt de
     # volledige 30-daagse reeks, waarvan de mediaan bij de 25 oudere dagen (0.10) ligt
     assert ratio == pytest.approx(0.10)
+
+
+def test_q0_gebruikt_lobith_afgeleide_waarde_bij_een_verouderde_westervoort_meting():
+    """Westervoort heeft een gat van twee weken (laatste meting 2026-08-25);
+    de Lobith-afgeleide waarde voor vandaag moet q0 leveren, niet die oude
+    meting -- anders start de recessie stelselmatig te laag."""
+    wes = {"2026-08-25": 71.0}
+    lob_meting = {"2026-09-08": 118.0}
+    q0 = _huidige_waarde(wes, lob_meting, "2026-09-08", seasonal_mean=200.0)
+    assert q0 == pytest.approx(118.0)
+    assert q0 != wes["2026-08-25"]
+
+
+def test_q0_geeft_voorrang_aan_de_westervoort_meting_van_vandaag():
+    """Is er wél een Westervoort-meting voor vandaag, dan wint die van de
+    Lobith-afgeleide waarde."""
+    wes = {"2026-09-08": 100.0}
+    lob_meting = {"2026-09-08": 999.0}
+    q0 = _huidige_waarde(wes, lob_meting, "2026-09-08", seasonal_mean=50.0)
+    assert q0 == pytest.approx(100.0)
+
+
+def test_q0_valt_terug_op_seizoensgemiddelde_zonder_actuele_bron():
+    """Ontbreken zowel de Westervoort-meting als de Lobith-afgeleide waarde
+    voor vandaag, dan is het seizoensgemiddelde de laatste terugval."""
+    q0 = _huidige_waarde({}, {}, "2026-09-08", seasonal_mean=200.0)
+    assert q0 == pytest.approx(200.0)

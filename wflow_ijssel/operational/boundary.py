@@ -23,6 +23,14 @@ RWS-verwachtingen reiken maar ~3 dagen (geverifieerd 2026-09-08), vandaar de
 recessie voor de rest. De overgang wordt over enkele dagen gemengd zodat er
 geen sprong in de randvoorwaarde ontstaat.
 
+Het recessiemodel start zelf ook vanaf een actuele waarde: q0 komt uit
+dezelfde niet-recessie-bronnen als laag 1/2 hierboven (zie `_huidige_waarde`),
+niet uit de kale, mogelijk weken oude laatste Westervoort-meting. Zonder die
+correctie zou de recessie — die 12 van de 17 dagen in een typische
+randvoorwaarde levert, dus de dominante term — vanaf een structureel te laag
+niveau vertrekken: exact dezelfde staleness-fout als bij de blend-lagen, maar
+dan verplaatst in plaats van opgelost.
+
 Olst wordt hier bewust NIET gebruikt: dat ligt bínnen het modeldomein,
 benedenstrooms van de instroomrand, en zou het gebied tussen Westervoort en
 Olst dubbeltellen. Olst is het validatiepunt, niet de randvoorwaarde.
@@ -95,6 +103,27 @@ def lobith_ratio(q_lobith: dict, q_westervoort: dict,
     return float(statistics.median(ratios))
 
 
+def _huidige_waarde(wes: dict, lob_meting: dict, today_str: str,
+                    seasonal_mean: float) -> float:
+    """Bepaal de waarde voor vandaag (q0 voor de recessie) zónder de recessie
+    zelf te gebruiken: Westervoort-meting > Lobith-meting × ratio >
+    seizoensgemiddelde.
+
+    Losstaand van `blend()` omdat er een volgorde-afhankelijkheid is: de
+    recessie heeft q0 nodig, en de volledige (via `blend()` samengestelde)
+    reeks heeft op haar beurt de recessie weer nodig. Deze functie doorbreekt
+    die cirkel door alleen de twee bronnen te raadplegen die geen recessie
+    vereisen — dezelfde die de nowcast-dag zelf al op een waarneming laten
+    rusten in plaats van op een verouderde, kale Westervoort-meting van soms
+    ruim twee weken oud.
+    """
+    if today_str in wes:
+        return float(wes[today_str])
+    if today_str in lob_meting:
+        return float(lob_meting[today_str])
+    return float(seasonal_mean)
+
+
 def blend(measured: dict, lobith_meting: dict, rws: dict, recession: dict,
           dates: list, blend_days: int = 2) -> list:
     """Stel de randvoorwaarde samen.
@@ -141,6 +170,7 @@ def build_boundary(dates: list) -> dict:
     from dashboard.forecast import _recession, _seasonal_mean
 
     today = date.today()
+    today_str = today.strftime("%Y-%m-%d")
     hist_start = today - timedelta(days=400)
 
     def as_map(series):
@@ -165,7 +195,13 @@ def build_boundary(dates: list) -> dict:
         rws_fc = {d: v * ratio for d, v in lob_fc.items()
                   if d not in wes and d not in lob_meting}
 
-    q0 = wes[max(wes)] if wes else float(_seasonal_mean(today.month))
+    # Stap 1: bepaal q0 uit de bronnen die geen recessie nodig hebben (zie
+    # `_huidige_waarde`) -- dit doorbreekt de volgorde-afhankelijkheid tussen
+    # q0, recessie en blend().
+    q0 = _huidige_waarde(wes, lob_meting, today_str, _seasonal_mean(today.month))
+
+    # Stap 2: nu q0 bekend is, de recessie berekenen en de volledige reeks
+    # samenstellen.
     rec_vals = _recession(q0, len(dates), today.month)
     recession = {d: float(v) for d, v in zip(dates, np.asarray(rec_vals, dtype=float))}
 
@@ -176,7 +212,7 @@ def build_boundary(dates: list) -> dict:
          ("lobith-verwachting" if d in rws_fc else "recessie"))
         for d in dates
     ]
-    logger.info("randvoorwaarde: ratio=%s, bronnen=%s",
-                round(ratio, 4) if ratio else None,
+    logger.info("randvoorwaarde: ratio=%s, q0=%.1f, bronnen=%s",
+                round(ratio, 4) if ratio else None, q0,
                 {s: sources.count(s) for s in set(sources)})
     return {"values": values, "sources": sources, "ratio": ratio}
