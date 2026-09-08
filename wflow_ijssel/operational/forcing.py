@@ -36,6 +36,12 @@ def write_forcing(path, dates, precip, pet, temp, inflow_series) -> Path:
     """Schrijf de forcing weg. Retourneert het pad."""
     path = Path(path)
     n = len(dates)
+    if n == 0:
+        # Zonder deze check passeren lege arrays (vorm (0,240,300)) stilzwijgend
+        # alle vorm-checks hieronder (0==0) en crasht de functie pas op de
+        # logregel met dates[0] -- een onduidelijke IndexError in plaats van
+        # een nette ValueError die zegt wat er mis is.
+        raise ValueError("dates mag niet leeg zijn")
     vorm = (n, len(MODEL_Y), len(MODEL_X))
 
     for naam, veld in (("precip", precip), ("pet", pet), ("temp", temp)):
@@ -66,11 +72,27 @@ def write_forcing(path, dates, precip, pet, temp, inflow_series) -> Path:
 
 def build_forcing(path, start: str, end: str) -> dict:
     """Haal meteo + randvoorwaarde op en schrijf de forcing voor [start, end]."""
+    from datetime import date
+
     from wflow_ijssel.operational import boundary, meteo
 
     lats, lons = meteo.grid_points()
     data = meteo.fetch_daily(lats, lons, start, end)
     dates = data["dates"]
+
+    # Harde aansluitcontrole: boundary.build_boundary ankert de recessie op
+    # date.today(), los van `dates`. Sluit de meteo-dagreeks niet exact aan op
+    # [start, end] (verschoven begin/eind, of een gat), dan schuift de
+    # recessie-tak van de randvoorwaarde stil ten opzichte van de neerslag-
+    # velden -- precies de fout die hier uitgesloten moet worden. Liever hier
+    # luid falen dan een stille dag-verschuiving in de forcing.
+    verwacht_aantal = (date.fromisoformat(end) - date.fromisoformat(start)).days + 1
+    if not dates or dates[0] != start or dates[-1] != end or len(dates) != verwacht_aantal:
+        raise ValueError(
+            f"meteo-dagreeks sluit niet aan op het gevraagde venster: "
+            f"gevraagd [{start} .. {end}] ({verwacht_aantal} dagen), "
+            f"gekregen {dates!r} ({len(dates)} dagen)"
+        )
 
     precip = meteo.to_model_grid(data["precip"], lats, lons, MODEL_Y, MODEL_X)
     pet = meteo.to_model_grid(data["pet"], lats, lons, MODEL_Y, MODEL_X)
