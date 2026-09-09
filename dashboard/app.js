@@ -1249,6 +1249,7 @@ async function loadForecast() {
     });
     renderForecastKpis(data);
     renderForecastChart(data);
+    renderModelComparison(data);
     renderForecastPrecip(data);
 
     const al = ALERT_LABELS[data.alert] || ALERT_LABELS.normaal;
@@ -1328,6 +1329,18 @@ function renderForecastChart(d, res) {
   const hasH = d.measured.h_kampen_m && d.measured.h_kampen_m.some(v => v !== null);
   const hasRwsFcast = d.rws_forecast && d.rws_forecast.dates && d.rws_forecast.dates.length > 0;
 
+  // Hoogste debiet dat werkelijk in beeld komt. Bij laagwater ligt dat ver onder
+  // de drempel van 1500; die lijn zou de y-as dan zo oprekken dat alle
+  // debietlijnen onderin samenvallen en het verschil tussen de twee modellen
+  // onzichtbaar wordt. In dat geval laten we de drempel weg — hij staat toch al
+  // als KPI boven de grafiek — en schalen we op de data.
+  const qWaarden = []
+    .concat(d.measured.q_westervoort || [], d.measured.q_kampen || [],
+            d.forecast.q_high || [], (d.wflow && d.wflow.q_kampen) || [])
+    .filter(v => typeof v === "number" && isFinite(v));
+  const maxQ = qWaarden.length ? Math.max(...qWaarden) : DISCHARGE_THRESHOLD;
+  const toonDrempel = maxQ > DISCHARGE_THRESHOLD * 0.5;
+
   const traces = [
     // Onzekerheidsband debiet (laag → hoog, fill)
     {
@@ -1365,15 +1378,32 @@ function renderForecastChart(d, res) {
       line: { color: "#4db6ac", width: 2, dash: "dash" },
       yaxis: "y",
     },
-    // Drempel 1500 m³/s
-    {
-      x: [allX0, allX1], y: [1500, 1500],
+  ];
+
+  // Drempel 1500 m³/s — alleen als hij binnen bereik van de data ligt.
+  if (toonDrempel) {
+    traces.push({
+      x: [allX0, allX1], y: [DISCHARGE_THRESHOLD, DISCHARGE_THRESHOLD],
       type: "scatter", mode: "lines",
-      name: "Drempel · 1500 m³/s (referentie)",
+      name: `Drempel · ${DISCHARGE_THRESHOLD} m³/s (referentie)`,
       line: { color: "#f44336", width: 1, dash: "dash" },
       hoverinfo: "skip", yaxis: "y",
-    },
-  ];
+    });
+  }
+
+  // Nachtelijke wflow SBM-nowcast (fase C). Alleen tonen als de nachtrun vers
+  // genoeg is; bij "vervallen" of uitval staat de reden in het uitlegblok.
+  const wf = d.wflow;
+  if (wf && wf.available && wf.dates && wf.dates.length) {
+    traces.push({
+      x: wf.dates, y: wf.q_kampen,
+      type: "scatter", mode: "lines",
+      name: "Verwacht · debiet Kampen — wflow SBM (m³/s)",
+      line: { color: "#64b5f6", width: 2.5 },
+      yaxis: "y",
+      hovertemplate: "%{y:.0f} m³/s<extra>wflow SBM</extra>",
+    });
+  }
 
   // Gemeten waterpeil Kampen (rechter y-as)
   if (hasH) {
@@ -1416,6 +1446,9 @@ function renderForecastChart(d, res) {
     yaxis: {
       title: "Debiet (m³/s)", gridcolor: "#1a3a5c",
       titlefont: { color: "#4db6ac" }, tickfont: { color: "#4db6ac" },
+      // Zonder drempel op de as: schaal op de data, anders blijft Plotly
+      // ruimte reserveren en vallen de modellijnen alsnog samen.
+      ...(toonDrempel ? {} : { range: [0, maxQ * 1.25] }),
     },
     ...(hasH ? {
       yaxis2: {
@@ -1447,6 +1480,106 @@ function renderForecastChart(d, res) {
 
   Plotly.react("forecast-chart", traces, layout, { responsive: true, displayModeBar: false });
 }
+
+// Fase C: twee debietverwachtingen naast elkaar. Dit blok legt uit wat de
+// bezoeker ziet en waarom de lijnen van vorm verschillen — en wat er níét uit
+// af te leiden valt. Zonder die uitleg is een tweede lijn alleen maar verwarrend.
+function renderModelComparison(d) {
+  const el = document.getElementById("forecast-modelvergelijking");
+  if (!el) return;
+
+  const wf = d.wflow || {};
+  const q0 = d.q0_source || {};
+  const stat = (d.forecast && d.forecast.q_mid) || [];
+
+  // ── status van de nachtrun ──
+  let badge = "", uitleg = "";
+  if (wf.available && wf.status === "vers") {
+    badge = `<span class="mv-status mv-vers">nachtrun ${wf.issue_date}</span>`;
+  } else if (wf.available) {
+    badge = `<span class="mv-status mv-verouderd">${wf.age_days} dagen oud</span>`;
+    uitleg = `<p>${wf.note || ""}</p>`;
+  } else {
+    badge = `<span class="mv-status mv-weg">geen wflow-lijn</span>`;
+    uitleg = `<p>${wf.note || "De wflow-nowcast is niet beschikbaar."}</p>`;
+  }
+
+  // ── waar het startpunt van het statistische model vandaan komt ──
+  let q0Regel = "";
+  if (q0.q0_bron === "lobith") {
+    q0Regel = `De RWS-reeks bij Westervoort loopt ${q0.gat_dagen} dagen achter; ` +
+      `het statistische model start daarom vanaf Lobith × ${q0.lobith_ratio} ` +
+      `(de gemeten IJssel-fractie van de Rijn), niet vanaf een aanname.`;
+  } else if (q0.q0_bron === "terugvalconstante") {
+    q0Regel = `<b>Let op:</b> er was geen bruikbare meting én geen Lobith-terugval, ` +
+      `dus het statistische model start vanaf een vaste constante. ` +
+      `Die lijn is nu niet datagedreven.`;
+  } else if (q0.q0_bron === "seizoensgemiddelde") {
+    q0Regel = `<b>Let op:</b> RWS leverde niets; het statistische model draait op ` +
+      `het seizoensgemiddelde.`;
+  }
+
+  // ── piekvergelijking, alleen als beide lijnen er zijn ──
+  let piek = "";
+  if (wf.available && wf.q_kampen && wf.q_kampen.length && stat.length) {
+    const iW = wf.q_kampen.indexOf(Math.max(...wf.q_kampen));
+    const iS = stat.indexOf(Math.max(...stat));
+    piek =
+      `<p>Deze uitgifte piekt wflow op <b>${wf.dates[iW]}</b> met ` +
+      `${Math.round(wf.q_kampen[iW])} m³/s; het statistische model op ` +
+      `<b>${d.forecast.dates[iS]}</b> met ${Math.round(stat[iS])} m³/s.</p>`;
+  }
+
+  // ── de sprong bij "vandaag" ──
+  // De gemeten Kampen-lijn is 0,85 × Westervoort met twee dagen vertraging. Dat
+  // is een *verlaging*, terwijl Kampen benedenstrooms juist stroomgebied wint —
+  // zowel wflow als de RWS-meting bij Olst spreken die factor tegen. Daardoor
+  // sluit de meetlijn niet aan op de verwachtingen. Benoemen is hier beter dan
+  // stilzwijgend laten staan; repareren raakt de historische KPI's en is apart werk.
+  let sprong = "";
+  const laatstGemeten = (d.measured.q_kampen || []).slice(-1)[0];
+  const eersteStat = stat[0];
+  if (typeof laatstGemeten === "number" && typeof eersteStat === "number" &&
+      eersteStat > laatstGemeten * 1.3) {
+    sprong =
+      `<p><b>De sprong bij "vandaag" is een bekende zwakte, geen storing.</b> ` +
+      `De gemeten Kampen-lijn (${Math.round(laatstGemeten)} m³/s) wordt berekend als ` +
+      `0,85 × Westervoort met twee dagen vertraging — een verlaging, terwijl de IJssel ` +
+      `tussen Westervoort en Kampen juist water wint. Beide verwachtingen tellen die ` +
+      `aanwas wél mee en beginnen daarom hoger. wflow en de RWS-meting bij Olst ` +
+      `stroomopwaarts wijzen allebei op de hogere waarde; de factor 0,85 klopt ` +
+      `vermoedelijk niet.</p>`;
+  }
+
+  el.innerHTML = `
+    <h4>Twee verwachtingen naast elkaar ${badge}</h4>
+    ${uitleg}
+    <div class="mv-lijnen">
+      <span class="mv-wflow"><b>wflow SBM</b> — fysisch, gedistribueerd neerslag-afvoermodel</span>
+      <span class="mv-stat"><b>Statistisch</b> — recessie + neerslagimpulsrespons</span>
+    </div>
+    <p><b>Waarom de vormen verschillen.</b> wflow verdeelt de neerslag over ruim
+    19.000 rekencellen en routeert het water door het netwerk; een bui komt daardoor
+    als een scherpe, verplaatsende piek aan. Het statistische model vertaalt dezelfde
+    neerslag via één gladde responsfunctie, en levert daardoor een lagere, bredere en
+    meestal latere piek. Lopen ze uiteen, dan zit het verschil vrijwel altijd in de
+    ruimtelijke verdeling van de bui — niet in een rekenfout.</p>
+    ${piek}
+    ${q0Regel ? `<p>${q0Regel}</p>` : ""}
+    ${sprong}
+    <div class="mv-let-op">
+      <b>Wat je hier niet uit mag afleiden.</b> Geen van beide modellen is
+      gekalibreerd, en er is nog geen hindcast die zegt welke van de twee het beter
+      doet — dat is het volgende werk. wflow ligt bovendien structureel boven de
+      RWS-meting bij Olst stroomopwaarts, dus lees de <i>vorm</i> van de lijn, niet
+      het niveau. Het wflow-meetpunt is de modeluitstroom bij Kampen
+      (${wf.gauge ? wf.gauge.lon + " O / " + wf.gauge.lat + " N" : "5.838 O / 52.579 N"}),
+      een ander punt dan de historische proeven gebruiken —
+      zie <a href="/docs/WL-SCHEMA-1_afgekoppelde-uitstroom" target="_blank"
+      style="color:#4db6ac">WL-SCHEMA-1</a>.
+    </div>`;
+}
+
 
 function renderForecastPrecip(d) {
   const today = d.generated_at;

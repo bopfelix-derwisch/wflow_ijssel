@@ -740,6 +740,35 @@
     .chart-legend-key .clk-axis { margin-left: auto; color: #455a64; font-style: italic; }
     @media (max-width: 700px) { .chart-legend-key .clk-axis { margin-left: 0; } }
     #forecast-precip { width: 100%; height: 130px; }
+
+    /* Twee modellen naast elkaar: wflow (fysisch) vs. het statistische model */
+    #forecast-modelvergelijking {
+      margin: 6px 0 2px; padding: 10px 12px; font-size: 11px; line-height: 1.55;
+      background: #0d1b2a; border: 1px solid #1a3a5c; border-radius: 4px; color: #b0bec5;
+    }
+    #forecast-modelvergelijking h4 {
+      margin: 0 0 6px; font-size: 11px; color: #eceff1; font-weight: 700;
+    }
+    #forecast-modelvergelijking .mv-status {
+      display: inline-block; padding: 1px 7px; border-radius: 3px;
+      font-size: 10px; font-weight: 700; margin-left: 6px; vertical-align: middle;
+    }
+    .mv-vers      { background: #1b5e20; color: #a5d6a7; }
+    .mv-verouderd { background: #5d4037; color: #ffcc80; }
+    .mv-weg       { background: #4a1c1c; color: #ef9a9a; }
+    #forecast-modelvergelijking .mv-lijnen {
+      display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 6px 0 8px;
+    }
+    #forecast-modelvergelijking .mv-lijnen span::before {
+      content: "—"; font-weight: 700; margin-right: 5px;
+    }
+    #forecast-modelvergelijking .mv-wflow::before { color: #64b5f6; }
+    #forecast-modelvergelijking .mv-stat::before  { color: #4db6ac; }
+    #forecast-modelvergelijking p { margin: 0 0 6px; }
+    #forecast-modelvergelijking .mv-let-op {
+      margin-top: 8px; padding-top: 7px; border-top: 1px solid #1a3a5c; color: #90a4ae;
+    }
+    #forecast-modelvergelijking .mv-let-op b { color: #ffcc80; }
     #forecast-disclaimer {
       margin: 0 16px 12px; padding: 8px 12px;
       background: #0a1220; border: 1px solid #1a3a5c; border-radius: 6px;
@@ -1315,10 +1344,12 @@
     <div id="forecast-chart"></div>
     <div class="chart-legend-key">
       <span><b style="color:#4caf50">Gemeten</b> = RWS-meting</span>
-      <span><b style="color:#4db6ac">Verwacht</b> = model / Open-Meteo</span>
+      <span><b style="color:#4db6ac">Verwacht</b> = statistisch model / Open-Meteo</span>
+      <span><b style="color:#64b5f6">wflow SBM</b> = fysisch model, nachtrun</span>
       <span><b style="color:#ba68c8">Grondwater</b> = reservoirmodel</span>
       <span class="clk-axis">assen apart: debiet (links, m³/s) · waterpeil (rechts, m+NAP) · grondwater (m)</span>
     </div>
+    <div id="forecast-modelvergelijking">Twee modellen worden geladen…</div>
     <div id="forecast-precip"></div>
   </div>
   <div id="forecast-disclaimer">
@@ -3995,7 +4026,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=55"></script>
+<script src="/static/app.js?v=56"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {
