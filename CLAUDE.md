@@ -7,6 +7,7 @@
 ## Stack & poorten
 - Dashboard: FastAPI `dashboard.server:app` op **:8000** — systemd `waterlab-dashboard.service` (system python `/usr/bin/python3`, uvicorn-launcher in `~/.local/bin`).
 - Publiek: `waterlab.felixisfelix.com` (cloudflared, dashboard-managed).
+- Nachtelijke wflow-nowcast: systemd `waterlab-nowcast.timer` (03:00, `Persistent=true`) → `wflow_ijssel/operational/nowcast.py` → `wflow_ijssel/data/forecast/latest.json`. Het dashboard **leest** dat bestand en rekent zelf niets; `/api/forecast` krijgt een `wflow`-blok met `status` (vers/verouderd/vervallen/ontbreekt/onleesbaar/mislukt). Boven 48 uur vervalt de lijn en valt de tab terug op het statistische model.
 - API's: GraphQL **/graphql** (GraphiQL) · FEWS PI REST **/fews/rest/fewspiservice/v1** · REST `/api/...`.
 - Lokale LLM **Qwen :8080** (ensemble/grondwater-duiding) · **Claude Haiku** (forecast-interventie, `.env` ANTHROPIC_API_KEY).
 - Python 3.10 · Julia (wflow SBM, Ribasim) · `strawberry-graphql` (system python, `--user`).
@@ -25,6 +26,8 @@
 
 ## Run
 - `sudo systemctl restart waterlab-dashboard.service`
+- Nowcast handmatig: `/usr/bin/python3 -m wflow_ijssel.operational.nowcast` (~1 min) · eerste warme state: `… --spinup` (365 d, ~2 min) · log: `wflow_ijssel/data/output_operational/run.log`
+- Timer: `systemctl list-timers waterlab-nowcast.timer` · `journalctl -u waterlab-nowcast.service -f`
 - `curl -sk? http://127.0.0.1:8000/...` · `/graphql` (GraphiQL) · headless browser-check: `verify_map_fallback.sh`.
 
 ## Status

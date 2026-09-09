@@ -53,9 +53,29 @@ def build_forcing_window(path, start: str, end: str) -> dict:
     return build_forcing(path, start, end)
 
 
+def _julia_bin() -> str:
+    """Vind het julia-binair, ook zonder het PATH van een interactieve shell.
+
+    Onder systemd is het PATH kaal en zit juliaup er niet in — een kale "julia"
+    geeft dan FileNotFoundError. We zoeken eerst in het PATH en vallen daarna
+    terug op de juliaup-locatie.
+    """
+    import shutil
+
+    gevonden = shutil.which("julia")
+    if gevonden:
+        return gevonden
+    fallback = Path.home() / ".juliaup" / "bin" / "julia"
+    if fallback.exists():
+        return str(fallback)
+    raise FileNotFoundError(
+        "julia niet gevonden in PATH noch op ~/.juliaup/bin/julia — "
+        "zonder Julia kan de wflow-nowcast niet draaien")
+
+
 def run_wflow(config_path=CONFIG, timeout: int = 1800) -> int:
     """Draai wflow via run_ijssel.jl. Retourneert de exitcode."""
-    cmd = ["julia"]
+    cmd = [_julia_bin()]
     if SYSIMAGE.exists():
         cmd += [f"--sysimage={SYSIMAGE}"]
     else:

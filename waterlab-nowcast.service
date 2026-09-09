@@ -1,0 +1,22 @@
+[Unit]
+Description=Waterlab — nachtelijke wflow SBM-nowcast
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=bob
+WorkingDirectory=/mnt/nvme/workspaces/waterlab
+# systemd erft het PATH van een interactieve shell niet; juliaup zit er dan niet
+# in. nowcast.py valt zelf ook terug op ~/.juliaup/bin/julia, dit is de gordel
+# naast die bretels.
+Environment=PATH=/home/bob/.juliaup/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/python3 -m wflow_ijssel.operational.nowcast
+# De run haalt eerst een jaar meteo op en rekent daarna; ruim bemeten.
+# Meting 2026-09-09: forcing ~40 s, wflow ~7 s voor een venster van 15 dagen.
+TimeoutStartSec=2400
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
