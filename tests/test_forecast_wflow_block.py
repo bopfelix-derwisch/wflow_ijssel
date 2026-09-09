@@ -139,20 +139,24 @@ def test_lege_reeks_geeft_nooit_available_true_ook_niet_bij_status_ok(tmp_path):
     assert r["q_kampen"] == []
 
 
-def test_claude_md_beschrijft_de_wflow_tab_niet_als_al_zichtbaar():
-    """Bevinding Important 5: CLAUDE.md mag niet suggereren dat de
-    Verwachting-tab al een wflow-lijn toont zolang app.js d.wflow niet kent
-    (dat tekenen is fase F, nog niet gebouwd)."""
+def test_claude_md_en_app_js_zeggen_hetzelfde_over_de_wflow_lijn():
+    """CLAUDE.md en app.js moeten het eens zijn of de tab de wflow-lijn toont.
+
+    Ontstaan uit bevinding Important 5 van de eindreview: CLAUDE.md beweerde
+    tab-gedrag dat niet bestond. De toets is nu symmetrisch — tekent app.js de
+    lijn, dan moet CLAUDE.md dat beschrijven; tekent hij hem niet, dan mag
+    CLAUDE.md het niet beweren. Zo blijft de bewaker werken in beide richtingen.
+    """
     root = Path(__file__).resolve().parent.parent
     app_js = (root / "dashboard" / "app.js").read_text()
     claude_md = (root / "CLAUDE.md").read_text()
 
-    # Als dit ooit verandert (d.wflow wordt wél getekend), mag CLAUDE.md weer
-    # over "de tab" gaan -- tot die tijd niet.
-    assert "d.wflow" not in app_js
-    assert "valt de tab terug op het statistische model" not in claude_md, (
-        "CLAUDE.md suggereert dat de tab al een wflow-lijn toont die er nog "
-        "niet is; app.js kent d.wflow niet"
+    tekent = "d.wflow" in app_js
+    beweert = "Zichtbaar op de Verwachting-tab" in claude_md
+
+    assert tekent == beweert, (
+        f"app.js tekent de wflow-lijn: {tekent}, maar CLAUDE.md beweert "
+        f"zichtbaarheid: {beweert} — die twee moeten synchroon blijven"
     )
 
 
