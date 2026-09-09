@@ -225,6 +225,19 @@ def get_forecast():
         raise HTTPException(503, f"Voorspelling niet beschikbaar: {e}")
 
 
+@app.get("/api/forecast/verification")
+def get_forecast_verification():
+    """Skill van de werkelijk uitgegeven wflow-verwachtingen, tegen RWS Olst.
+
+    Apart endpoint: dit groeit per nacht en hoeft niet bij elke paginalading mee.
+    """
+    from dashboard.forecast import build_verification
+    try:
+        return JSONResponse(build_verification())
+    except Exception as e:
+        raise HTTPException(503, f"Verificatie niet beschikbaar: {e}")
+
+
 _intv_cache: dict = {}
 _INTV_TTL = 900  # 15 min — zelfde als forecast cache
 

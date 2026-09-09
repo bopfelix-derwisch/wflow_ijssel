@@ -354,6 +354,26 @@ def build_forecast() -> dict:
     return result
 
 
+def build_verification(days_back: int = 120) -> dict:
+    """Skill van de werkelijk uitgegeven verwachtingen, gescoord tegen Olst.
+
+    Geen gereconstrueerde hindcast: het archief groeit per nacht, en de eerste
+    score kan pas twee weken na de eerste nachtrun. Zie
+    wflow_ijssel/operational/archive.py voor waarom die route gekozen is.
+    """
+    from datetime import date as _date, timedelta
+
+    from wflow_ijssel.operational.archive import build_verification as _verify
+
+    today = _date.today()
+    meting = _rws_daily("olst", "Q", "m3/s", today - timedelta(days=days_back), today)
+    realisatie = ({ts.strftime("%Y-%m-%d"): float(v) for ts, v in meting.items()}
+                  if meting is not None else {})
+    uit = _verify(realisatie)
+    uit["realisatie_dagen"] = len(realisatie)
+    return uit
+
+
 def _build_stage(wflow_blok: dict, today) -> dict:
     """Peilverwachting; faalt nooit hard — de tab moet zonder blijven werken."""
     try:

@@ -312,6 +312,7 @@ def run_nightly(today=None) -> dict:
                      "gebruiken: die is van de IJssel-tak afgekoppeld. Zie "
                      "docs/WL-SCHEMA-1_afgekoppelde-uitstroom.md."),
         },
+        "archived": False,   # wordt hieronder gezet
         "boundary_sources": meta.get("sources"),
         "lobith_ratio": meta.get("ratio"),
         # Altijd True hier: we bereiken dit punt alleen als promote_states()
@@ -320,6 +321,15 @@ def run_nightly(today=None) -> dict:
         "states_promoted": True,
         "series": series,
     }
+    # Archiveer de uitgifte vóór het schrijven van latest.json, maar laat een
+    # archiveerfout de nachtrun niet ongeldig maken: de verwachting zelf is goed.
+    try:
+        from wflow_ijssel.operational.archive import append_issue
+        append_issue(payload)
+        payload["archived"] = True
+    except Exception as e:
+        logger.warning("uitgifte kon niet gearchiveerd worden: %s", e)
+
     write_latest(LATEST, payload)
     return payload
 
