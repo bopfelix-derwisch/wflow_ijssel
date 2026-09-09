@@ -19,7 +19,11 @@
     #alert-badge { background: #f44336; }
 
     /* ── tabs ── */
-    #year-tabs { display: flex; gap: 4px; margin-left: auto; }
+    /* flex-wrap is hier niet cosmetisch: zonder wrap rekt een rij van vijftien
+       tabs het document breder dan het scherm. De panelen eronder blijven dan op
+       schermbreedte staan, en rechts blijft een lege strook over — precies wat er
+       op de telefoon te zien was. */
+    #year-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-left: auto; }
     .year-tab {
       padding: 4px 16px; border: 1px solid #1a3a5c; border-radius: 14px;
       cursor: pointer; font-size: 12px; font-weight: 600; background: transparent;
@@ -728,6 +732,30 @@
     #forecast-source {
       padding: 4px 16px 0; font-size: 10px; color: #556; text-align: right;
       background: #0a1220; border-bottom: 1px solid #1a3a5c;
+    }
+
+    /* ── telefoon en smalle schermen ──────────────────────────────────────────
+       Vier KPI-kolommen naast elkaar laten op ~390 px breedte betekent ~80 px
+       per kaart; het label ("Verwacht max 14 dagen") wringt zich dan in vijf
+       regels of valt weg. Minder kolommen, kleinere letterafstand en ruimte om
+       te wrappen lost dat op. De tabbalk staat hierboven al op wrap. */
+    @media (max-width: 900px) {
+      #header { padding: 8px 10px; gap: 8px 10px; }
+      #year-tabs { margin-left: 0; width: 100%; gap: 5px 4px; }
+      .year-tab { padding: 4px 10px; font-size: 11px; }
+      #forecast-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 8px 10px; gap: 8px; }
+      .kpi { padding: 7px 9px; min-width: 0; }
+      .kpi .label { letter-spacing: .3px; line-height: 1.3; overflow-wrap: anywhere; }
+      .kpi .value { font-size: 17px; }
+      .kpi .sub { overflow-wrap: anywhere; }
+      #forecast-chart-wrap { padding: 8px 10px 0; }
+      #forecast-source { padding: 4px 10px 0; }
+      #forecast-modelvergelijking, #olst-toets { padding: 9px 10px; }
+    }
+    @media (max-width: 520px) {
+      #forecast-kpi-row { grid-template-columns: 1fr; }
+      #forecast-chart { height: 260px; }
+      #olst-chart { height: 220px; }
     }
     #forecast-chart-wrap { padding: 8px 16px 0; }
     #forecast-chart  { width: 100%; height: 220px; }
