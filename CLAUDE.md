@@ -7,7 +7,7 @@
 ## Stack & poorten
 - Dashboard: FastAPI `dashboard.server:app` op **:8000** — systemd `waterlab-dashboard.service` (system python `/usr/bin/python3`, uvicorn-launcher in `~/.local/bin`).
 - Publiek: `waterlab.felixisfelix.com` (cloudflared, dashboard-managed).
-- Nachtelijke wflow-nowcast: systemd `waterlab-nowcast.timer` (03:00, `Persistent=true`) → `wflow_ijssel/operational/nowcast.py` → `wflow_ijssel/data/forecast/latest.json`. Het dashboard **leest** dat bestand en rekent zelf niets; `/api/forecast` krijgt een `wflow`-blok met `status` (vers/verouderd/vervallen/ontbreekt/onleesbaar/mislukt). Boven 48 uur vervalt de lijn en valt de tab terug op het statistische model.
+- Nachtelijke wflow-nowcast: systemd `waterlab-nowcast.timer` (03:00, `Persistent=true`) → `wflow_ijssel/operational/nowcast.py` → `wflow_ijssel/data/forecast/latest.json`. Het dashboard **leest** dat bestand en rekent zelf niets; `/api/forecast` krijgt een `wflow`-blok met `status` (vers/verouderd/vervallen/ontbreekt/onleesbaar/leeg/mislukt). Boven 48 uur vervalt dat blok naar `available: false`. **Nog niet zichtbaar op de tab** — `dashboard/app.js` kent `d.wflow` nog niet; dat blok tekenen is fase F, nog niet gebouwd.
 - API's: GraphQL **/graphql** (GraphiQL) · FEWS PI REST **/fews/rest/fewspiservice/v1** · REST `/api/...`.
 - Lokale LLM **Qwen :8080** (ensemble/grondwater-duiding) · **Claude Haiku** (forecast-interventie, `.env` ANTHROPIC_API_KEY).
 - Python 3.10 · Julia (wflow SBM, Ribasim) · `strawberry-graphql` (system python, `--user`).

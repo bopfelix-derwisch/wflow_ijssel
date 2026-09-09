@@ -277,8 +277,14 @@ def read_wflow_forecast(path=None, today=None) -> dict:
     ergste zijn wat we konden doen, want dit lab gaat over navolgbaarheid.
 
     Statussen: `vers` (0-1 dagen oud), `verouderd` (2 dagen), `vervallen`
-    (ouder), `ontbreekt`, `onleesbaar`, `mislukt`. Alleen bij `vers` en
-    `verouderd` is `available` waar.
+    (ouder), `ontbreekt`, `onleesbaar`, `leeg` (status "ok" maar een lege
+    reeks), `mislukt`. Alleen bij `vers` en `verouderd` is `available` waar.
+
+    Een mislukte nachtrun overschrijft de laatste goede reeks niet: `run_nightly`
+    schrijft dan een `last_attempt`-veld bij in de bestaande `latest.json`. Die
+    poging wordt hier altijd in de `note` verwerkt, ook als de getoonde reeks
+    zelf nog `vers` of `verouderd` is — anders zou een mislukte nacht onzichtbaar
+    blijven zolang de vorige goede reeks nog binnen de leeftijdsgrens valt.
     """
     from datetime import date as _date
 
@@ -300,9 +306,14 @@ def read_wflow_forecast(path=None, today=None) -> dict:
                         "valt terug op het statistische model."}
 
     if data.get("status") != "ok":
+        attempt = data.get("last_attempt") or {}
+        extra = (f" (exitcode {attempt['exit_code']}, fase '{attempt.get('fase')}')"
+                 if attempt.get("exit_code") is not None
+                 else f" (fase '{attempt['fase']}')" if attempt.get("fase") else "")
         return {**leeg, "status": "mislukt",
-                "note": "De laatste nachtelijke wflow-run is mislukt; de verwachting "
-                        "valt terug op het statistische model."}
+                "note": f"De laatste nachtelijke wflow-run is mislukt{extra}; er is nog "
+                        "geen bruikbare verwachting. De verwachting valt terug op het "
+                        "statistische model."}
 
     try:
         issue = _date.fromisoformat(str(data["issue_date"]))
@@ -320,11 +331,31 @@ def read_wflow_forecast(path=None, today=None) -> dict:
                         "verwachting valt terug op het statistische model."}
 
     series = data.get("series") or {}
+    if not series.get("dates"):
+        # Verdediging in de leesfunctie zelf, ook al zou run_nightly() een lege
+        # reeks nooit als status "ok" mogen wegschrijven: een "beschikbare"
+        # nowcast zonder data is precies de stille degradatie die deze functie
+        # moet uitsluiten.
+        return {**leeg, "status": "leeg", "age_days": age,
+                "note": f"De wflow-nowcast van {issue.isoformat()} bevat een lege "
+                        "reeks; de verwachting valt terug op het statistische model."}
+
     status = "vers" if age <= 1 else "verouderd"
     note = ("Nachtelijke wflow SBM-nowcast."
             if status == "vers"
             else f"De wflow-nowcast is van {issue.isoformat()} ({age} dagen oud) — "
                  "de nachtrun van vannacht is niet doorgekomen.")
+
+    # Een mislukte poging ná deze goede run mag niet onzichtbaar blijven, ook
+    # al is de getoonde reeks zelf nog jong (zie Critical-2-bevinding,
+    # .superpowers/sdd/2026-09-08-verwachting-v2-fase-c/).
+    attempt = data.get("last_attempt")
+    if attempt and attempt.get("outcome") != "ok":
+        note += (f" Let op: de nachtrun van {attempt.get('date')} is mislukt"
+                  + (f" (exitcode {attempt['exit_code']})"
+                     if attempt.get("exit_code") is not None else "")
+                  + f"; de getoonde reeks is nog van {issue.isoformat()}.")
+
     return {
         "available": True,
         "status": status,

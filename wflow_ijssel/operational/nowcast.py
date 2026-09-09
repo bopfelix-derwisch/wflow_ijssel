@@ -1,14 +1,30 @@
 """Nachtelijke wflow-nowcast met warme state.
 
-Cyclus:
-  1. bouw forcing over [D-1, D+14]
-  2. draai wflow vanaf de instates van gisteren
-  3. ALLEEN bij exitcode 0: promoveer outstates -> instates
-  4. schrijf latest.json atomair
+Cyclus — TWEE runs, niet één (zie docs/superpowers/specs/2026-09-08-verwachting-
+v2-wflow-design.md §3.2 en de Critical-1-bevinding in
+.superpowers/sdd/2026-09-08-verwachting-v2-fase-c/): wflow schrijft zijn
+state-snapshot aan het EIND van de simulatie, dus een enkele run over
+[D-1, D+14] zou de warme state besmetten met dertien dagen *voorspelde*
+neerslag in plaats van gemeten weer. Vandaar het knip in tweeën:
 
-Stap 3 is kritiek: één mislukte nacht mag de warme keten niet breken. Bij
-falen blijven de oude instates staan en draait de volgende nacht met een dag
-extra forcing.
+  1. NOWCAST-stap: forcing over [D-1, D] uit gemeten data, draai wflow vanaf
+     de instates van gisteren. ALLEEN bij exitcode 0 én bestaande outstates:
+     promoveer outstates -> instates. Dit is de enige stap die de warme
+     keten bijwerkt.
+  2. FORECAST-stap: forcing over [D, D+14], draai wflow opnieuw vanaf de
+     zojuist gepromoveerde state. Lees hieruit de reeks voor `latest.json`.
+     Promoveer deze outstates NIET.
+
+Beide runs gebruiken dezelfde config en hetzelfde forcing-pad; de forcing
+wordt tussen de runs herschreven.
+
+Foutafhandeling: mislukt stap 1 (exitcode of promotie), dan blijven de
+instates ongemoeid en heeft stap 2 geen zin -> overslaan. Mislukt stap 2
+(exitcode, ontbrekende CSV of een lege reeks), dan is de warme state via
+stap 1 wél al terecht bijgewerkt, maar is er geen nieuwe verwachting. In
+beide gevallen wordt een mislukte poging zichtbaar geregistreerd (zie
+`_record_failed_attempt`) in plaats van stil te falen: de laatste goede
+reeks blijft staan, met een waarschuwing erbij.
 """
 from __future__ import annotations
 
@@ -93,13 +109,21 @@ def run_wflow(config_path=CONFIG, timeout: int = 1800) -> int:
 
 
 def promote_states(out_states=None, in_states=None) -> bool:
-    """Maak de outstates van deze run de instates van morgen."""
+    """Maak de outstates van deze run de instates van morgen.
+
+    Atomair: kopieer eerst naar een tijdelijk bestand in dezelfde map, hernoem
+    dan pas naar de live instates (zelfde patroon als `write_latest`). Een
+    rechtstreekse `shutil.copy2` over het levende instates-bestand zou bij
+    onderbreking een half bestand achterlaten en de warme keten breken.
+    """
     out_states = Path(out_states or OUT_STATES)
     in_states = Path(in_states or IN_STATES)
     if not out_states.exists():
         logger.warning("outstates ontbreekt (%s) — instates blijven staan", out_states)
         return False
-    shutil.copy2(out_states, in_states)
+    tmp = in_states.with_suffix(in_states.suffix + ".tmp")
+    shutil.copy2(out_states, tmp)
+    os.replace(tmp, in_states)
     return True
 
 
@@ -116,6 +140,18 @@ def read_csv_output(path) -> dict:
     return {"dates": dates, "q_kampen": q_kampen, "q_westervoort": q_west}
 
 
+def _validate_series(series: dict) -> None:
+    """Gooi ValueError als de reeks leeg is.
+
+    Een CSV met alleen een header (geen datarijen) is geen fout die wflow of
+    `read_csv_output` laat klappen — het levert gewoon lege lijsten. Zonder
+    deze check zou zo'n reeks als `status: "ok"` weggeschreven worden: een
+    "beschikbare" nowcast zonder data.
+    """
+    if not series.get("dates"):
+        raise ValueError("output_ijssel.csv bevat geen databregels (alleen header?)")
+
+
 def write_latest(path, payload: dict) -> Path:
     """Schrijf atomair: nooit een half bestand voor de lezer."""
     path = Path(path)
@@ -124,6 +160,51 @@ def write_latest(path, payload: dict) -> Path:
     tmp.write_text(json.dumps(payload, indent=1))
     os.replace(tmp, path)
     return path
+
+
+def _record_failed_attempt(today: date, exit_code, fase: str) -> dict:
+    """Registreer een mislukte nachtrun zichtbaar, zonder de laatste goede reeks weg te gooien.
+
+    Bij falen schreef `run_nightly` voorheen helemaal geen `latest.json`: de
+    leeftijd van het bestaande bestand bleef zo 1 dag en `read_wflow_forecast`
+    meldde onverstoorbaar "vers", ook na een mislukte nacht. Dat is precies de
+    stille degradatie die de docstring van `read_wflow_forecast` uitsluit.
+
+    Bestaat er al een `latest.json` (van een eerdere geslaagde nacht), werk die
+    dan bij met een poging-registratie (`last_attempt`) en laat de laatste
+    goede reeks ongemoeid staan — een verwachting van gisteren met een
+    duidelijke waarschuwing is bruikbaarder dan geen verwachting. Bestaat er
+    nog helemaal geen `latest.json`, schrijf er dan één met status "mislukt".
+    """
+    attempt = {"date": today.isoformat(), "outcome": "mislukt",
+               "exit_code": exit_code, "fase": fase}
+
+    bestaand = None
+    if LATEST.exists():
+        try:
+            bestaand = json.loads(LATEST.read_text())
+        except Exception as e:
+            logger.warning("latest.json onleesbaar bij het registreren van een "
+                            "mislukte poging (%s) — schrijf een verse mislukt-status", e)
+
+    if bestaand is not None:
+        bestaand["last_attempt"] = attempt
+        write_latest(LATEST, bestaand)
+        logger.error("nachtrun mislukt in fase '%s' (exit %s) — oude reeks van "
+                      "%s blijft staan, met poging-registratie", fase, exit_code,
+                      bestaand.get("issue_date"))
+        return {"status": "mislukt", "exit_code": exit_code, "fase": fase,
+                "previous_series_kept": True}
+
+    payload = {"status": "mislukt",
+               "generated_at": time.strftime("%Y-%m-%d %H:%M"),
+               "issue_date": today.isoformat(),
+               "last_attempt": attempt}
+    write_latest(LATEST, payload)
+    logger.error("nachtrun mislukt in fase '%s' (exit %s) — nog geen eerdere "
+                  "goede reeks, latest.json krijgt status 'mislukt'", fase, exit_code)
+    return {"status": "mislukt", "exit_code": exit_code, "fase": fase,
+            "previous_series_kept": False}
 
 
 def run_spinup(days: int = SPINUP_DAYS, today=None) -> dict:
@@ -159,20 +240,43 @@ def run_spinup(days: int = SPINUP_DAYS, today=None) -> dict:
             "boundary_sources": meta.get("sources")}
 
 
-def run_nightly() -> dict:
-    """De volledige nachtelijke cyclus."""
-    today = date.today()
-    start = (today - timedelta(days=1)).isoformat()
-    end = (today + timedelta(days=HORIZON)).isoformat()
+def run_nightly(today=None) -> dict:
+    """De volledige nachtelijke cyclus: nowcast-stap (promoveert) + forecast-stap (promoveert niet)."""
+    today = today or date.today()
 
-    meta = build_forcing_window(FORCING, start, end)
+    # ── stap 1: nowcast [D-1, D] uit gemeten data — bouwt de warme keten bij ──
+    nowcast_start = (today - timedelta(days=1)).isoformat()
+    nowcast_end = today.isoformat()
+    build_forcing_window(FORCING, nowcast_start, nowcast_end)
     code = run_wflow()
     if code != 0:
-        logger.error("nachtrun mislukt (exit %d) — instates ongemoeid gelaten", code)
-        return {"status": "mislukt", "exit_code": code}
+        logger.error("nowcast-stap mislukt (exit %d) — instates ongemoeid, "
+                      "forecast-stap overgeslagen", code)
+        return _record_failed_attempt(today, code, fase="nowcast")
 
-    promoted = promote_states()
-    series = read_csv_output(OUT_DIR / "output_ijssel.csv")
+    if not promote_states():
+        # promote_states loggt zelf al waarom; hier alleen de nachtrun afbreken.
+        return _record_failed_attempt(today, None, fase="nowcast-outstates-ontbreken")
+
+    # ── stap 2: forecast [D, D+14] vanaf de zojuist gepromoveerde state ──────
+    fcast_start = today.isoformat()
+    fcast_end = (today + timedelta(days=HORIZON)).isoformat()
+    meta = build_forcing_window(FORCING, fcast_start, fcast_end)
+    code = run_wflow()
+    if code != 0:
+        logger.error("forecast-stap mislukt (exit %d) — warme state is al "
+                      "bijgewerkt door de nowcast-stap, maar geen nieuwe "
+                      "verwachting", code)
+        return _record_failed_attempt(today, code, fase="forecast")
+
+    try:
+        series = read_csv_output(OUT_DIR / "output_ijssel.csv")
+        _validate_series(series)
+    except (FileNotFoundError, ValueError) as e:
+        logger.error("forecast-stap gaf exit 0 maar de uitvoer is niet "
+                      "bruikbaar: %s", e)
+        return _record_failed_attempt(today, None, fase="forecast-ongeldige-uitvoer")
+
     payload = {
         "status": "ok",
         "generated_at": time.strftime("%Y-%m-%d %H:%M"),
@@ -189,7 +293,10 @@ def run_nightly() -> dict:
         },
         "boundary_sources": meta.get("sources"),
         "lobith_ratio": meta.get("ratio"),
-        "states_promoted": promoted,
+        # Altijd True hier: we bereiken dit punt alleen als promote_states()
+        # na de nowcast-stap is geslaagd (zie boven) — de forecast-stap
+        # promoveert zelf bewust niets.
+        "states_promoted": True,
         "series": series,
     }
     write_latest(LATEST, payload)
