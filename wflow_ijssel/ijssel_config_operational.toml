@@ -108,16 +108,35 @@ river_water__volume_flow_rate = "q_river"
 [output.csv]
 path = "output_ijssel.csv"
 
+# LET OP — deze coördinaat wijkt bewust af van de historische configs.
+#
+# De historische proeven meten op 5.496/53.221: de cel met de grootste uparea
+# (10231 km²), die in `docs/WL-PROV-2_schematisatie.md` als stroomgebieds-outlet
+# staat. Maar de IJssel-instroom bij Westervoort bereikt die cel nooit. Het
+# afwateringsnetwerk loopt vanaf Westervoort 131 cellen noordwaarts en eindigt in
+# een tweede pit op 5.838/52.579 — feitelijk bij de stad Kampen. De gauge op
+# 5.496/53.221 ziet daardoor alleen lokale neerslag-afvoer: grillig, klein, en
+# losgekoppeld van de instroom (gemeten 2026-09-09: 0,3–194 m³/s bij een instroom
+# van 110–395 m³/s).
+#
+# Op de pit-cel hieronder geeft het model 225–314 m³/s bij een instroom van
+# 120–139 — hoger dan de instroom, wat klopt omdat de IJssel onderweg
+# stroomgebied wint. Zie `docs/WL-SCHEMA-1_afgekoppelde-uitstroom.md`.
+#
+# Dit is een omweg, geen oplossing: de onderliggende LDD blijft kapot. De
+# historische configs zijn bewust NIET aangepast, zodat de proeven 4/5/6
+# reproduceerbaar blijven tegen hun eerdere uitkomsten.
+
 [[output.csv.column]]
 header       = "Q_kampen"
-coordinate.x = 5.496
-coordinate.y = 53.221
+coordinate.x = 5.838
+coordinate.y = 52.579
 parameter    = "river_water__volume_flow_rate"
 
 [[output.csv.column]]
 header       = "h_kampen"
-coordinate.x = 5.496
-coordinate.y = 53.221
+coordinate.x = 5.838
+coordinate.y = 52.579
 parameter    = "river_water__depth"
 
 [[output.csv.column]]

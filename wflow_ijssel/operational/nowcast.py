@@ -158,6 +158,15 @@ def run_nightly() -> dict:
         "generated_at": time.strftime("%Y-%m-%d %H:%M"),
         "issue_date": today.isoformat(),
         "model": "wflow SBM 1.0.2 (kinematic wave)",
+        "gauge": {
+            "naam": "IJssel bij Kampen (modeluitstroom)",
+            "lon": 5.838, "lat": 52.579,
+            "noot": ("Dit is de pit waarin het afwateringsnetwerk vanaf Westervoort "
+                     "eindigt, ~6 km van de stad Kampen. Bewust NIET de cel met de "
+                     "grootste uparea (5.496/53.221) die de historische proeven "
+                     "gebruiken: die is van de IJssel-tak afgekoppeld. Zie "
+                     "docs/WL-SCHEMA-1_afgekoppelde-uitstroom.md."),
+        },
         "boundary_sources": meta.get("sources"),
         "lobith_ratio": meta.get("ratio"),
         "states_promoted": promoted,
