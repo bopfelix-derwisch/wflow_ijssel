@@ -346,9 +346,24 @@ def build_forecast() -> dict:
         # Toetspunt Olst: het enige punt op de IJssel waar RWS én meet én een
         # officiële debietverwachting publiceert.
         "olst": build_olst_comparison(wflow_blok, start_dt, end_dt, today_dt),
+        # Peilverwachting Kampen: hybride, want wflow's eigen h is rivierdiepte
+        # zonder opstuwing. Zie dashboard/stage.py.
+        "stage": _build_stage(wflow_blok, today_dt),
     }
     _cache_set(result)
     return result
+
+
+def _build_stage(wflow_blok: dict, today) -> dict:
+    """Peilverwachting; faalt nooit hard — de tab moet zonder blijven werken."""
+    try:
+        from dashboard.stage import build_stage_forecast
+        return build_stage_forecast(wflow_blok, today)
+    except Exception as e:
+        logger.warning("peilverwachting faalde: %s", e)
+        return {"available": False,
+                "method": "hybride — wflow-debiet + empirische afvoerrelatie",
+                "note": f"Peilverwachting niet beschikbaar: {e}"}
 
 
 def build_olst_comparison(d_wflow: dict, start, end, today) -> dict:

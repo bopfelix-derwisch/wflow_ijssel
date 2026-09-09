@@ -1430,6 +1430,26 @@ function renderForecastChart(d, res) {
     });
   }
 
+  // Hybride peilverwachting Kampen (fase D): wflow-debiet bij Olst + een op
+  // RWS gekalibreerde afvoerrelatie. Nadrukkelijk GEEN wflow-peil — het model
+  // levert rivierdiepte zonder opstuwing, en Kampen wordt benedenstrooms
+  // gestuurd. Staat op dezelfde as als de officiële RWS-peilverwachting, zodat
+  // de twee direct te vergelijken zijn.
+  const st = d.stage;
+  if (hasH && st && st.available && st.dates && st.dates.length) {
+    traces.push(
+      { x: st.dates, y: st.lower, type: "scatter", mode: "lines",
+        line: { width: 0 }, yaxis: "y2", showlegend: false, hoverinfo: "skip" },
+      { x: st.dates, y: st.upper, type: "scatter", mode: "lines",
+        line: { width: 0 }, fill: "tonexty", fillcolor: "rgba(255,138,101,0.15)",
+        yaxis: "y2", name: "Verwacht · peil-onzekerheid (hybride)", hoverinfo: "skip" },
+      { x: st.dates, y: st.h, type: "scatter", mode: "lines",
+        name: "Verwacht · waterpeil Kampen — hybride (m+NAP)",
+        line: { color: "#ff8a65", width: 2.5 }, yaxis: "y2",
+        hovertemplate: "%{y:.2f} m+NAP<extra>hybride</extra>" },
+    );
+  }
+
   if (gwTraces.length) traces.push(...gwTraces);
   const hasGw = gwTraces.length > 0;
 
@@ -1552,6 +1572,55 @@ function renderModelComparison(d) {
       `vermoedelijk niet.</p>`;
   }
 
+  // ── de peillijn ──
+  // Waarom die niet "wflow-peil" heet, en waarom de band voorbij dag 3 verbreedt.
+  let peil = "";
+  const st = d.stage;
+  if (st && st.available && st.coef) {
+    const c = st.coef;
+    const bandDag1 = Math.round((st.upper[0] - st.lower[0]) * 50);
+    const bandEind = Math.round((st.upper[st.upper.length - 1] -
+                                 st.lower[st.lower.length - 1]) * 50);
+    peil =
+      `<p><b>De peillijn is hybride, geen wflow-peil.</b> wflow levert ` +
+      `rivierdiepte boven de bedding, geen meters NAP, en de kinematische golf ` +
+      `kent geen opstuwing — terwijl het peil bij Kampen juist benedenstrooms ` +
+      `wordt gestuurd vanuit Ketelmeer en IJsselmeer. Daarom komt het peil uit ` +
+      `een op ${c.n} dagen RWS-meting gekalibreerde relatie: ` +
+      `<i>peil = ${c.a.toFixed(2)} + ${c.b.toFixed(2)} × meerpeil + ` +
+      `${c.c.toFixed(5)} × debiet</i> (R² ${c.r2}, residu ` +
+      `${Math.round(c.resid_std * 100)} cm). Dat de coëfficiënt bij het meerpeil ` +
+      `vrijwel 1 is, zegt het meeste: Kampen volgt het meer bijna één op één.</p>` +
+      `<p>Het debiet komt uit wflow bij Olst — het punt waar het model accuraat ` +
+      `is. Het meerpeil komt de eerste ${st.rws_dagen} dag${st.rws_dagen === 1 ? "" : "en"} ` +
+      `uit de officiële RWS-verwachting en daarna uit de gemeten maandklimatologie ` +
+      `van Ketelhaven. Daar verbreedt de band van ±${bandDag1} naar ±${bandEind} cm: ` +
+      `<b>voorbij dag drie bepaalt het IJsselmeerpeil de onzekerheid, niet wflow.</b> ` +
+      `Een debietfout van 100 m³/s kost maar ~5 cm peil; een fout in het meerpeil ` +
+      `werkt vrijwel één op één door.</p>`;
+
+    // Toets tegen de officiële RWS-peilverwachting, waar die overlapt.
+    const rf = d.rws_forecast;
+    if (rf && rf.dates && rf.dates.length) {
+      const hmap = {};
+      st.dates.forEach((dt, i) => { hmap[dt] = st.h[i]; });
+      const verschillen = rf.dates
+        .map((dt, i) => (hmap[dt] != null ? (hmap[dt] - rf.values_m[i]) * 100 : null))
+        .filter(v => v !== null);
+      if (verschillen.length) {
+        const gem = verschillen.reduce((a, b) => a + b, 0) / verschillen.length;
+        peil +=
+          `<p>Op de <b>${verschillen.length}</b> dag${verschillen.length === 1 ? "" : "en"} ` +
+          `die deze lijn deelt met de officiële RWS-peilverwachting scheelt hij ` +
+          `<span class="ot-cijfer" style="color:#ffcc80;font-weight:700">` +
+          `${gem >= 0 ? "+" : ""}${gem.toFixed(0)} cm</span> — in dezelfde orde als het ` +
+          `kalibratieresidu van ${Math.round(c.resid_std * 100)} cm. Dat is een ` +
+          `aanwijzing, geen bewijs: twee dagen is te weinig voor een uitspraak over ` +
+          `skill. Daarvoor is de hindcast nodig.</p>`;
+      }
+    }
+  }
+
   el.innerHTML = `
     <h4>Twee verwachtingen naast elkaar ${badge}</h4>
     ${uitleg}
@@ -1568,6 +1637,7 @@ function renderModelComparison(d) {
     ${piek}
     ${q0Regel ? `<p>${q0Regel}</p>` : ""}
     ${sprong}
+    ${peil}
     <div class="mv-let-op">
       <b>Wat je hier niet uit mag afleiden.</b> Geen van beide modellen is
       gekalibreerd, en er is nog geen hindcast die zegt welke van de twee het beter
