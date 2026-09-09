@@ -217,3 +217,57 @@ def test_run_nightly_accepteert_geen_lege_reeks_als_status_ok(tmp_path, monkeypa
 
     res = nowcast.run_nightly(today=date(2026, 9, 9))
     assert res["status"] == "mislukt"
+
+
+def test_run_nightly_registreert_een_forcing_fout_in_plaats_van_te_crashen(tmp_path, monkeypatch):
+    """Valt Open-Meteo of RWS uit, dan crashte run_nightly met een ongevangen
+    exceptie: geen registratie in latest.json, dus de nachtrun mislukte
+    onzichtbaar. Dat ondermijnt precies de garantie uit Critical 2 — alleen
+    wflow-exitcodes en CSV-validatie waren afgedekt, forcing-opbouw niet."""
+    latest = tmp_path / "latest.json"
+    inn = tmp_path / "instates.nc"
+    inn.write_bytes(b"oude-state")
+
+    monkeypatch.setattr(nowcast, "LATEST", latest)
+    monkeypatch.setattr(nowcast, "IN_STATES", inn)
+
+    def stuk(*a, **k):
+        raise RuntimeError("Open-Meteo onbereikbaar")
+
+    monkeypatch.setattr(nowcast, "build_forcing_window", stuk)
+    monkeypatch.setattr(nowcast, "run_wflow", lambda *a, **k: 0)
+
+    res = nowcast.run_nightly()
+    assert res["status"] == "mislukt"
+    assert "forcing" in res.get("fase", "")
+    assert inn.read_bytes() == b"oude-state"
+    assert latest.exists(), "een mislukte poging hoort zichtbaar te zijn in latest.json"
+
+
+def test_run_nightly_registreert_ook_een_forcing_fout_in_de_forecast_stap(tmp_path, monkeypatch):
+    """De nowcast-stap slaagt, de forecast-forcing valt uit: de warme state is
+    dan terecht al bijgewerkt, maar de mislukking moet zichtbaar blijven."""
+    latest = tmp_path / "latest.json"
+    inn = tmp_path / "instates.nc"
+    out = tmp_path / "outstates.nc"
+    inn.write_bytes(b"oud"); out.write_bytes(b"nieuw")
+
+    monkeypatch.setattr(nowcast, "LATEST", latest)
+    monkeypatch.setattr(nowcast, "IN_STATES", inn)
+    monkeypatch.setattr(nowcast, "OUT_STATES", out)
+    monkeypatch.setattr(nowcast, "run_wflow", lambda *a, **k: 0)
+
+    pogingen = {"n": 0}
+
+    def soms_stuk(*a, **k):
+        pogingen["n"] += 1
+        if pogingen["n"] == 1:
+            return {"sources": [], "ratio": None}
+        raise RuntimeError("RWS onbereikbaar")
+
+    monkeypatch.setattr(nowcast, "build_forcing_window", soms_stuk)
+
+    res = nowcast.run_nightly()
+    assert res["status"] == "mislukt"
+    assert inn.read_bytes() == b"nieuw", "de nowcast-stap hoort wél gepromoveerd te hebben"
+    assert latest.exists()

@@ -253,7 +253,16 @@ def run_nightly(today=None) -> dict:
     # ── stap 1: nowcast [D-1, D] uit gemeten data — bouwt de warme keten bij ──
     nowcast_start = (today - timedelta(days=1)).isoformat()
     nowcast_end = today.isoformat()
-    build_forcing_window(FORCING, nowcast_start, nowcast_end)
+    try:
+        build_forcing_window(FORCING, nowcast_start, nowcast_end)
+    except Exception as e:
+        # Open-Meteo of RWS onbereikbaar, of een gat in de dagreeks. Zonder deze
+        # vangst crashte de nachtrun met een ongevangen exceptie: niets in
+        # latest.json, dus een onzichtbare mislukking — precies wat de garantie
+        # "elke mislukte poging is zichtbaar" moest uitsluiten.
+        logger.error("nowcast-forcing kon niet gebouwd worden: %s", e)
+        return _record_failed_attempt(today, None, fase="nowcast-forcing")
+
     code = run_wflow()
     if code != 0:
         logger.error("nowcast-stap mislukt (exit %d) — instates ongemoeid, "
@@ -267,7 +276,13 @@ def run_nightly(today=None) -> dict:
     # ── stap 2: forecast [D, D+14] vanaf de zojuist gepromoveerde state ──────
     fcast_start = today.isoformat()
     fcast_end = (today + timedelta(days=HORIZON)).isoformat()
-    meta = build_forcing_window(FORCING, fcast_start, fcast_end)
+    try:
+        meta = build_forcing_window(FORCING, fcast_start, fcast_end)
+    except Exception as e:
+        logger.error("forecast-forcing kon niet gebouwd worden: %s — de warme "
+                      "state is wel bijgewerkt door de nowcast-stap", e)
+        return _record_failed_attempt(today, None, fase="forecast-forcing")
+
     code = run_wflow()
     if code != 0:
         logger.error("forecast-stap mislukt (exit %d) — warme state is al "
