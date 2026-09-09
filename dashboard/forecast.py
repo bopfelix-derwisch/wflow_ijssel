@@ -62,6 +62,79 @@ def _rws_daily(locatie: str, grootheid: str, eenheid: str,
     return rws_client.daily_series(locatie, grootheid, eenheid, start, end, proces_type)
 
 
+WESTERVOORT_FALLBACK = 400.0   # laatste redmiddel; zie fill_westervoort_gap
+
+
+def _lobith_metingen(start, end) -> dict:
+    """Lobith-dagafvoer als {datum: m³/s}. Leeg bij uitval."""
+    s = rws_client.daily_series("lobith.bovenrijn.tolkamer", "Q", "m3/s", start, end)
+    if s is None:
+        return {}
+    return {ts.strftime("%Y-%m-%d"): float(v) for ts, v in s.items()}
+
+
+def _lobith_ratio(lobith: dict, westervoort: dict):
+    """Verhouding Westervoort/Lobith; None bij te weinig overlap."""
+    from wflow_ijssel.operational.boundary import lobith_ratio
+    return lobith_ratio(lobith, westervoort)
+
+
+def fill_westervoort_gap(q_west_raw, idx):
+    """Vul het gat in de Westervoort-reeks, bij voorkeur uit Lobith.
+
+    De RWS-reeks voor Westervoort loopt structureel ongeveer twee weken achter
+    (gemeten 2026-09-09: 21 van 36 dagen, laatste 25 augustus), terwijl Lobith
+    compleet en actueel is. Hier stond `fillna(WESTERVOORT_FALLBACK)`, waardoor
+    het startpunt van het recessiemodel exact op die constante uitkwam in plaats
+    van op data — en `data_available` toch op `true`. De verwachting daalde
+    daardoor van 390 naar 317 m³/s waar hij had moeten stijgen van 134 naar 248.
+
+    Retourneert (reeks zonder NaN, info-dict met `q0_bron` en `gat_dagen`).
+    `q0_bron` is `meting`, `lobith` of `terugvalconstante` — die laatste is een
+    noodgreep en hoort zichtbaar te zijn in het antwoord, niet stil.
+    """
+    heeft_meting = (q_west_raw is not None and len(q_west_raw))
+    # `gat_dagen` telt de dagen zónder meting, niet de dagen die na interpolatie
+    # nog leeg zijn: die eerste vijf zijn immers ook geen waarneming.
+    gat = (len(idx) if not heeft_meting
+           else int(len(idx) - q_west_raw.reindex(idx).notna().sum()))
+
+    basis = (q_west_raw.reindex(idx).interpolate(limit=5).bfill()
+             if heeft_meting else pd.Series(float("nan"), index=idx))
+    if gat == 0:
+        return basis, {"q0_bron": "meting", "gat_dagen": 0}
+    if not basis.isna().any():
+        # Kort gat, volledig overbrugd door interpolatie — geen Lobith nodig.
+        return basis, {"q0_bron": "meting", "gat_dagen": gat}
+
+    start, end = idx[0].date(), idx[-1].date()
+    try:
+        lobith = _lobith_metingen(start, end)
+        gemeten = {ts.strftime("%Y-%m-%d"): float(v)
+                   for ts, v in basis.dropna().items()}
+        ratio = _lobith_ratio(lobith, gemeten) if lobith else None
+    except Exception as e:                                   # pragma: no cover
+        logger.warning("Lobith-terugval faalde: %s", e)
+        lobith, ratio = {}, None
+
+    if ratio:
+        afgeleid = pd.Series(
+            [lobith.get(d.strftime("%Y-%m-%d"), float("nan")) * ratio for d in idx],
+            index=idx)
+        gevuld = basis.fillna(afgeleid)
+        if not gevuld.isna().any():
+            logger.info("Westervoort-gat van %d dagen gevuld uit Lobith (ratio %.4f)",
+                        gat, ratio)
+            return gevuld, {"q0_bron": "lobith", "gat_dagen": gat,
+                            "lobith_ratio": round(float(ratio), 4)}
+        basis = gevuld
+
+    logger.warning("Westervoort-gat van %d dagen: geen bruikbare Lobith-terugval, "
+                   "val terug op de constante %.0f m³/s", gat, WESTERVOORT_FALLBACK)
+    return basis.fillna(WESTERVOORT_FALLBACK), {
+        "q0_bron": "terugvalconstante", "gat_dagen": gat}
+
+
 # ── Open-Meteo neerslag ───────────────────────────────────────────────────────
 
 def _openmeteo_precip(lat: float = 52.3, lon: float = 6.0,
@@ -159,10 +232,11 @@ def build_forecast() -> dict:
     data_ok    = q_west_raw is not None and len(q_west_raw) >= 5
 
     if data_ok:
-        q_west = q_west_raw.reindex(idx).interpolate(limit=5).bfill().fillna(400.0)
+        q_west, gap_info = fill_westervoort_gap(q_west_raw, idx)
     else:
         seasonal = _seasonal_mean(today_dt.month)
         q_west   = pd.Series(float(seasonal), index=idx)
+        gap_info = {"q0_bron": "seizoensgemiddelde", "gat_dagen": len(idx)}
 
     q_kampen_hist = _route_to_kampen(q_west.values)
 
@@ -229,6 +303,10 @@ def build_forecast() -> dict:
     result = {
         "generated_at":  today_dt.strftime("%Y-%m-%d"),
         "data_available": data_ok,
+        # Waar het startpunt van het recessiemodel vandaan komt. `terugvalconstante`
+        # betekent dat de verwachting níét datagedreven is — dat hoort zichtbaar te
+        # zijn, niet stil in de code te blijven zitten.
+        "q0_source": gap_info,
         "alert":          alert,
         "kpis": {
             "current_q_kampen":      round(q_now, 1),
