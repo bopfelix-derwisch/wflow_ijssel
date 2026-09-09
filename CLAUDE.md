@@ -9,6 +9,8 @@
 - Publiek: `waterlab.felixisfelix.com` (cloudflared, dashboard-managed).
 - Nachtelijke wflow-nowcast: systemd `waterlab-nowcast.timer` (03:00, `Persistent=true`) → `wflow_ijssel/operational/nowcast.py` → `wflow_ijssel/data/forecast/latest.json`. Het dashboard **leest** dat bestand en rekent zelf niets; `/api/forecast` krijgt een `wflow`-blok met `status` (vers/verouderd/vervallen/ontbreekt/onleesbaar/leeg/mislukt). Boven 48 uur vervalt dat blok naar `available: false`. **Zichtbaar op de Verwachting-tab** als aparte lijn (`#64b5f6`) naast het statistische model, met eronder `#forecast-modelvergelijking` (`renderModelComparison` in `app.js`) dat de verschillen toelicht. Vervalt de lijn, dan staat de reden in dat blok.
 - API's: GraphQL **/graphql** (GraphiQL) · FEWS PI REST **/fews/rest/fewspiservice/v1** · REST `/api/...`.
+- **De FEWS PI REST is een emulatie die onze eigen data uitgeeft** (`fews_poc/`), géén koppeling die iets ophaalt bij de echte FEWS van RWS. Officiële RWS-cijfers komen altijd uit RWS Waterinfo via `dashboard/rws_client.py`.
+- **Toetspunt Olst** (`/api/forecast` → `olst`): het enige punt op de IJssel waar RWS zowel een debietmeting als een officiële **debiet**verwachting publiceert (~3 dagen). Bij Kampen alleen een waterstandsverwachting, bij Westervoort niets. Modelcel 6.0958/52.3375 — 0,9 km van het echte Olst, want dáár ligt geen riviercel; geverifieerd op het pad Westervoort → uitstroom (stap 58 van 131).
 - Lokale LLM **Qwen :8080** (ensemble/grondwater-duiding) · **Claude Haiku** (forecast-interventie, `.env` ANTHROPIC_API_KEY).
 - Python 3.10 · Julia (wflow SBM, Ribasim) · `strawberry-graphql` (system python, `--user`).
 - Repo: `github.com/bopfelix-derwisch/wflow_ijssel` (branch `master`).

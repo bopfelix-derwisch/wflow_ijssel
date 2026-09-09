@@ -1250,6 +1250,7 @@ async function loadForecast() {
     renderForecastKpis(data);
     renderForecastChart(data);
     renderModelComparison(data);
+    renderOlstToets(data);
     renderForecastPrecip(data);
 
     const al = ALERT_LABELS[data.alert] || ALERT_LABELS.normaal;
@@ -1578,6 +1579,83 @@ function renderModelComparison(d) {
       zie <a href="/docs/WL-SCHEMA-1_afgekoppelde-uitstroom" target="_blank"
       style="color:#4db6ac">WL-SCHEMA-1</a>.
     </div>`;
+}
+
+
+// Toetspunt Olst. Het enige punt op de IJssel waar RWS zowel meet als een
+// officiële debietverwachting publiceert — en dus de enige plek waar de
+// wflow-lijn eerlijk naast een officiële verwachting te leggen is. Bij Kampen
+// publiceert RWS alleen een waterstand, bij Westervoort niets.
+function renderOlstToets(d) {
+  const wrap = document.getElementById("olst-toets");
+  const uit  = document.getElementById("olst-toets-uitleg");
+  const o    = d.olst || {};
+  if (!wrap || !uit) return;
+
+  if (!o.available) {
+    wrap.classList.add("ot-weg");
+    uit.innerHTML =
+      `RWS publiceert bij Olst zowel een debietmeting als een officiële ` +
+      `verwachting — het enige punt op de IJssel waar dat kan. Die vergelijking ` +
+      `is nu niet te maken: ${o.wflow_q ? "RWS leverde geen data" :
+        "de wflow-nowcast levert nog geen Olst-reeks"}.`;
+    return;
+  }
+  wrap.classList.remove("ot-weg");
+
+  let duiding = "";
+  if (typeof o.gem_verschil === "number") {
+    const hoog = o.gem_verschil > 0;
+    duiding =
+      `Over de <b>${o.overlap_dagen}</b> dagen die beide dekken ligt wflow ` +
+      `gemiddeld <span class="ot-cijfer">${hoog ? "+" : ""}${o.gem_verschil} m³/s` +
+      `${o.gem_verschil_pct !== null ? ` (${hoog ? "+" : ""}${o.gem_verschil_pct}%)` : ""}</span> ` +
+      `${hoog ? "boven" : "onder"} de officiële RWS-verwachting. `;
+  }
+
+  uit.innerHTML =
+    `Bij Kampen publiceert RWS alleen een wáterstandsverwachting; bij Olst ook een ` +
+    `<b>debiet</b>verwachting. Daarom staat de toets hier. ${duiding}` +
+    `De officiële verwachting reikt maar drie dagen — dat is de horizon die RWS ` +
+    `publiceert, geen tekortkoming van dit lab. Verder vooruit staat wflow er alleen ` +
+    `voor, en is de meting de enige toets die later volgt. ` +
+    `<i>Let op: dit komt rechtstreeks uit RWS Waterinfo, niet uit de FEWS-koppeling ` +
+    `van dit lab — die geeft juist onze eigen data uit.</i>`;
+
+  const traces = [];
+  if (o.measured_q && o.measured_q.length) {
+    traces.push({
+      x: o.measured_dates, y: o.measured_q,
+      type: "scatter", mode: "lines",
+      name: "Gemeten · debiet Olst (m³/s, RWS)",
+      line: { color: "#4caf50", width: 2 },
+    });
+  }
+  if (o.rws_q && o.rws_q.length) {
+    traces.push({
+      x: o.rws_dates, y: o.rws_q,
+      type: "scatter", mode: "lines+markers",
+      name: "Officiële verwachting · RWS (m³/s)",
+      line: { color: "#ffb74d", width: 2.5 }, marker: { size: 6 },
+    });
+  }
+  if (o.wflow_q && o.wflow_q.length) {
+    traces.push({
+      x: o.wflow_dates, y: o.wflow_q,
+      type: "scatter", mode: "lines",
+      name: "Verwacht · wflow SBM (m³/s)",
+      line: { color: "#64b5f6", width: 2.5 },
+    });
+  }
+
+  Plotly.newPlot("olst-chart", traces, {
+    paper_bgcolor: "#0d1b2a", plot_bgcolor: "#0d1b2a",
+    font: { color: "#e0e0e0", size: 11 },
+    margin: { t: 8, b: 34, l: 52, r: 14 },
+    legend: { orientation: "h", y: -0.32, font: { size: 10 } },
+    xaxis: { gridcolor: "#1a3a5c", tickformat: "%d %b" },
+    yaxis: { title: "Debiet Olst (m³/s)", gridcolor: "#1a3a5c" },
+  }, { displayModeBar: false, responsive: true });
 }
 
 

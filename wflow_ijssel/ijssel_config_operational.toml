@@ -144,3 +144,17 @@ header       = "Q_westervoort"
 coordinate.x = 6.154
 coordinate.y = 51.987
 parameter    = "river_water__volume_flow_rate"
+
+# Toetspunt Olst. Dit is het enige punt op de IJssel waar RWS zowel een
+# debietmeting als een officiële debietverwachting publiceert, dus het enige
+# plek waar het model eerlijk tegen de werkelijkheid te leggen is.
+#
+# De coördinaat is niet die van het echte Olst (6.108 / 52.336): daar ligt in
+# deze schematisatie geen riviercel. De dichtstbijzijnde cel óp het netwerk ligt
+# 0,9 km westelijker en is geverifieerd onderdeel van het pad Westervoort →
+# uitstroom (stap 58 van 131), met uparea 2077 km².
+[[output.csv.column]]
+header       = "Q_olst"
+coordinate.x = 6.0958
+coordinate.y = 52.3375
+parameter    = "river_water__volume_flow_rate"

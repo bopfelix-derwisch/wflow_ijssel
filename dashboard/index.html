@@ -769,6 +769,18 @@
       margin-top: 8px; padding-top: 7px; border-top: 1px solid #1a3a5c; color: #90a4ae;
     }
     #forecast-modelvergelijking .mv-let-op b { color: #ffcc80; }
+
+    /* Toetspunt Olst: het enige punt op de IJssel met een officiële RWS-debietverwachting */
+    #olst-toets {
+      margin: 8px 0 2px; padding: 10px 12px;
+      background: #0d1b2a; border: 1px solid #1a3a5c; border-radius: 4px;
+    }
+    #olst-toets h4 { margin: 0 0 6px; font-size: 11px; color: #eceff1; font-weight: 700; }
+    #olst-toets-uitleg { font-size: 11px; line-height: 1.55; color: #b0bec5; margin-bottom: 6px; }
+    #olst-toets-uitleg b { color: #eceff1; }
+    #olst-toets-uitleg .ot-cijfer { color: #ffcc80; font-weight: 700; }
+    #olst-chart { width: 100%; height: 200px; }
+    #olst-toets.ot-weg #olst-chart { display: none; }
     #forecast-disclaimer {
       margin: 0 16px 12px; padding: 8px 12px;
       background: #0a1220; border: 1px solid #1a3a5c; border-radius: 6px;
@@ -1350,6 +1362,11 @@
       <span class="clk-axis">assen apart: debiet (links, m³/s) · waterpeil (rechts, m+NAP) · grondwater (m)</span>
     </div>
     <div id="forecast-modelvergelijking">Twee modellen worden geladen…</div>
+    <div id="olst-toets">
+      <h4>Toetspunt Olst — het model naast de officiële verwachting</h4>
+      <div id="olst-toets-uitleg"></div>
+      <div id="olst-chart"></div>
+    </div>
     <div id="forecast-precip"></div>
   </div>
   <div id="forecast-disclaimer">
@@ -4026,7 +4043,7 @@
 <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=56"></script>
+<script src="/static/app.js?v=57"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {

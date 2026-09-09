@@ -131,13 +131,19 @@ def read_csv_output(path) -> dict:
     """Lees output_ijssel.csv naar dagreeksen."""
     import csv as _csv
 
-    dates, q_kampen, q_west = [], [], []
+    dates, q_kampen, q_west, q_olst = [], [], [], []
     with open(path, newline="") as f:
         for row in _csv.DictReader(f):
             dates.append(row["time"][:10])
             q_kampen.append(float(row["Q_kampen"]))
             q_west.append(float(row["Q_westervoort"]))
-    return {"dates": dates, "q_kampen": q_kampen, "q_westervoort": q_west}
+            # Olst is later toegevoegd als toetspunt; oudere CSV's missen de kolom.
+            if "Q_olst" in row:
+                q_olst.append(float(row["Q_olst"]))
+    out = {"dates": dates, "q_kampen": q_kampen, "q_westervoort": q_west}
+    if q_olst:
+        out["q_olst"] = q_olst
+    return out
 
 
 def _validate_series(series: dict) -> None:

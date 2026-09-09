@@ -286,6 +286,7 @@ def build_forecast() -> dict:
     ]
 
     # ── KPI's & alarmering ───────────────────────────────────────────────────
+    wflow_blok = read_wflow_forecast()
     q_now     = float(q_kampen_hist[-1])
     h_now     = float(h_kampen_m.iloc[-1]) if not h_kampen_m.isnull().all() else None
     peak_idx  = int(np.argmax(q_mid))
@@ -341,10 +342,65 @@ def build_forecast() -> dict:
         },
         # Nachtelijke wflow SBM-nowcast, gelezen uit latest.json. Het statistische
         # model hierboven blijft staan: als vergelijkingsbasis én als terugval.
-        "wflow": read_wflow_forecast(),
+        "wflow": wflow_blok,
+        # Toetspunt Olst: het enige punt op de IJssel waar RWS én meet én een
+        # officiële debietverwachting publiceert.
+        "olst": build_olst_comparison(wflow_blok, start_dt, end_dt, today_dt),
     }
     _cache_set(result)
     return result
+
+
+def build_olst_comparison(d_wflow: dict, start, end, today) -> dict:
+    """Toetspunt Olst: model tegen meting én officiële RWS-verwachting.
+
+    Olst is het enige punt op de IJssel waar RWS zowel een debietmeting als een
+    officiële debietverwachting publiceert. Bij Kampen is er alleen een
+    waterstandsverwachting, en bij Westervoort niets. Dit is dus de enige plek
+    waar de wflow-lijn eerlijk naast een officiële verwachting te leggen is.
+
+    De RWS-verwachting reikt maar ~3 dagen; dat is geen tekortkoming van dit
+    lab maar de horizon die RWS publiceert.
+
+    NB dit is géén FEWS-koppeling. De FEWS PI REST in dit project (`fews_poc/`)
+    is een emulatie die onze eigen data uitgeeft; hij haalt niets op. Deze
+    cijfers komen rechtstreeks uit RWS Waterinfo.
+    """
+    from datetime import timedelta
+
+    out = {"available": False, "station": "olst",
+           "note": "Toetspunt Olst — RWS meet en voorspelt hier het debiet."}
+
+    meting = _rws_daily("olst", "Q", "m3/s", start, end)
+    verwacht = _rws_daily("olst", "Q", "m3/s", today, today + timedelta(days=14),
+                          proces_type="verwachting")
+
+    if meting is not None and len(meting):
+        out["measured_dates"] = [ts.strftime("%Y-%m-%d") for ts in meting.index]
+        out["measured_q"] = [round(float(v), 1) for v in meting.values]
+    if verwacht is not None and len(verwacht):
+        out["rws_dates"] = [ts.strftime("%Y-%m-%d") for ts in verwacht.index]
+        out["rws_q"] = [round(float(v), 1) for v in verwacht.values]
+
+    if d_wflow.get("available") and d_wflow.get("q_olst"):
+        out["wflow_dates"] = d_wflow["dates"]
+        out["wflow_q"] = [round(float(v), 1) for v in d_wflow["q_olst"]]
+
+    out["available"] = bool(out.get("wflow_q") and
+                            (out.get("measured_q") or out.get("rws_q")))
+
+    # Vergelijk model en officiële verwachting op de dagen die ze delen.
+    if out.get("wflow_q") and out.get("rws_q"):
+        wmap = dict(zip(out["wflow_dates"], out["wflow_q"]))
+        paren = [(d, wmap[d], q) for d, q in zip(out["rws_dates"], out["rws_q"])
+                 if d in wmap]
+        if paren:
+            verschillen = [w - r for _, w, r in paren]
+            out["overlap_dagen"] = len(paren)
+            out["gem_verschil"] = round(sum(verschillen) / len(verschillen), 1)
+            ref = sum(r for _, _, r in paren) / len(paren)
+            out["gem_verschil_pct"] = round(100.0 * out["gem_verschil"] / ref, 0) if ref else None
+    return out
 
 
 def read_wflow_forecast(path=None, today=None) -> dict:
@@ -443,6 +499,7 @@ def read_wflow_forecast(path=None, today=None) -> dict:
         "dates": series.get("dates", []),
         "q_kampen": series.get("q_kampen", []),
         "q_westervoort": series.get("q_westervoort", []),
+        "q_olst": series.get("q_olst", []),
         "model": data.get("model"),
         "gauge": data.get("gauge"),
         "boundary_sources": data.get("boundary_sources"),
