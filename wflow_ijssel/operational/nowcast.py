@@ -331,7 +331,63 @@ def run_nightly(today=None) -> dict:
         logger.warning("uitgifte kon niet gearchiveerd worden: %s", e)
 
     write_latest(LATEST, payload)
+
+    # Bereken meteen de dure dashboard-antwoorden voor. Koud duurt /api/forecast
+    # 74 s, het reservoirmodel 45 en de AI-interventie 12 — dat hoort niet bij de
+    # eerste bezoeker terecht te komen. Faalt dit, dan valt de pagina terug op
+    # live rekenen: trager, niet stuk.
+    try:
+        prebuild_dashboard(today)
+        payload["prebuilt"] = True
+    except Exception as e:
+        logger.warning("voorberekenen van de dashboard-antwoorden faalde: %s", e)
+        payload["prebuilt"] = False
+        write_latest(LATEST, payload)
+
     return payload
+
+
+def prebuild_dashboard(today=None) -> dict:
+    """Bereken de dure endpoint-antwoorden voor en schrijf ze weg.
+
+    Draait ná het schrijven van latest.json, zodat build_forecast() de verse
+    wflow-reeks meeneemt.
+    """
+    from dashboard import prebuilt
+
+    today = today or date.today()
+    gedaan = {}
+
+    from dashboard.forecast import build_forecast
+    fc = build_forecast()
+    prebuilt.write(prebuilt.FORECAST, fc, today)
+    gedaan["forecast"] = True
+
+    try:
+        from dashboard.reservoir import predict_set
+        prebuilt.write(prebuilt.RESERVOIR, predict_set(), today)
+        gedaan["reservoir"] = True
+    except Exception as e:
+        logger.warning("reservoirmodel voorberekenen faalde: %s", e)
+        gedaan["reservoir"] = False
+
+    try:
+        from dashboard.grondwater import forecast_groundwater_context
+        from dashboard.server import _build_intervention
+        prebuilt.write(prebuilt.INTERVENTION, {
+            "available": True,
+            "intervention": _build_intervention(fc),
+            "alert": fc["alert"],
+            "groundwater": forecast_groundwater_context(),
+            "generated_at": fc["generated_at"],
+        }, today)
+        gedaan["intervention"] = True
+    except Exception as e:
+        logger.warning("AI-interventie voorberekenen faalde: %s", e)
+        gedaan["intervention"] = False
+
+    logger.info("dashboard-antwoorden voorberekend: %s", gedaan)
+    return gedaan
 
 
 if __name__ == "__main__":

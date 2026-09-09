@@ -219,6 +219,12 @@ def get_river_day_legacy(day: str):
 
 @app.get("/api/forecast")
 def get_forecast():
+    # De nachtrun berekent dit voor; koud duurt het ruim een minuut. Ontbreekt
+    # het vooraf berekende antwoord of is het te oud, dan rekenen we alsnog zelf.
+    from dashboard import prebuilt
+    vooraf = prebuilt.read(prebuilt.FORECAST)
+    if vooraf is not None:
+        return JSONResponse(vooraf)
     try:
         return JSONResponse(build_forecast())
     except Exception as e:
@@ -464,6 +470,10 @@ Maximaal 220 woorden. Vloeiende lopende tekst zonder markdown-opmaak (geen # of 
 
 @app.get("/api/forecast/intervention")
 def get_forecast_intervention():
+    from dashboard import prebuilt
+    vooraf = prebuilt.read(prebuilt.INTERVENTION)
+    if vooraf is not None:
+        return JSONResponse(vooraf)
     cached_ts = _intv_cache.get("ts")
     if cached_ts and time.monotonic() - cached_ts < _INTV_TTL:
         return JSONResponse(_intv_cache["data"])
@@ -545,7 +555,11 @@ def get_grondwater_projection(event: str = "zomer2018"):
 # v2 — absolute grondwaterstand-voorspelling (lineair reservoir, recharge-gedreven)
 @app.get("/api/grondwater/reservoir")
 def get_grondwater_reservoir():
+    from dashboard import prebuilt
     from dashboard.reservoir import predict_set
+    vooraf = prebuilt.read(prebuilt.RESERVOIR)
+    if vooraf is not None:
+        return JSONResponse(vooraf)
     try:
         return JSONResponse(predict_set())
     except Exception as e:

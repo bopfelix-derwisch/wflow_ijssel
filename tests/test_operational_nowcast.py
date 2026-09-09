@@ -107,6 +107,9 @@ def test_run_nightly_promoveert_alleen_na_de_nowcast_stap_niet_na_de_forecast_st
     monkeypatch.setattr(nowcast, "promote_states", fake_promote)
     monkeypatch.setattr(nowcast, "OUT_DIR", tmp_path)
     monkeypatch.setattr(nowcast, "LATEST", tmp_path / "latest.json")
+    # prebuild_dashboard rekent de dure endpoint-antwoorden voor en gaat daarvoor
+    # het netwerk op; zonder deze stub duurt deze test ruim twee minuten.
+    monkeypatch.setattr(nowcast, "prebuild_dashboard", lambda *a, **k: {})
 
     (tmp_path / "output_ijssel.csv").write_text(
         "time,Q_kampen,h_kampen,Q_westervoort\n"
@@ -271,3 +274,43 @@ def test_run_nightly_registreert_ook_een_forcing_fout_in_de_forecast_stap(tmp_pa
     assert res["status"] == "mislukt"
     assert inn.read_bytes() == b"nieuw", "de nowcast-stap hoort wél gepromoveerd te hebben"
     assert latest.exists()
+
+
+def _geslaagde_run(tmp_path, monkeypatch, prebuild):
+    """Gemeenschappelijke opzet voor een nachtrun die de happy path haalt."""
+    monkeypatch.setattr(nowcast, "build_forcing_window",
+                        lambda *a, **k: {"sources": [], "ratio": None})
+    monkeypatch.setattr(nowcast, "run_wflow", lambda *a, **k: 0)
+    monkeypatch.setattr(nowcast, "promote_states", lambda *a, **k: True)
+    monkeypatch.setattr(nowcast, "OUT_DIR", tmp_path)
+    monkeypatch.setattr(nowcast, "LATEST", tmp_path / "latest.json")
+    monkeypatch.setattr(nowcast, "prebuild_dashboard", prebuild)
+    (tmp_path / "output_ijssel.csv").write_text(
+        "time,Q_kampen,h_kampen,Q_westervoort\n"
+        "2026-09-10T00:00:00,200.0,2.0,150.0\n"
+    )
+    return nowcast.run_nightly(today=date(2026, 9, 9))
+
+
+def test_run_nightly_berekent_de_dashboard_antwoorden_voor(tmp_path, monkeypatch):
+    """Koud duurt /api/forecast 74 s; dat werk hoort in de nachtrun te gebeuren,
+    niet bij de eerste bezoeker."""
+    geroepen = []
+    res = _geslaagde_run(tmp_path, monkeypatch,
+                         lambda *a, **k: geroepen.append(True) or {})
+    assert res["status"] == "ok"
+    assert geroepen, "de nachtrun hoort de dure antwoorden voor te berekenen"
+    assert res["prebuilt"] is True
+
+
+def test_een_mislukte_voorberekening_maakt_de_nachtrun_niet_ongeldig(tmp_path, monkeypatch):
+    """De verwachting zelf is goed; alleen de pagina wordt dan trager."""
+    def stuk(*a, **k):
+        raise RuntimeError("Open-Meteo onbereikbaar")
+
+    res = _geslaagde_run(tmp_path, monkeypatch, stuk)
+    assert res["status"] == "ok"
+    assert res["prebuilt"] is False
+    opgeslagen = json.loads((tmp_path / "latest.json").read_text())
+    assert opgeslagen["status"] == "ok"
+    assert opgeslagen["prebuilt"] is False
