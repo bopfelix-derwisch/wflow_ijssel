@@ -9,8 +9,10 @@ Databronnen:
 
 Resultaat is indicatief — voor operationele beslissingen: zie waterinfo.rws.nl.
 """
+import json
 import logging
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -21,6 +23,13 @@ logger = logging.getLogger(__name__)
 from dashboard import rws_client
 
 OPENMETEO_URL = "https://api.open-meteo.com/v1/forecast"
+
+# Nachtelijke wflow-nowcast; geschreven door wflow_ijssel/operational/nowcast.py.
+WFLOW_LATEST = (Path(__file__).resolve().parent.parent
+                / "wflow_ijssel" / "data" / "forecast" / "latest.json")
+
+# Ouder dan dit → de lijn vervalt en de tab valt terug op het statistische model.
+MAX_AGE_DAYS = 2
 
 DISCHARGE_THRESHOLD = 1500.0
 CATCHMENT_KM2       = 12_500.0
@@ -252,6 +261,82 @@ def build_forecast() -> dict:
             "q_low":  [round(float(v), 1) for v in q_low],
             "q_high": [round(float(v), 1) for v in q_high],
         },
+        # Nachtelijke wflow SBM-nowcast, gelezen uit latest.json. Het statistische
+        # model hierboven blijft staan: als vergelijkingsbasis én als terugval.
+        "wflow": read_wflow_forecast(),
     }
     _cache_set(result)
     return result
+
+
+def read_wflow_forecast(path=None, today=None) -> dict:
+    """Lees de nachtelijke wflow-nowcast uit latest.json.
+
+    Het dashboard rekent niets: het leest wat de nachtrun heeft weggeschreven.
+    Iedere degradatie is zichtbaar via `status` — stil terugvallen zou hier het
+    ergste zijn wat we konden doen, want dit lab gaat over navolgbaarheid.
+
+    Statussen: `vers` (0-1 dagen oud), `verouderd` (2 dagen), `vervallen`
+    (ouder), `ontbreekt`, `onleesbaar`, `mislukt`. Alleen bij `vers` en
+    `verouderd` is `available` waar.
+    """
+    from datetime import date as _date
+
+    path = Path(path) if path is not None else WFLOW_LATEST
+    today = today or _date.today()
+    leeg = {"available": False, "age_days": None, "dates": [], "q_kampen": [],
+            "q_westervoort": [], "gauge": None, "model": None}
+
+    if not path.exists():
+        return {**leeg, "status": "ontbreekt",
+                "note": "Er is nog geen wflow-nowcast gedraaid; de verwachting toont "
+                        "alleen het statistische model."}
+    try:
+        data = json.loads(path.read_text())
+    except Exception as e:
+        logger.warning("latest.json onleesbaar: %s", e)
+        return {**leeg, "status": "onleesbaar",
+                "note": "De wflow-nowcast kon niet gelezen worden; de verwachting "
+                        "valt terug op het statistische model."}
+
+    if data.get("status") != "ok":
+        return {**leeg, "status": "mislukt",
+                "note": "De laatste nachtelijke wflow-run is mislukt; de verwachting "
+                        "valt terug op het statistische model."}
+
+    try:
+        issue = _date.fromisoformat(str(data["issue_date"]))
+    except Exception:
+        return {**leeg, "status": "onleesbaar",
+                "note": "De wflow-nowcast heeft geen geldige uitgiftedatum; de "
+                        "verwachting valt terug op het statistische model."}
+
+    # Een negatieve leeftijd (klokverschil) mag geen lijn laten vervallen.
+    age = max((today - issue).days, 0)
+    if age > MAX_AGE_DAYS:
+        return {**leeg, "status": "vervallen", "age_days": age,
+                "note": f"De wflow-nowcast is van {issue.isoformat()} en daarmee "
+                        f"{age} dagen oud; hij wordt niet meer getoond en de "
+                        "verwachting valt terug op het statistische model."}
+
+    series = data.get("series") or {}
+    status = "vers" if age <= 1 else "verouderd"
+    note = ("Nachtelijke wflow SBM-nowcast."
+            if status == "vers"
+            else f"De wflow-nowcast is van {issue.isoformat()} ({age} dagen oud) — "
+                 "de nachtrun van vannacht is niet doorgekomen.")
+    return {
+        "available": True,
+        "status": status,
+        "age_days": age,
+        "issue_date": data["issue_date"],
+        "generated_at": data.get("generated_at"),
+        "dates": series.get("dates", []),
+        "q_kampen": series.get("q_kampen", []),
+        "q_westervoort": series.get("q_westervoort", []),
+        "model": data.get("model"),
+        "gauge": data.get("gauge"),
+        "boundary_sources": data.get("boundary_sources"),
+        "lobith_ratio": data.get("lobith_ratio"),
+        "note": note,
+    }
