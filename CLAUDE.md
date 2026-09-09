@@ -7,6 +7,7 @@
 ## Stack & poorten
 - Dashboard: FastAPI `dashboard.server:app` op **:8000** — systemd `waterlab-dashboard.service` (system python `/usr/bin/python3`, uvicorn-launcher in `~/.local/bin`).
 - Publiek: `waterlab.felixisfelix.com` (cloudflared, dashboard-managed).
+- Nachtelijke wflow-nowcast: systemd `waterlab-nowcast.timer` (03:00, `Persistent=true`) → `wflow_ijssel/operational/nowcast.py` → `wflow_ijssel/data/forecast/latest.json`. Het dashboard **leest** dat bestand en rekent zelf niets; `/api/forecast` krijgt een `wflow`-blok met `status` (vers/verouderd/vervallen/ontbreekt/onleesbaar/leeg/mislukt). Boven 48 uur vervalt dat blok naar `available: false`. **Nog niet zichtbaar op de tab** — `dashboard/app.js` kent `d.wflow` nog niet; dat blok tekenen is fase F, nog niet gebouwd.
 - API's: GraphQL **/graphql** (GraphiQL) · FEWS PI REST **/fews/rest/fewspiservice/v1** · REST `/api/...`.
 - Lokale LLM **Qwen :8080** (ensemble/grondwater-duiding) · **Claude Haiku** (forecast-interventie, `.env` ANTHROPIC_API_KEY).
 - Python 3.10 · Julia (wflow SBM, Ribasim) · `strawberry-graphql` (system python, `--user`).
@@ -16,6 +17,8 @@
 - **wflow-data** staat onder `wflow_ijssel/data/output*/`, NIET `<root>/data/` → `DATA_ROOT` in `server.py` + `fews_poc/data_adapter.py`. (Geen top-level `data/` → historische tabs leeg.)
 - **`app.js` heeft `"use strict"`**: een verwijzing naar een niet-gedeclareerde var (bv. functieparam vs body-naam) gooit een ReferenceError → de héle grafiek rendert niet. Bump `app.js?v=NN` in `index.html` bij elke JS-wijziging.
 - **wflow negeert `starttime`/`endtime` uit de TOML** (gevolg van de ARM-JIT-patches): het rekenvenster komt uit de tijdas van het forcing-bestand. Venster sturen = forcing slicen. Zie `tools/arm_patches/README.md`.
+- **De gauge `Q_kampen` van de historische proeven is van de IJssel afgekoppeld.** Het netwerk vanaf Westervoort eindigt in een pit op 5.838/52.579; de gauge op 5.496/53.221 ziet alleen lokale afvoer. De operationele config meet daarom op de pit-cel; de historische configs zijn bewust ongewijzigd. **Verklaart de 37,7× amplitudefout uit WL-VAL-1.** Zie `docs/WL-SCHEMA-1_afgekoppelde-uitstroom.md`.
+- **Een wflow-run zonder spin-up levert stil onzin.** De meegeleverde `instates` komen uit december 1994 met een leeg riviernetwerk; 15 dagen is te kort om te vullen. `python3 -m wflow_ijssel.operational.nowcast --spinup` draait 365 dagen (~100 s) en bouwt de state op.
 - **ARM-patches op Wflow/CFTime staan buiten git** (`~/.julia/packages/`). Draai `/usr/bin/python3 tools/arm_patches/verify_arm_patches.py` voordat je op de rekenkern vertrouwt; zonder de patches duurt een koude start uren.
 - **Alle RWS-verkeer via `dashboard/rws_client.py`** — die filtert de sentinel `999999999` (kwaliteitscode `99`). Voeg nooit een tweede `rw.get_data`-aanroep toe.
 - `dashboard/` is de **geserveerde** copy (single source); `wflow_ijssel/dashboard/` is verwijderd.
@@ -23,6 +26,8 @@
 
 ## Run
 - `sudo systemctl restart waterlab-dashboard.service`
+- Nowcast handmatig: `/usr/bin/python3 -m wflow_ijssel.operational.nowcast` (~1 min) · eerste warme state: `… --spinup` (365 d, ~2 min) · log: `wflow_ijssel/data/output_operational/run.log`
+- Timer: `systemctl list-timers waterlab-nowcast.timer` · `journalctl -u waterlab-nowcast.service -f`
 - `curl -sk? http://127.0.0.1:8000/...` · `/graphql` (GraphiQL) · headless browser-check: `verify_map_fallback.sh`.
 
 ## Status

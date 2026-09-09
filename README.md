@@ -72,7 +72,13 @@ Limieten: query-diepte ≤ 10, ≤ 2000 tokens, ≤ 15 aliassen, en 60 verzoeken
 Deltares-compatibel: `filters` · `locations` · `parameters` · `timeseries` (PI JSON). De niet-standaard `period`-parameter selecteert een historische wflow-run (1995/2018/2021).
 
 ### REST data-endpoints
-- `GET /api/forecast` · `/api/forecast/intervention` — live verwachting + integrale AI-interventie
+- `GET /api/forecast` · `/api/forecast/intervention` — live verwachting + integrale AI-interventie.
+  Het antwoord bevat sinds fase C een **`wflow`-blok** met de nachtelijke wflow SBM-nowcast en een
+  `status`-veld: `vers` (0–1 dagen oud), `verouderd` (2 dagen), `vervallen` (ouder dan 48 uur),
+  `ontbreekt`, `onleesbaar` of `mislukt`. Alleen bij `vers` en `verouderd` staat `available` op `true`;
+  daarbuiten valt de verwachting terug op het statistische model, met de reden in `note`. Het `gauge`-blok
+  noemt op welk punt gemeten is — zie `docs/WL-SCHEMA-1_afgekoppelde-uitstroom.md` voor waarom dat niet
+  het punt van de historische proeven is.
 - `GET /api/grondwater` · `/api/grondwater/interpretation` · `/api/grondwater/projection` — Proef 9 (overlay, AI-duiding, vooruitblik)
 - `GET /api/ensemble` · `/api/multimodel` · `/api/{1995|2018|2021}/...`
 

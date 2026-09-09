@@ -9,8 +9,10 @@ Databronnen:
 
 Resultaat is indicatief — voor operationele beslissingen: zie waterinfo.rws.nl.
 """
+import json
 import logging
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -21,6 +23,13 @@ logger = logging.getLogger(__name__)
 from dashboard import rws_client
 
 OPENMETEO_URL = "https://api.open-meteo.com/v1/forecast"
+
+# Nachtelijke wflow-nowcast; geschreven door wflow_ijssel/operational/nowcast.py.
+WFLOW_LATEST = (Path(__file__).resolve().parent.parent
+                / "wflow_ijssel" / "data" / "forecast" / "latest.json")
+
+# Ouder dan dit → de lijn vervalt en de tab valt terug op het statistische model.
+MAX_AGE_DAYS = 2
 
 DISCHARGE_THRESHOLD = 1500.0
 CATCHMENT_KM2       = 12_500.0
@@ -51,6 +60,79 @@ def _rws_daily(locatie: str, grootheid: str, eenheid: str,
     Alle fetch- en filterlogica zit in dashboard/rws_client.py.
     """
     return rws_client.daily_series(locatie, grootheid, eenheid, start, end, proces_type)
+
+
+WESTERVOORT_FALLBACK = 400.0   # laatste redmiddel; zie fill_westervoort_gap
+
+
+def _lobith_metingen(start, end) -> dict:
+    """Lobith-dagafvoer als {datum: m³/s}. Leeg bij uitval."""
+    s = rws_client.daily_series("lobith.bovenrijn.tolkamer", "Q", "m3/s", start, end)
+    if s is None:
+        return {}
+    return {ts.strftime("%Y-%m-%d"): float(v) for ts, v in s.items()}
+
+
+def _lobith_ratio(lobith: dict, westervoort: dict):
+    """Verhouding Westervoort/Lobith; None bij te weinig overlap."""
+    from wflow_ijssel.operational.boundary import lobith_ratio
+    return lobith_ratio(lobith, westervoort)
+
+
+def fill_westervoort_gap(q_west_raw, idx):
+    """Vul het gat in de Westervoort-reeks, bij voorkeur uit Lobith.
+
+    De RWS-reeks voor Westervoort loopt structureel ongeveer twee weken achter
+    (gemeten 2026-09-09: 21 van 36 dagen, laatste 25 augustus), terwijl Lobith
+    compleet en actueel is. Hier stond `fillna(WESTERVOORT_FALLBACK)`, waardoor
+    het startpunt van het recessiemodel exact op die constante uitkwam in plaats
+    van op data — en `data_available` toch op `true`. De verwachting daalde
+    daardoor van 390 naar 317 m³/s waar hij had moeten stijgen van 134 naar 248.
+
+    Retourneert (reeks zonder NaN, info-dict met `q0_bron` en `gat_dagen`).
+    `q0_bron` is `meting`, `lobith` of `terugvalconstante` — die laatste is een
+    noodgreep en hoort zichtbaar te zijn in het antwoord, niet stil.
+    """
+    heeft_meting = (q_west_raw is not None and len(q_west_raw))
+    # `gat_dagen` telt de dagen zónder meting, niet de dagen die na interpolatie
+    # nog leeg zijn: die eerste vijf zijn immers ook geen waarneming.
+    gat = (len(idx) if not heeft_meting
+           else int(len(idx) - q_west_raw.reindex(idx).notna().sum()))
+
+    basis = (q_west_raw.reindex(idx).interpolate(limit=5).bfill()
+             if heeft_meting else pd.Series(float("nan"), index=idx))
+    if gat == 0:
+        return basis, {"q0_bron": "meting", "gat_dagen": 0}
+    if not basis.isna().any():
+        # Kort gat, volledig overbrugd door interpolatie — geen Lobith nodig.
+        return basis, {"q0_bron": "meting", "gat_dagen": gat}
+
+    start, end = idx[0].date(), idx[-1].date()
+    try:
+        lobith = _lobith_metingen(start, end)
+        gemeten = {ts.strftime("%Y-%m-%d"): float(v)
+                   for ts, v in basis.dropna().items()}
+        ratio = _lobith_ratio(lobith, gemeten) if lobith else None
+    except Exception as e:                                   # pragma: no cover
+        logger.warning("Lobith-terugval faalde: %s", e)
+        lobith, ratio = {}, None
+
+    if ratio:
+        afgeleid = pd.Series(
+            [lobith.get(d.strftime("%Y-%m-%d"), float("nan")) * ratio for d in idx],
+            index=idx)
+        gevuld = basis.fillna(afgeleid)
+        if not gevuld.isna().any():
+            logger.info("Westervoort-gat van %d dagen gevuld uit Lobith (ratio %.4f)",
+                        gat, ratio)
+            return gevuld, {"q0_bron": "lobith", "gat_dagen": gat,
+                            "lobith_ratio": round(float(ratio), 4)}
+        basis = gevuld
+
+    logger.warning("Westervoort-gat van %d dagen: geen bruikbare Lobith-terugval, "
+                   "val terug op de constante %.0f m³/s", gat, WESTERVOORT_FALLBACK)
+    return basis.fillna(WESTERVOORT_FALLBACK), {
+        "q0_bron": "terugvalconstante", "gat_dagen": gat}
 
 
 # ── Open-Meteo neerslag ───────────────────────────────────────────────────────
@@ -150,10 +232,11 @@ def build_forecast() -> dict:
     data_ok    = q_west_raw is not None and len(q_west_raw) >= 5
 
     if data_ok:
-        q_west = q_west_raw.reindex(idx).interpolate(limit=5).bfill().fillna(400.0)
+        q_west, gap_info = fill_westervoort_gap(q_west_raw, idx)
     else:
         seasonal = _seasonal_mean(today_dt.month)
         q_west   = pd.Series(float(seasonal), index=idx)
+        gap_info = {"q0_bron": "seizoensgemiddelde", "gat_dagen": len(idx)}
 
     q_kampen_hist = _route_to_kampen(q_west.values)
 
@@ -220,6 +303,10 @@ def build_forecast() -> dict:
     result = {
         "generated_at":  today_dt.strftime("%Y-%m-%d"),
         "data_available": data_ok,
+        # Waar het startpunt van het recessiemodel vandaan komt. `terugvalconstante`
+        # betekent dat de verwachting níét datagedreven is — dat hoort zichtbaar te
+        # zijn, niet stil in de code te blijven zitten.
+        "q0_source": gap_info,
         "alert":          alert,
         "kpis": {
             "current_q_kampen":      round(q_now, 1),
@@ -252,6 +339,113 @@ def build_forecast() -> dict:
             "q_low":  [round(float(v), 1) for v in q_low],
             "q_high": [round(float(v), 1) for v in q_high],
         },
+        # Nachtelijke wflow SBM-nowcast, gelezen uit latest.json. Het statistische
+        # model hierboven blijft staan: als vergelijkingsbasis én als terugval.
+        "wflow": read_wflow_forecast(),
     }
     _cache_set(result)
     return result
+
+
+def read_wflow_forecast(path=None, today=None) -> dict:
+    """Lees de nachtelijke wflow-nowcast uit latest.json.
+
+    Het dashboard rekent niets: het leest wat de nachtrun heeft weggeschreven.
+    Iedere degradatie is zichtbaar via `status` — stil terugvallen zou hier het
+    ergste zijn wat we konden doen, want dit lab gaat over navolgbaarheid.
+
+    Statussen: `vers` (0-1 dagen oud), `verouderd` (2 dagen), `vervallen`
+    (ouder), `ontbreekt`, `onleesbaar`, `leeg` (status "ok" maar een lege
+    reeks), `mislukt`. Alleen bij `vers` en `verouderd` is `available` waar.
+
+    Een mislukte nachtrun overschrijft de laatste goede reeks niet: `run_nightly`
+    schrijft dan een `last_attempt`-veld bij in de bestaande `latest.json`. Die
+    poging wordt hier altijd in de `note` verwerkt, ook als de getoonde reeks
+    zelf nog `vers` of `verouderd` is — anders zou een mislukte nacht onzichtbaar
+    blijven zolang de vorige goede reeks nog binnen de leeftijdsgrens valt.
+    """
+    from datetime import date as _date
+
+    path = Path(path) if path is not None else WFLOW_LATEST
+    today = today or _date.today()
+    leeg = {"available": False, "age_days": None, "dates": [], "q_kampen": [],
+            "q_westervoort": [], "gauge": None, "model": None}
+
+    if not path.exists():
+        return {**leeg, "status": "ontbreekt",
+                "note": "Er is nog geen wflow-nowcast gedraaid; de verwachting toont "
+                        "alleen het statistische model."}
+    try:
+        data = json.loads(path.read_text())
+    except Exception as e:
+        logger.warning("latest.json onleesbaar: %s", e)
+        return {**leeg, "status": "onleesbaar",
+                "note": "De wflow-nowcast kon niet gelezen worden; de verwachting "
+                        "valt terug op het statistische model."}
+
+    if data.get("status") != "ok":
+        attempt = data.get("last_attempt") or {}
+        extra = (f" (exitcode {attempt['exit_code']}, fase '{attempt.get('fase')}')"
+                 if attempt.get("exit_code") is not None
+                 else f" (fase '{attempt['fase']}')" if attempt.get("fase") else "")
+        return {**leeg, "status": "mislukt",
+                "note": f"De laatste nachtelijke wflow-run is mislukt{extra}; er is nog "
+                        "geen bruikbare verwachting. De verwachting valt terug op het "
+                        "statistische model."}
+
+    try:
+        issue = _date.fromisoformat(str(data["issue_date"]))
+    except Exception:
+        return {**leeg, "status": "onleesbaar",
+                "note": "De wflow-nowcast heeft geen geldige uitgiftedatum; de "
+                        "verwachting valt terug op het statistische model."}
+
+    # Een negatieve leeftijd (klokverschil) mag geen lijn laten vervallen.
+    age = max((today - issue).days, 0)
+    if age > MAX_AGE_DAYS:
+        return {**leeg, "status": "vervallen", "age_days": age,
+                "note": f"De wflow-nowcast is van {issue.isoformat()} en daarmee "
+                        f"{age} dagen oud; hij wordt niet meer getoond en de "
+                        "verwachting valt terug op het statistische model."}
+
+    series = data.get("series") or {}
+    if not series.get("dates"):
+        # Verdediging in de leesfunctie zelf, ook al zou run_nightly() een lege
+        # reeks nooit als status "ok" mogen wegschrijven: een "beschikbare"
+        # nowcast zonder data is precies de stille degradatie die deze functie
+        # moet uitsluiten.
+        return {**leeg, "status": "leeg", "age_days": age,
+                "note": f"De wflow-nowcast van {issue.isoformat()} bevat een lege "
+                        "reeks; de verwachting valt terug op het statistische model."}
+
+    status = "vers" if age <= 1 else "verouderd"
+    note = ("Nachtelijke wflow SBM-nowcast."
+            if status == "vers"
+            else f"De wflow-nowcast is van {issue.isoformat()} ({age} dagen oud) — "
+                 "de nachtrun van vannacht is niet doorgekomen.")
+
+    # Een mislukte poging ná deze goede run mag niet onzichtbaar blijven, ook
+    # al is de getoonde reeks zelf nog jong (zie Critical-2-bevinding,
+    # .superpowers/sdd/2026-09-08-verwachting-v2-fase-c/).
+    attempt = data.get("last_attempt")
+    if attempt and attempt.get("outcome") != "ok":
+        note += (f" Let op: de nachtrun van {attempt.get('date')} is mislukt"
+                  + (f" (exitcode {attempt['exit_code']})"
+                     if attempt.get("exit_code") is not None else "")
+                  + f"; de getoonde reeks is nog van {issue.isoformat()}.")
+
+    return {
+        "available": True,
+        "status": status,
+        "age_days": age,
+        "issue_date": data["issue_date"],
+        "generated_at": data.get("generated_at"),
+        "dates": series.get("dates", []),
+        "q_kampen": series.get("q_kampen", []),
+        "q_westervoort": series.get("q_westervoort", []),
+        "model": data.get("model"),
+        "gauge": data.get("gauge"),
+        "boundary_sources": data.get("boundary_sources"),
+        "lobith_ratio": data.get("lobith_ratio"),
+        "note": note,
+    }

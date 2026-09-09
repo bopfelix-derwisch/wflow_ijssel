@@ -1,0 +1,231 @@
+"""Instroom-randvoorwaarde bij Westervoort voor de operationele wflow-run.
+
+wflow krijgt de Rijn-instroom als randvoorwaarde bij Westervoort (6.154 O,
+51.987 N). Per dag, in aflopende prioriteit:
+
+  1. Westervoort-meting                       — waar aanwezig
+  2. Lobith-meting × ratio                     — vult het gat in de
+                                                  Westervoort-reeks tot en
+                                                  met vandaag
+  3. Lobith-verwachting × ratio                — D+1 … D+3
+  4. recessiemodel, gemengd over `blend_days`  — D+4 en verder
+
+Westervoort-metingen lopen bij RWS structureel achter — in de praktijk tot
+ruim twee weken (geverifieerd 2026-09-08: laatste Westervoort-dagwaarde
+14 dagen oud, terwijl Lobith en Olst tot en met vandaag compleet zijn). Zonder
+laag 2 zou de randvoorwaarde voor de nowcast-dag zelf al op het recessiemodel
+terugvallen — een extrapolatie in plaats van een waarneming, precies wat fase
+C moest oplossen. Laag 2 vult dat gat met de (geschaalde) Lobith-meting, die
+wél actueel is, zodat de randvoorwaarde tot en met vandaag op een echte
+waarneming rust.
+
+RWS-verwachtingen reiken maar ~3 dagen (geverifieerd 2026-09-08), vandaar de
+recessie voor de rest. De overgang wordt over enkele dagen gemengd zodat er
+geen sprong in de randvoorwaarde ontstaat.
+
+Het recessiemodel start zelf ook vanaf een actuele waarde: q0 komt uit
+dezelfde niet-recessie-bronnen als laag 1/2 hierboven (zie `_huidige_waarde`),
+niet uit de kale, mogelijk weken oude laatste Westervoort-meting. Zonder die
+correctie zou de recessie — die 12 van de 17 dagen in een typische
+randvoorwaarde levert, dus de dominante term — vanaf een structureel te laag
+niveau vertrekken: exact dezelfde staleness-fout als bij de blend-lagen, maar
+dan verplaatst in plaats van opgelost.
+
+Olst wordt hier bewust NIET gebruikt: dat ligt bínnen het modeldomein,
+benedenstrooms van de instroomrand, en zou het gebied tussen Westervoort en
+Olst dubbeltellen. Olst is het validatiepunt, niet de randvoorwaarde.
+"""
+from __future__ import annotations
+
+import logging
+import statistics
+from datetime import date, timedelta
+
+logger = logging.getLogger(__name__)
+
+LOBITH = "lobith.bovenrijn.tolkamer"
+WESTERVOORT = "westervoort"
+MIN_OVERLAP = 20
+RATIO_WINDOW_DAYS = 90
+
+
+def lobith_ratio(q_lobith: dict, q_westervoort: dict,
+                 min_overlap: int = MIN_OVERLAP,
+                 window_days: "int | None" = RATIO_WINDOW_DAYS) -> "float | None":
+    """Mediane verhouding Westervoort/Lobith over de overlappende dagen.
+
+    Deze ratio is regime-afhankelijk, geen constante: de verdeling van de
+    Rijnafvoer over de Rijntakken wordt bij de stuw bij Driel geregeld, en het
+    IJssel-aandeel loopt op bij lage afvoer en zakt bij hoogwater. "De IJssel
+    is ruwweg een negende van de Rijn" is dus een langjarig gemiddelde, geen
+    huidige waarde — een vaste 1/9 zou de randvoorwaarde bij het actuele
+    afvoerregime stelselmatig verkeerd zetten. Daarom kalibreert deze functie
+    standaard op de meest recente `window_days` dagen, zodat de ratio het
+    regime van dit moment volgt in plaats van jaren aan hoog- en laagwater tot
+    één getal glad te strijken. **Verander de standaard niet terug naar een
+    vaste breuk** — dat is precies de fout die dit venster voorkomt.
+
+    Is er binnen dat venster te weinig overlap (minder dan `min_overlap`
+    dagen met een geldig paar), dan valt de functie terug op de volledige
+    aangeleverde historie in plaats van meteen `None` te geven — een iets
+    verouderde ratio is bruikbaarder dan geen ratio. Alleen als ook de
+    volledige historie te weinig overlap heeft, is het resultaat `None`.
+    `window_days=None` schakelt het venster uit en kalibreert direct op de
+    volledige historie.
+    """
+    def ratios_since(cutoff):
+        out = []
+        for d, lob in q_lobith.items():
+            if cutoff is not None and d < cutoff:
+                continue
+            wes = q_westervoort.get(d)
+            if wes is None or lob is None or lob <= 0 or wes <= 0:
+                continue
+            out.append(wes / lob)
+        return out
+
+    if window_days is not None:
+        anchor = max(q_lobith, default=None)
+        cutoff = None
+        if anchor is not None:
+            try:
+                cutoff = (date.fromisoformat(anchor) - timedelta(days=window_days)).isoformat()
+            except ValueError:
+                cutoff = None  # sleutels zijn geen ISO-datums (bv. in tests) -> geen venster
+        if cutoff is not None:
+            recent = ratios_since(cutoff)
+            if len(recent) >= min_overlap:
+                return float(statistics.median(recent))
+
+    ratios = ratios_since(None)
+    if len(ratios) < min_overlap:
+        return None
+    return float(statistics.median(ratios))
+
+
+def _kies_bron(d: str, measured: dict, lobith_meting: dict, rws: dict) -> "float | None":
+    """Kies de bronwaarde voor één datum `d` volgens de bronladder:
+    Westervoort-meting > Lobith-meting × ratio > Lobith-verwachting × ratio.
+
+    Geeft `None` als geen van de drie een waarde voor `d` heeft — dan is de
+    recessie aan de beurt. Dit is de ene plek waar de ladder staat
+    uitgeschreven; zowel `blend()` (voor de hele reeks) als `_huidige_waarde`
+    (voor alleen vandaag, als startpunt van de recessie) roepen 'm aan, zodat
+    de twee nooit uit elkaar kunnen lopen.
+    """
+    if d in measured:
+        return float(measured[d])
+    if d in lobith_meting:
+        return float(lobith_meting[d])
+    if d in rws:
+        return float(rws[d])
+    return None
+
+
+def _huidige_waarde(wes: dict, lob_meting: dict, rws_fc: dict, today_str: str,
+                    seasonal_mean: float) -> float:
+    """Bepaal de waarde voor vandaag (q0 voor de recessie) zónder de recessie
+    zelf te gebruiken: dezelfde bronladder als `blend()` (via `_kies_bron`),
+    met het seizoensgemiddelde als laatste terugval.
+
+    Losstaand van `blend()` omdat er een volgorde-afhankelijkheid is: de
+    recessie heeft q0 nodig, en de volledige (via `blend()` samengestelde)
+    reeks heeft op haar beurt de recessie weer nodig. Deze functie doorbreekt
+    die cirkel door alleen de bronnen te raadplegen die geen recessie
+    vereisen — dezelfde die de nowcast-dag zelf al op een waarneming laten
+    rusten in plaats van op een verouderde, kale Westervoort-meting van soms
+    ruim twee weken oud, of (als ook de Lobith-meting toevallig een gat heeft
+    voor vandaag, bv. bij een tijdelijke RWS-rapportagevertraging) op de
+    Lobith-verwachting.
+    """
+    v = _kies_bron(today_str, wes, lob_meting, rws_fc)
+    if v is not None:
+        return v
+    return float(seasonal_mean)
+
+
+def blend(measured: dict, lobith_meting: dict, rws: dict, recession: dict,
+          dates: list, blend_days: int = 2) -> list:
+    """Stel de randvoorwaarde samen.
+
+    Bronprioriteit per dag: Westervoort-meting > Lobith-meting (geschaald)
+    > Lobith-verwachting (geschaald) > recessie (zie `_kies_bron`). Over
+    `blend_days` na de laatste dag met een Lobith-verwachting wordt lineair
+    naar de recessie gemengd, zodat de randvoorwaarde niet springt.
+    """
+    if not dates:
+        raise ValueError("dates mag niet leeg zijn")
+
+    last_rws = max((d for d in dates if d in rws), default=None)
+    out = []
+    for d in dates:
+        v = _kies_bron(d, measured, lobith_meting, rws)
+        if v is not None:
+            out.append(v)
+            continue
+
+        rec = float(recession[d])
+        if last_rws is not None and blend_days > 0 and d > last_rws:
+            steps_after = sum(1 for x in dates if last_rws < x <= d)
+            if steps_after <= blend_days:
+                w = steps_after / (blend_days + 1)
+                out.append(float(rws[last_rws]) * (1 - w) + rec * w)
+                continue
+        out.append(rec)
+    return out
+
+
+def build_boundary(dates: list) -> dict:
+    """Haal de bronnen op en stel de randvoorwaarde samen voor `dates`."""
+    import numpy as np
+
+    from dashboard import rws_client
+    from dashboard.forecast import _recession, _seasonal_mean
+
+    today = date.today()
+    today_str = today.strftime("%Y-%m-%d")
+    hist_start = today - timedelta(days=400)
+
+    def as_map(series):
+        if series is None:
+            return {}
+        return {ts.strftime("%Y-%m-%d"): float(v) for ts, v in series.items()}
+
+    wes = as_map(rws_client.daily_series(WESTERVOORT, "Q", "m3/s", hist_start, today))
+    lob = as_map(rws_client.daily_series(LOBITH, "Q", "m3/s", hist_start, today))
+    ratio = lobith_ratio(lob, wes)
+
+    # Laag 2: Lobith-meting geschaald, vult het (structurele) gat in de
+    # Westervoort-reeks tot en met vandaag.
+    lob_meting = {}
+    if ratio is not None:
+        lob_meting = {d: v * ratio for d, v in lob.items() if d not in wes}
+
+    lob_fc = as_map(rws_client.daily_series(
+        LOBITH, "Q", "m3/s", today, today + timedelta(days=14), proces_type="verwachting"))
+    rws_fc = {}
+    if ratio is not None:
+        rws_fc = {d: v * ratio for d, v in lob_fc.items()
+                  if d not in wes and d not in lob_meting}
+
+    # Stap 1: bepaal q0 uit de bronnen die geen recessie nodig hebben (zie
+    # `_huidige_waarde`) -- dit doorbreekt de volgorde-afhankelijkheid tussen
+    # q0, recessie en blend().
+    q0 = _huidige_waarde(wes, lob_meting, rws_fc, today_str, _seasonal_mean(today.month))
+
+    # Stap 2: nu q0 bekend is, de recessie berekenen en de volledige reeks
+    # samenstellen.
+    rec_vals = _recession(q0, len(dates), today.month)
+    recession = {d: float(v) for d, v in zip(dates, np.asarray(rec_vals, dtype=float))}
+
+    values = blend(wes, lob_meting, rws_fc, recession, dates)
+    sources = [
+        "meting" if d in wes else
+        ("lobith-meting" if d in lob_meting else
+         ("lobith-verwachting" if d in rws_fc else "recessie"))
+        for d in dates
+    ]
+    logger.info("randvoorwaarde: ratio=%s, q0=%.1f, bronnen=%s",
+                round(ratio, 4) if ratio else None, q0,
+                {s: sources.count(s) for s in set(sources)})
+    return {"values": values, "sources": sources, "ratio": ratio}
