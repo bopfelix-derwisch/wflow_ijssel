@@ -22,6 +22,11 @@ FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
 DAILY_VARS = "precipitation_sum,et0_fao_evapotranspiration,temperature_2m_mean"
 
+# Het archief loopt enkele dagen achter op vandaag. Gemeten 2026-09-08 had D−3
+# al data; 7 dagen is daarmee een ruime, veilige marge. Alles vanaf
+# D−ARCHIEF_MARGE_DAGEN+1 komt van de forecast-API, die ~92 dagen terugreikt.
+ARCHIEF_MARGE_DAGEN = 7
+
 # Tolerantie voor de respons-volgorde-toets in _check_response_order, in graden.
 # Moet ruim ONDER de halve bevragingsstap van grid_points() (standaard 0,25°,
 # dus halve stap 0,125°) blijven — anders wordt een verwisseling met het
@@ -30,6 +35,12 @@ DAILY_VARS = "precipitation_sum,et0_fao_evapotranspiration,temperature_2m_mean"
 # steeds kleiner is dan de helft daarvan. 0,1° is ruim genoeg voor Open-Meteo's
 # snap-naar-roosterpunt-afwijking (in de praktijk << 0,1°, zie de rooktest).
 RESPONS_TOLERANTIE_GRADEN = 0.1
+
+# Het archief snapt naar een grover rooster dan de forecast-API: gemeten
+# 2026-09-08 tot 0,131° afwijking, tegen 0,041° bij de forecast. Dat is méér dan
+# de halve bevragingsstap (0,125°), dus afstand alleen kan daar een buurpunt niet
+# uitsluiten — de bijectie-eis in _match_response_order doet dat wel.
+ARCHIEF_TOLERANTIE_GRADEN = 0.3
 
 # Modelgrid van staticmaps-ijssel.nc / forcing-ijssel.nc — exact overnemen.
 # LET OP: y loopt AFLOPEND (noord → zuid). Een oplopende as spiegelt het
@@ -62,31 +73,63 @@ def _as_list(payload) -> list:
     return payload if isinstance(payload, list) else [payload]
 
 
-def _check_response_order(payload: list, lats, lons,
-                           tol: float = RESPONS_TOLERANTIE_GRADEN) -> None:
-    """Toets dat de respons dezelfde volgorde heeft als de opgevraagde punten.
+def _match_response_order(payload: list, lats, lons,
+                          tol: float = RESPONS_TOLERANTIE_GRADEN) -> list:
+    """Koppel elk respons-object aan het opgevraagde punt dat erbij hoort.
 
-    Open-Meteo snapt elk punt naar zijn eigen roosterpunt, dus de teruggegeven
-    `latitude`/`longitude` wijken licht af van wat is opgevraagd — vandaar een
-    tolerantie. Die moet wel ruim onder de halve bevragingsstap blijven (zie
-    RESPONS_TOLERANTIE_GRADEN hierboven), anders detecteert deze toets een
-    verwisseling met het dichtstbijzijnde buurpunt niet. De afstand wordt
-    Euclidisch getoetst (niet lat/lon los met een `of`), anders glipt een
-    diagonale buur — die op elke as afzonderlijk binnen tolerantie valt — erdoor.
-    Wijkt een punt verder af, dan is de volgorde vermoedelijk veranderd en zou
-    de koppeling tussen punt en waarde stil verkeerd lopen.
+    We nemen de volgorde van de respons niet aan maar leiden hem af uit de
+    `latitude`/`longitude` die Open-Meteo per object meestuurt. Dat is robuuster
+    dan een volgordetoets: raakt de volgorde verstoord, dan herstellen we hem in
+    plaats van alleen te klagen.
+
+    Waarom niet gewoon op afstand toetsen: de API snapt elk punt naar zijn eigen
+    roosterpunt, en dat rooster verschilt per bron. Gemeten 2026-09-08 wijkt de
+    forecast-API hooguit 0,041° af, maar het archief tot 0,131° — méér dan de
+    halve bevragingsstap van 0,125°. Een pure afstandstoets kan daar "gesnapt
+    naar eigen roosterpunt" niet onderscheiden van "verwisseld met de buur".
+    De koppeling moet daarom een *bijectie* zijn: elk opgevraagd punt krijgt
+    precies één respons. Dat sluit een verwisseling uit, ongeacht de snap.
+
+    De koppeling gaat van opgevraagd punt náár respons, niet andersom. Dat is
+    bewust: het archiefrooster is grover dan ons bevragingsraster van 0,25°, dus
+    meerdere opgevraagde punten kunnen op dezelfde archiefcel uitkomen. Die cel
+    mag dan door beide gebruikt worden — dat is geen fout maar de resolutie van
+    de bron. Andersom koppelen (respons → punt) zou daar ten onrechte op
+    "geen bijectie" stuklopen.
+
+    Retourneert de respons, geordend als de opgevraagde punten. Gooit een
+    ValueError als een opgevraagd punt verder dan `tol` van élk respons-object
+    ligt — dan is er echt iets mis, en dat moet luid falen.
     """
-    for i, (loc, la, lo) in enumerate(zip(payload, lats, lons)):
+    if len(payload) != len(lats):
+        raise ValueError(
+            f"respons bevat {len(payload)} locaties, er zijn er {len(lats)} opgevraagd")
+
+    coords = []
+    for i, loc in enumerate(payload):
         rla, rlo = loc.get("latitude"), loc.get("longitude")
-        if rla is None or rlo is None:
-            continue
-        afstand = ((float(rla) - float(la)) ** 2 + (float(rlo) - float(lo)) ** 2) ** 0.5
-        if afstand > tol:
+        # Zonder coördinaten kunnen we niet koppelen; dan rest de aangenomen volgorde.
+        coords.append(None if rla is None or rlo is None else (float(rla), float(rlo)))
+    if all(c is None for c in coords):
+        return payload
+
+    geordend = []
+    for j, (la, lo) in enumerate(zip(lats, lons)):
+        beste_i, beste_d = None, None
+        for i, c in enumerate(coords):
+            if c is None:
+                continue
+            d = ((c[0] - float(la)) ** 2 + (c[1] - float(lo)) ** 2) ** 0.5
+            if beste_d is None or d < beste_d:
+                beste_i, beste_d = i, d
+        if beste_d is None or beste_d > tol:
             raise ValueError(
-                f"respons op index {i} komt niet overeen met het opgevraagde punt "
-                f"(opgevraagd {la:.4f},{lo:.4f}; gekregen {rla:.4f},{rlo:.4f}; "
-                f"afstand {afstand:.4f}° > tolerantie {tol}°) — "
-                "volgorde van de respons wijkt af van de opgevraagde punten")
+                f"opgevraagd punt {j} ({float(la):.4f},{float(lo):.4f}) ligt "
+                f"{beste_d:.4f}° van het dichtstbijzijnde respons-object — verder dan "
+                f"de tolerantie {tol}°; de koppeling tussen punten en waarden zou "
+                "stil verkeerd lopen")
+        geordend.append(payload[beste_i])
+    return geordend
 
 
 def fetch_daily(lats, lons, start: str, end: str, archive: bool = False) -> dict:
@@ -101,7 +144,11 @@ def fetch_daily(lats, lons, start: str, end: str, archive: bool = False) -> dict
         "end_date": end,
     }
     payload = _as_list(_get_json(url, params))
-    _check_response_order(payload, lats, lons)
+    # Het archief snapt grover dan de forecast-API (0,131° vs 0,041°, gemeten
+    # 2026-09-08), dus daar is een ruimere tolerantie nodig. De bijectie-eis in
+    # _match_response_order blijft een verwisseling uitsluiten.
+    tol = ARCHIEF_TOLERANTIE_GRADEN if archive else RESPONS_TOLERANTIE_GRADEN
+    payload = _match_response_order(payload, lats, lons, tol)
 
     dates = payload[0]["daily"]["time"]
     n_pts, n_days = len(payload), len(dates)
@@ -118,6 +165,48 @@ def fetch_daily(lats, lons, start: str, end: str, archive: bool = False) -> dict
         "precip": column("precipitation_sum"),
         "pet": column("et0_fao_evapotranspiration"),
         "temp": column("temperature_2m_mean"),
+    }
+
+
+def fetch_daily_window(lats, lons, start: str, end: str, today=None) -> dict:
+    """Haal een venster op dat het archief én de forecast-API kan overspannen.
+
+    Waarom dit nodig is: de forecast-API reikt ongeveer 92 dagen terug (gemeten
+    2026-09-08: niet verder dan D−92), en het archief loopt enkele dagen achter.
+    Een spin-up over een jaar past dus in geen van beide alleen. Deze functie
+    splitst het venster op `ARCHIEF_MARGE_DAGEN` en naait de twee helften aan
+    elkaar.
+
+    De aanroeper controleert de aansluiting alsnog streng (zie
+    `forcing._check_dagreeks_sluit_aan`), dus een naadfout valt luid door de mand
+    in plaats van stil een dag te verschuiven.
+    """
+    from datetime import date as _date, timedelta as _timedelta
+
+    today = today or _date.today()
+    archief_eind = today - _timedelta(days=ARCHIEF_MARGE_DAGEN)
+    s, e = _date.fromisoformat(start), _date.fromisoformat(end)
+    if s > e:
+        raise ValueError(f"start {start} ligt na end {end}")
+
+    delen = []
+    if s <= archief_eind:
+        delen.append(fetch_daily(lats, lons, s.isoformat(),
+                                 min(e, archief_eind).isoformat(), archive=True))
+    if e > archief_eind:
+        f_start = max(s, archief_eind + _timedelta(days=1))
+        delen.append(fetch_daily(lats, lons, f_start.isoformat(), e.isoformat()))
+
+    if len(delen) == 1:
+        return delen[0]
+
+    logger.info("venster %s..%s uit %d bronnen genaaid (archief t/m %s)",
+                start, end, len(delen), archief_eind.isoformat())
+    return {
+        "dates": delen[0]["dates"] + delen[1]["dates"],
+        "precip": np.concatenate([d["precip"] for d in delen], axis=1),
+        "pet": np.concatenate([d["pet"] for d in delen], axis=1),
+        "temp": np.concatenate([d["temp"] for d in delen], axis=1),
     }
 
 

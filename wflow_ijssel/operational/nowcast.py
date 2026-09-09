@@ -38,6 +38,15 @@ LATEST = WFLOW_DIR / "data" / "forecast" / "latest.json"
 
 HORIZON = 14
 
+# Spin-up: de meegeleverde instates komen uit de historische proef van december
+# 1994 en hebben een vrijwel leeg riviernetwerk. Zonder aanloop levert een run
+# van vijftien dagen ~0 m³/s bij Kampen terwijl de instroom bij Westervoort
+# klopt — wflow klaagt daar niet over. De 1995-proef had ~60 dagen nodig om het
+# kanaal te vullen; een jaar geeft daarnaast de bodem- en grondwaterberging tijd
+# om op de werkelijke toestand uit te komen.
+SPINUP_DAYS = 365
+SPINUP_TIMEOUT = 5400
+
 
 def build_forcing_window(path, start: str, end: str) -> dict:
     from wflow_ijssel.operational.forcing import build_forcing
@@ -97,6 +106,39 @@ def write_latest(path, payload: dict) -> Path:
     return path
 
 
+def run_spinup(days: int = SPINUP_DAYS, today=None) -> dict:
+    """Bouw de éérste warme state op, vanaf de koude historische instates.
+
+    Draait wflow over `days` dagen gemeten forcing tot en met vandaag en
+    promoveert het resultaat tot de operationele instates. Daarna kan
+    `run_nightly` het per dag overnemen.
+
+    Dit is eenmalig werk (~1-2 min rekentijd bij 365 dagen), maar het is geen
+    optionele opwarming: zonder spin-up produceert de nachtrun een debiet bij
+    Kampen dat orden van grootte te laag is, zonder enige foutmelding.
+
+    Schrijft bewust GEEN latest.json — een spin-up is geen verwachting.
+    """
+    today = today or date.today()
+    start = (today - timedelta(days=days)).isoformat()
+    end = today.isoformat()
+
+    logger.info("spin-up: %s .. %s (%d dagen)", start, end, days)
+    meta = build_forcing_window(FORCING, start, end)
+    code = run_wflow(timeout=SPINUP_TIMEOUT)
+    if code != 0:
+        logger.error("spin-up mislukt (exit %d) — instates ongemoeid gelaten", code)
+        return {"status": "mislukt", "exit_code": code}
+
+    promoted = promote_states()
+    series = read_csv_output(OUT_DIR / "output_ijssel.csv")
+    q_eind = series["q_kampen"][-1] if series["q_kampen"] else None
+    logger.info("spin-up klaar: Q_kampen op de laatste dag = %s m3/s", q_eind)
+    return {"status": "ok", "days": days, "start": start, "end": end,
+            "states_promoted": promoted, "q_kampen_eind": q_eind,
+            "boundary_sources": meta.get("sources")}
+
+
 def run_nightly() -> dict:
     """De volledige nachtelijke cyclus."""
     today = date.today()
@@ -126,7 +168,12 @@ def run_nightly() -> dict:
 
 
 if __name__ == "__main__":
+    import sys
+
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(message)s")
-    res = run_nightly()
+    if "--spinup" in sys.argv:
+        res = run_spinup()
+    else:
+        res = run_nightly()
     raise SystemExit(0 if res.get("status") == "ok" else 1)

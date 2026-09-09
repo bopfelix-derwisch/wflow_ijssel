@@ -108,7 +108,10 @@ def build_forcing(path, start: str, end: str) -> dict:
     from wflow_ijssel.operational import boundary, meteo
 
     lats, lons = meteo.grid_points()
-    data = meteo.fetch_daily(lats, lons, start, end)
+    # fetch_daily_window i.p.v. fetch_daily: een spin-up over een jaar past niet
+    # in de forecast-API (die reikt ~92 dagen terug), dus het venster wordt zo
+    # nodig uit archief + forecast aan elkaar genaaid.
+    data = meteo.fetch_daily_window(lats, lons, start, end)
     dates = data["dates"]
 
     _check_dagreeks_sluit_aan(dates, start, end)
