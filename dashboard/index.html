@@ -4,7 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Waterlab — micro-innovatielab</title>
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css">
+  <!-- Versies vastgepind: een kale unpkg-URL volgt "latest", en toen maplibre-gl 6
+       uitkwam bestond dist/maplibre-gl.js daar niet meer -> 404 -> maplibregl undefined
+       -> de kaart verdween op alle jaartabs, zonder zichtbare fout. -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.css">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #080c14; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; font-size: 13px; }
@@ -4001,10 +4004,10 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
-<script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+<script src="https://unpkg.com/maplibre-gl@5.9.0/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/deck.gl@9.4.0/dist.min.js"></script>
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
-<script src="/static/app.js?v=58"></script>
+<script src="/static/app.js?v=59"></script>
 <script>
 /* ── MINI LOGO op alle panels ── */
 (function() {

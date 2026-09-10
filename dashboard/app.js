@@ -116,8 +116,43 @@ try {
     map.addControl(overlay);
     loadYear("1995");
   });
+
+  // Valt de basemap-CDN weg, dan komt "load" nooit en zou de tab leeg blijven.
+  map.on("error", e => {
+    console.warn("Kaartfout:", e && e.error);
+    meldKaartUit("De achtergrondkaart kon niet geladen worden.");
+  });
 } catch (err) {
-  console.warn("Kaart kon niet initialiseren (WebGL?) — kaart-tabs uitgeschakeld, rest van het dashboard werkt:", err);
+  console.warn("Kaart kon niet initialiseren:", err);
+  meldKaartUit(typeof maplibregl === "undefined"
+    ? "De kaartbibliotheek is niet geladen."
+    : "De kaart kon niet starten (WebGL?).");
+  // De cijfers en grafieken hangen niet van de kaart af — zonder deze regel
+  // laadde een kaartstoring óók de jaartabs leeg, want loadYear() zat ín
+  // map.on("load"). Dat is precies waarom dit maanden onopgemerkt bleef.
+  loadYear("1995");
+}
+
+/** Maak een kaartstoring zichtbaar in plaats van een leeg zwart vlak.
+ *
+ *  Aanleiding: de unpkg-URL voor maplibre was niet vastgepind. Toen upstream
+ *  versie 6 uitbracht bestond dist/maplibre-gl.js daar niet meer (404), was
+ *  `maplibregl` undefined, en verdween de kaart op alle jaartabs — zonder dat
+ *  er iets te zien was behalve een leeg vlak. Een stille storing die je pas
+ *  vindt als iemand er toevallig over valt.
+ */
+function meldKaartUit(reden) {
+  const el = document.getElementById("map");
+  if (!el || el.dataset.uitgevallen) return;
+  el.dataset.uitgevallen = "1";
+  el.innerHTML =
+    '<div style="height:100%;display:flex;flex-direction:column;align-items:center;' +
+    'justify-content:center;gap:8px;padding:16px;text-align:center;color:#90a4ae;' +
+    'font-size:12px;background:#0d1b2a">' +
+    '<div style="font-size:13px;color:#ffcc80;font-weight:700">🗺 Kaart niet beschikbaar</div>' +
+    '<div>' + reden + ' De cijfers en grafieken op deze tab werken wel.</div>' +
+    '<div style="font-size:11px;color:#607d8b">Bekijk de meetpunten via de knoppen onder de grafiek.</div>' +
+    '</div>';
 }
 
 // ── jaar wisselen ─────────────────────────────────────────────────────────────

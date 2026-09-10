@@ -19,6 +19,7 @@
 
 ## Valkuilen (project)
 - **wflow-data** staat onder `wflow_ijssel/data/output*/`, NIET `<root>/data/` → `DATA_ROOT` in `server.py` + `fews_poc/data_adapter.py`. (Geen top-level `data/` → historische tabs leeg.)
+- **Pin CDN-versies in `index.html`.** De kaart was maanden stil kapot doordat `unpkg.com/maplibre-gl/dist/maplibre-gl.js` niet gepind was: bij upstream v6 bestaat dat pad niet meer → 404 → `maplibregl` undefined → kaart weg op álle jaartabs. Erger nog: `loadYear()` zat ín `map.on("load")`, dus de cijfers en grafieken laadden dan óók niet. Nu gepind (maplibre 5.9.0, deck.gl 9.4.0) en de storing is zichtbaar via `meldKaartUit()`.
 - **`app.js` heeft `"use strict"`**: een verwijzing naar een niet-gedeclareerde var (bv. functieparam vs body-naam) gooit een ReferenceError → de héle grafiek rendert niet. Bump `app.js?v=NN` in `index.html` bij elke JS-wijziging.
 - **wflow negeert `starttime`/`endtime` uit de TOML** (gevolg van de ARM-JIT-patches): het rekenvenster komt uit de tijdas van het forcing-bestand. Venster sturen = forcing slicen. Zie `tools/arm_patches/README.md`.
 - **De gauge `Q_kampen` van de historische proeven is van de IJssel afgekoppeld.** Het netwerk vanaf Westervoort eindigt in een pit op 5.838/52.579; de gauge op 5.496/53.221 ziet alleen lokale afvoer. De operationele config meet daarom op de pit-cel; de historische configs zijn bewust ongewijzigd. **Verklaart de 37,7× amplitudefout uit WL-VAL-1.** Zie `docs/WL-SCHEMA-1_afgekoppelde-uitstroom.md`.
