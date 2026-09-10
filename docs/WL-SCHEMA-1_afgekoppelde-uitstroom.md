@@ -70,6 +70,46 @@ zodat ze reproduceerbaar blijven tegen hun eerder gepubliceerde uitkomsten. Dat 
 label `Q_kampen` daar een grootheid aanduidt die de IJssel-afvoer niet is — dat moet bij die proeven
 vermeld worden, niet stilzwijgend blijven staan.
 
+## Tweede gezicht van hetzelfde defect: het Kampen-debiet is te hoog
+
+*Vastgesteld 2026-09-10.*
+
+Het verplaatsen van de gauge naar de pit maakte de reeks bruikbaar, maar niet juist. Het model zet Kampen
+op mediaan **1,69 ×** Olst (bereik 1,42–2,19). Dat is niet te rijmen met zijn eigen gedrag stroomopwaarts:
+
+```
+Westervoort → Olst : +903 km² stroomgebied  →  +15 m³/s   =  0,0166 m³/s per km²
+Olst → Kampen      :                           +145 m³/s
+daarvoor nodig bij diezelfde specifieke afvoer: +8.729 km²
+totale stroomgebied van de schematisatie:       10.231 km²
+```
+
+Om dat verschil te verantwoorden zou vrijwel het hele stroomgebied op dat ene traject moeten afwateren.
+Realistisch is eerder 10–25 % boven Olst, dus ruwweg 155–175 m³/s waar het model 283 geeft.
+
+**Het spoor loopt naar dezelfde LDD-correctie.** Langs het stroompad Westervoort → pit:
+
+| positie | stap | uparea |
+|---|---:|---:|
+| Westervoort | 0 | 1.174 km² |
+| Olst | 58 | 2.077 km² |
+| — | 91 | **1 km²** |
+| laatste 40 cellen | 92–131 | `nan` |
+
+Het bovenstroomse oppervlak zakt van 2.077 naar 1 en verdwijnt daarna — alsof daar een nieuwe bovenloop
+begint. De kanaalafmetingen langs dat traject ogen overigens nog wél plausibel (breedte 42 → 46 → 80 m),
+dus die zijn kennelijk vóór de correctie afgeleid.
+
+**Wat hier níét door besmet is:** de Olst-reeks en de peilverwachting. Die draaien op het debiet bij Olst,
+waar het model binnen 4 % van de officiële RWS-verwachting zit. De peillijn landt binnen 2 cm van de
+officiële peilverwachting.
+
+**Belangrijk voorbehoud.** Dit is *afgeleid*, niet gemeten — er ís geen debietmeting bij Kampen, en dat is
+precies de WL-VAL-1-bevinding. De conclusie rust op de interne inconsistentie van het model. Het kan dus
+ook een routeringsartefact bij de pit zijn in plaats van te veel lateraal water; dat is niet uitgezocht.
+
+Op de Verwachting-tab staat deze waarschuwing bij de grafiek, met het live berekende quotiënt.
+
 ## Wat dit raakt
 
 - **Proeven 4, 5 en 6** rapporteren `Q_kampen` van pit A. Die reeksen zijn geen IJssel-afvoer bij Kampen.

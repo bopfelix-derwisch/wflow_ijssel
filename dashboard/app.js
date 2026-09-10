@@ -1656,6 +1656,39 @@ function renderModelComparison(d) {
     }
   }
 
+  // ── bekend defect: het Kampen-debiet is te hoog ──
+  // Niet gemeten maar afgeleid, want er ís geen debietmeting bij Kampen. De
+  // toets komt uit het model zelf: de specifieke afvoer die het bovenstrooms
+  // laat zien, verklaart bij lange na niet wat het benedenstrooms toevoegt.
+  let kampenWaarschuwing = "";
+  const ol = d.olst || {};
+  if (wf.available && wf.q_kampen && wf.q_kampen.length &&
+      ol.wflow_q && ol.wflow_q.length === wf.q_kampen.length) {
+    const verh = wf.q_kampen.map((k, i) => k / ol.wflow_q[i])
+                            .filter(v => isFinite(v) && v > 0)
+                            .sort((a, b) => a - b);
+    if (verh.length) {
+      const mediaan = verh[Math.floor(verh.length / 2)];
+      kampenWaarschuwing =
+        `<p style="margin-top:8px;padding:8px 10px;background:#2a1a0d;` +
+        `border-left:3px solid #ffb74d;border-radius:0 4px 4px 0">` +
+        `<b style="color:#ffcc80">Het Kampen-debiet is te hoog — reken er niet mee.</b> ` +
+        `Het model zet Kampen op <b>${mediaan.toFixed(2)}×</b> Olst. Dat kan niet: ` +
+        `tussen Westervoort en Olst levert ruim 900 km² extra stroomgebied maar zo'n ` +
+        `15 m³/s op, en met díé verhouding zou je bijna 8.700 km² nodig hebben om het ` +
+        `verschil tussen Olst en Kampen te verklaren — meer dan er in het hele ` +
+        `stroomgebied zit. Realistisch is eerder 10 tot 25 procent boven Olst. ` +
+        `De oorzaak zit in het afwateringsnetwerk: op het laatste traject naar Kampen ` +
+        `zakt het bovenstroomse oppervlak van 2.077 km² naar 1, en de laatste veertig ` +
+        `cellen missen die waarde helemaal — een restant van een handmatige correctie ` +
+        `tussen Zwolle en Kampen. Zie ` +
+        `<a href="/docs/WL-SCHEMA-1_afgekoppelde-uitstroom" target="_blank" ` +
+        `style="color:#4db6ac">WL-SCHEMA-1</a>. ` +
+        `<b>De Olst-lijn en de peillijn zijn hier niet door besmet</b> — die draaien ` +
+        `op het debiet bij Olst, waar het model wél klopt.</p>`;
+    }
+  }
+
   el.innerHTML = `
     <h4>Twee verwachtingen naast elkaar ${badge}</h4>
     ${uitleg}
@@ -1672,6 +1705,7 @@ function renderModelComparison(d) {
     ${piek}
     ${q0Regel ? `<p>${q0Regel}</p>` : ""}
     ${sprong}
+    ${kampenWaarschuwing}
     ${peil}
     <div class="mv-let-op">
       <b>Wat je hier niet uit mag afleiden.</b> Geen van beide modellen is
